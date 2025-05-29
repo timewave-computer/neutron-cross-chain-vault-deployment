@@ -1,0 +1,11 @@
+[package]
+name = "deploy"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+types  = { path = "../types" }
+anyhow = "1"
+toml   = "0.8"
+serde  = { version = "1", features = ["derive"] }
+cosmwasm-std = { workspace = true }
