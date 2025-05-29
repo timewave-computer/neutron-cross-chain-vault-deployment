@@ -8,3 +8,4 @@ types  = { path = "../types" }
 anyhow = "1"
 toml   = "0.8"
 serde  = { version = "1", features = ["derive"] }
+cosmwasm-std = { workspace = true }
