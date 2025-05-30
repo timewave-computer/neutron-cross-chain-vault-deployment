@@ -288,7 +288,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
 
     println!("Ethereum Strategy Config created successfully");
-    println!("{:#?}", eth_cfg);
+    
+    // Save the Ethereum Strategy Config to a toml file
+    let eth_cfg_toml = toml::to_string(&eth_cfg).expect("Failed to serialize Ethereum Strategy Config");
+    fs::write(current_dir.join("deploy/src/ethereum_strategy_config.toml"), eth_cfg_toml)
+        .expect("Failed to write Ethereum Strategy Config to file");
 
     Ok(())
 }
