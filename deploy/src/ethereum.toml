@@ -1,0 +1,20 @@
+[general]
+rpc_url = "http://localhost:8545"
+owner   = "0x54a37ac81263C482D6BE56F5Bd796e06e9Afa344" # Neutron multisig address
+
+[vault]
+deposit_token            = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+strategist               = "0x54a37ac81263C482D6BE56F5Bd796e06e9Afa344" # Address of the strategist
+platform_fee_account     = "0x54a37ac81263C482D6BE56F5Bd796e06e9Afa344" # Receiver of the platform fees portion
+strategist_fee_account   = "0x54a37ac81263C482D6BE56F5Bd796e06e9Afa344" # Receiver of the strategist fees portion
+strategist_fee_ratio_bps = 500                                          # Strategist fee is 5%, rest goes to the platform (95%)
+deposit_cap              = "10000000000000"                             # e.g. 10K BTC
+deposit_fee_bps          = 100                                          # 1% deposit fee
+withdraw_rate_bps        = 100                                          # 1% withdrawal rate
+starting_rate            = "10000000"                                   # 1e8 - WBTC Precision
+
+[eureka_transfer]
+handler       = "0xfc2d0487a0ae42ae7329a80dc269916a9184cf7c"
+recipient     = "cosmos1...."
+source_client = "cosmoshub-0"
+timeout       = 43200                                        # 12 hours in seconds

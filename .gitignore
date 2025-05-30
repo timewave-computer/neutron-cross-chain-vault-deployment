@@ -1,1 +1,5 @@
 target/
+.env
+
+# Output files
+deploy/src/ethereum_strategy_config.toml
