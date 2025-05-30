@@ -22,8 +22,8 @@ pub struct EthereumStrategyConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EthereumDenoms {
-    /// WBTC ERC20 address (deposit token)
-    pub wbtc: String,
+    /// e.g. WBTC ERC20 address
+    pub deposit_token: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -37,6 +37,6 @@ pub struct EthereumAccounts {
 pub struct EthereumLibraries {
     /// ERC-4626-based vault
     pub one_way_vault: String,
-    /// IBC-Eureka forwarder
-    pub eureka_forwarder: String,
+    /// IBC-Eureka transfer
+    pub eureka_transfer: String,
 }
