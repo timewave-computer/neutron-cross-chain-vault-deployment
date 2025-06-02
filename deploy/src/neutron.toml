@@ -1,0 +1,28 @@
+[general]
+grpc_url  = "https://grpc.neutron.bronbro.io"
+grpc_port = 443
+chain_id  = "neutron-1"
+owner     = "neutron1h2lzp88kjk24sf7jfyrpd27xzfp52qerwvyxx2ds23pwavhz72asrpacva" # Neutron DAO
+
+[code_ids]
+authorization            = 1
+processor                = 2
+base_account             = 3
+interchain_account       = 4
+forwarder                = 5
+ica_ibc_transfer_library = 6
+supervaults_lper         = 7
+supervaults_withdrawer   = 8
+mars_position_manager    = 9
+verification_gateway     = 10
+
+[ica]
+deposit_token_on_hub_denom = "ibc/D742E8566B0B8CC8F569D950051C09CF57988A88F0E45574BFB3079D41DE6462" # WBTC
+channel_id                 = "channel-569"                                                          # Hub -> Neutron channel
+ibc_transfer_timeout       = 600                                                                    # 10 minutes
+connection_id              = "connection-0"                                                         # Neutron -> Hub connection
+ica_timeout                = 43200                                                                  # 12 hours in seconds - Large value recommended: https://docs.neutron.org/neutron/modules/interchain-txs/messages
+
+[program]
+deposit_token_on_neutron_denom = "ibc/..."
+
