@@ -22,6 +22,9 @@ pub struct StrategyConfig {
 // main strategy struct that wraps around the StrategyConfig
 // and stores the initialized clients
 pub struct Strategy {
+    /// strategy name
+    pub label: String,
+
     /// top level strategy configuration
     pub cfg: StrategyConfig,
 
@@ -41,6 +44,7 @@ impl Strategy {
     pub async fn new(cfg: StrategyConfig) -> Result<Self, Box<dyn Error>> {
         dotenv::dotenv().ok();
         let mnemonic = env::var("MNEMONIC").expect("mnemonic must be provided");
+        let label = env::var("LABEL").expect("label must be provided");
 
         let gaia_client = CosmosHubClient::new(
             &cfg.gaia.grpc_url,
@@ -66,6 +70,7 @@ impl Strategy {
             eth_client,
             gaia_client,
             neutron_client,
+            label,
         })
     }
 

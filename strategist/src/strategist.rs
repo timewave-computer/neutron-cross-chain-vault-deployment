@@ -29,7 +29,7 @@ use crate::strategy_config::Strategy;
 #[async_trait]
 impl ValenceWorker for Strategy {
     fn get_name(&self) -> String {
-        "Valence X-Vault: ETH-NEUTRON BTC".to_string()
+        format!("Valence X-Vault: {}", self.label)
     }
 
     async fn cycle(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
