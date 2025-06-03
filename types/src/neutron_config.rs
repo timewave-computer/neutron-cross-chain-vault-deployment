@@ -9,8 +9,6 @@ pub struct NeutronStrategyConfig {
     pub grpc_port: String,
     /// neutron chain id
     pub chain_id: String,
-    /// strategist mnemonic
-    pub mnemonic: String,
     /// total amount of untrn required to initiate an ibc transfer from neutron
     pub min_ibc_fee: Uint128,
 

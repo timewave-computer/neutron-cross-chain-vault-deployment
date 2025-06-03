@@ -482,10 +482,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let neutron_cfg = NeutronStrategyConfig {
-        grpc_url: "<Set GRPC here>".to_string(),
-        grpc_port: "<Set GRPC port here>".to_string(),
-        chain_id: "neutron-1".to_string(),
-        mnemonic: "<taken from env>".to_string(),
+        grpc_url: params.general.grpc_url.clone(),
+        grpc_port: params.general.grpc_port.clone(),
+        chain_id: params.general.chain_id.clone(),
         mars_pool: "mars pool".to_string(),
         supervault: params.program.supervault.clone(),
         denoms,

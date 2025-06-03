@@ -278,8 +278,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let eth_cfg = EthereumStrategyConfig {
-        rpc_url: "<Set RPC here>".to_string(),
-        mnemonic: "<This will be taken from env>.".to_string(),
+        rpc_url: parameters.general.rpc_url,
         authorizations: authorization.to_string(),
         processor: processor_address.to_string(),
         denoms,
