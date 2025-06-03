@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use valence_e2e::utils::worker::ValenceWorkerTomlSerde;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GaiaStrategyConfig {
@@ -12,3 +13,5 @@ pub struct GaiaStrategyConfig {
     // deposit denom routed from ethereum via IBC-Eureka
     pub btc_denom: String,
 }
+
+impl ValenceWorkerTomlSerde for GaiaStrategyConfig {}

@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 cosmwasm-std     = { workspace = true }
 serde            = { workspace = true }
+valence-e2e      = { workspace = true }

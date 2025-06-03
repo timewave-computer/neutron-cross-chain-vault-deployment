@@ -1,5 +1,6 @@
 use cosmwasm_std::Uint128;
 use serde::{Deserialize, Serialize};
+use valence_e2e::utils::worker::ValenceWorkerTomlSerde;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NeutronStrategyConfig {
@@ -29,6 +30,8 @@ pub struct NeutronStrategyConfig {
     /// all libraries relevant to the neutron-side of strategy
     pub libraries: NeutronLibraries,
 }
+
+impl ValenceWorkerTomlSerde for NeutronStrategyConfig {}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NeutronDenoms {

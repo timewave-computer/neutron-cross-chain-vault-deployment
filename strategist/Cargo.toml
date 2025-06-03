@@ -4,5 +4,23 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-cosmwasm-std     = { workspace = true }
-serde            = { workspace = true }
+types                        = { path = "../types" }
+dotenv                       = { workspace = true }
+cosmwasm-std                 = { workspace = true }
+serde                        = { workspace = true }
+valence-domain-clients       = { workspace = true }
+alloy                        = { workspace = true }
+hex                          = { workspace = true }
+valence-authorization-utils  = { workspace = true }
+valence-processor-utils      = { workspace = true }
+valence-library-utils        = { workspace = true }
+valence-account-utils        = { workspace = true }
+valence-ica-ibc-transfer     = { workspace = true }
+valence-forwarder-library    = { workspace = true }
+valence-mars-lending         = { workspace = true }
+valence-supervaults-lper     = { workspace = true }
+valence-clearing-queue       = { workspace = true }
+valence-verification-gateway = { workspace = true }
+valence-e2e                  = { workspace = true }
+log                          = { workspace = true }
+async-trait                  = "0.1.77"

@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use valence_e2e::utils::worker::ValenceWorkerTomlSerde;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EthereumStrategyConfig {
@@ -17,6 +18,8 @@ pub struct EthereumStrategyConfig {
     /// all libraries relevant to the eth-side of strategy
     pub libraries: EthereumLibraries,
 }
+
+impl ValenceWorkerTomlSerde for EthereumStrategyConfig {}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EthereumDenoms {
