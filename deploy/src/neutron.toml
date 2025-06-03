@@ -1,0 +1,20 @@
+[general]
+grpc_url  = "https://rpc.neutron.quokkastake.io"
+grpc_port = "9090"
+chain_id  = "neutron-1"
+owner     = "neutron1h2lzp88kjk24sf7jfyrpd27xzfp52qerwvyxx2ds23pwavhz72asrpacva" # Neutron DAO
+
+[ica]
+deposit_token_on_hub_denom = "ibc/D742E8566B0B8CC8F569D950051C09CF57988A88F0E45574BFB3079D41DE6462" # WBTC
+channel_id                 = "channel-569"                                                          # Hub -> Neutron channel
+ibc_transfer_timeout       = 600                                                                    # 10 minutes
+connection_id              = "connection-0"                                                         # Neutron -> Hub connection
+ica_timeout                = 43200                                                                  # 12 hours in seconds - Large value recommended: https://docs.neutron.org/neutron/modules/interchain-txs/messages
+
+[program]
+deposit_token_on_neutron_denom = "ibc/D742E8566B0B8CC8F569D950051C09CF57988A88F0E45574BFB3079D41DE6462" # TBD
+mars_credit_manager = "neutron1qdzn3l4kn7gsjna2tfpg3g3mwd6kunx4p50lfya59k02846xas6qslgs3r" # Need to figure this out, not sure if this one
+supervault = "neutron1qdzn3l4kn7gsjna2tfpg3g3mwd6kunx4p50lfya59k02846xas6qslgs3r" # Need to figure this out, not sure if this one
+supervault_asset1 = "ibc/D742E8566B0B8CC8F569D950051C09CF57988A88F0E45574BFB3079D41DE6462" # TBD
+supervault_asset2 = "ibc/4B8F0A1D3C6E5F7B8A9D3E4F5B6C7D8E9F0A1B2C3D4E5F6A7B8C9D0E1F2A3B" # TBD
+supervault_lp_denom = "factory/..."
