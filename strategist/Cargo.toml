@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 types                        = { path = "../types" }
+deploy                       = { path = "../deploy" }
 dotenv                       = { workspace = true }
 cosmwasm-std                 = { workspace = true }
 serde                        = { workspace = true }
@@ -21,6 +22,6 @@ valence-mars-lending         = { workspace = true }
 valence-supervaults-lper     = { workspace = true }
 valence-clearing-queue       = { workspace = true }
 valence-verification-gateway = { workspace = true }
-valence-e2e                  = { workspace = true }
+valence-strategist-utils     = { workspace = true }
 log                          = { workspace = true }
 async-trait                  = "0.1.77"

@@ -6,26 +6,20 @@ use alloy::{
     sol_types::SolEvent,
 };
 use async_trait::async_trait;
-use cosmwasm_std::{Uint64, Uint128, to_json_binary};
+use cosmwasm_std::{Uint64, to_json_binary};
 use log::{info, warn};
-use valence_authorization_utils::{
-    authorization::Priority,
-    msg::{PermissionedMsg, ProcessorMessage},
+use types::sol_types::{
+    Authorization, BaseAccount, ERC20, IBCEurekaTransfer,
+    OneWayVault::{self, WithdrawRequested},
+    processor_contract::LiteProcessor,
 };
+use valence_authorization_utils::msg::ProcessorMessage;
 use valence_clearing_queue::msg::ObligationsResponse;
 use valence_domain_clients::{
     cosmos::{base_client::BaseClient, wasm_client::WasmClient},
     evm::{base_client::EvmBaseClient, request_provider_client::RequestProviderClient},
 };
-use valence_e2e::utils::{
-    solidity_contracts::{
-        BaseAccount, ERC20, IBCEurekaTransfer,
-        OneWayVault::{self, WithdrawRequested},
-        sol_authorizations::Authorizations,
-        sol_lite_processor::LiteProcessor,
-    },
-    worker::ValenceWorker,
-};
+use valence_strategist_utils::worker::ValenceWorker;
 
 use crate::strategy_config::Strategy;
 
@@ -46,22 +40,22 @@ impl ValenceWorker for Strategy {
 
         // ======================= ETH Side setup =============================
         // here we build up the Ethereum domain state for the strategy cycle
-        let eth_authorizations_contract = Authorizations::new(
+        let _eth_authorizations_contract = Authorization::new(
             Address::from_str(&self.cfg.ethereum.authorizations)?,
             &eth_rp,
         );
-        let eth_processor_contract =
+        let _eth_processor_contract =
             LiteProcessor::new(Address::from_str(&self.cfg.ethereum.processor)?, &eth_rp);
 
-        let eth_wbtc_contract = ERC20::new(
+        let _eth_wbtc_contract = ERC20::new(
             Address::from_str(&self.cfg.ethereum.denoms.deposit_token)?,
             &eth_rp,
         );
-        let eth_one_way_vault_contract = OneWayVault::new(
+        let _eth_one_way_vault_contract = OneWayVault::new(
             Address::from_str(&self.cfg.ethereum.libraries.one_way_vault)?,
             &eth_rp,
         );
-        let eth_eureka_transfer_contract = IBCEurekaTransfer::new(
+        let _eth_eureka_transfer_contract = IBCEurekaTransfer::new(
             Address::from_str(&self.cfg.ethereum.libraries.eureka_transfer)?,
             &eth_rp,
         );
@@ -117,10 +111,7 @@ impl Strategy {
         // by the Valence Interchain Account on Neutron
         // TODO: make this into a blocking assertion query
         self.gaia_client
-            .query_balance(
-                &self.cfg.neutron.accounts.gaia_ica.remote_addr,
-                &self.cfg.gaia.btc_denom,
-            )
+            .query_balance("TODO:GAIA_ICA", &self.cfg.gaia.btc_denom)
             .await?;
 
         // 5. Initiate ICA-IBC-Transfer from Cosmos Hub ICA to Neutron program
@@ -157,7 +148,7 @@ impl Strategy {
         self.neutron_client
             .query_balance(
                 &self.cfg.neutron.accounts.deposit,
-                &self.cfg.neutron.denoms.wbtc,
+                &self.cfg.neutron.denoms.deposit_token,
             )
             .await?;
 
@@ -227,16 +218,16 @@ impl Strategy {
         let eth_rp = self.eth_client.get_request_provider().await?;
 
         // 1. query the Clearing Queue library for the latest posted withdraw request ID
-        let clearing_queue_cfg: valence_clearing_queue::msg::Config = self
+        let _clearing_queue_cfg: valence_clearing_queue::msg::Config = self
             .neutron_client
             .query_contract_state(
-                &self.cfg.neutron.libraries.clearing,
+                &self.cfg.neutron.libraries.clearing_queue,
                 valence_clearing_queue::msg::QueryMsg::GetLibraryConfig {},
             )
             .await?;
 
         // TODO: fetch this from the cfg queried above
-        let latest_registered_obligation_id = Uint64::new(10);
+        let _latest_registered_obligation_id = Uint64::new(10);
 
         // 2. query the OneWayVault for emitted events and filter them such that
         // only requests with id greater than the one queried in step 1. are fetched
@@ -279,7 +270,7 @@ impl Strategy {
         // 3. process the new OneWayVault Withdraw events in order from the oldest
         // to the newest, posting them to the coprocessor to obtain a ZKP
 
-        for withdraw_request in withdraw_requested_events {
+        for _withdraw_request in withdraw_requested_events {
             // TODO: post to coprocessor, get ZKP
 
             //  4. preserving the order, post the ZKPs obtained in step 3. to the Neutron
@@ -325,7 +316,7 @@ impl Strategy {
             .neutron_client
             .query_balance(
                 &self.cfg.neutron.accounts.settlement,
-                &self.cfg.neutron.denoms.wbtc,
+                &self.cfg.neutron.denoms.deposit_token,
             )
             .await?;
 
@@ -333,7 +324,7 @@ impl Strategy {
         let clearing_queue: ObligationsResponse = self
             .neutron_client
             .query_contract_state(
-                &self.cfg.neutron.libraries.clearing,
+                &self.cfg.neutron.libraries.clearing_queue,
                 valence_clearing_queue::msg::QueryMsg::PendingObligations {
                     from: None,
                     to: None,
@@ -344,7 +335,7 @@ impl Strategy {
         let total_queue_obligations: u128 = clearing_queue
             .obligations
             .iter()
-            .map(|o| o.payout_coins[0].amount.u128())
+            .map(|o| o.payout_coin.amount.u128())
             .sum();
 
         // 3. if settlement account balance is insufficient to cover the active

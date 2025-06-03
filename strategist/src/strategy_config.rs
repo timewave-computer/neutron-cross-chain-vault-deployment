@@ -7,9 +7,9 @@ use types::{
 use valence_domain_clients::clients::{
     ethereum::EthereumClient, gaia::CosmosHubClient, neutron::NeutronClient,
 };
-use valence_e2e::utils::worker::ValenceWorkerTomlSerde;
 
 use serde::{Deserialize, Serialize};
+use valence_strategist_utils::worker::ValenceWorkerTomlSerde;
 
 /// top-level config that wraps around each domain configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -33,6 +33,7 @@ pub struct Strategy {
     pub(crate) neutron_client: NeutronClient,
 }
 
+#[allow(dead_code)]
 impl Strategy {
     /// strategy initializer that takes in a `StrategyConfig`, and uses it
     /// to initialize the respective domain clients. prerequisite to starting
