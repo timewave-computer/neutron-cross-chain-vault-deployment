@@ -50,7 +50,7 @@ pub struct NeutronAccounts {
     pub mars_deposit: String,
     /// input account from which funds will be deposited into Supervault
     pub supervault_deposit: String,
-    /// input account from which funds will be withdrawn from Supervault and put into Settlement account
+    /// settlement account where funds will be sent to end users
     pub settlement: String,
 }
 
