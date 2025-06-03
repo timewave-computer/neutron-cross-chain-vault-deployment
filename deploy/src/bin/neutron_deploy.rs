@@ -1,4 +1,10 @@
-use std::{collections::BTreeMap, env, error::Error, fs, time::SystemTime};
+use std::{
+    collections::{BTreeMap, HashMap},
+    env,
+    error::Error,
+    fs,
+    time::SystemTime,
+};
 
 use cosmwasm_std::{Uint128, Uint64};
 use serde::Deserialize;
@@ -13,9 +19,13 @@ use valence_forwarder_library::msg::{ForwardingConstraints, UncheckedForwardingC
 use valence_library_utils::{denoms::UncheckedDenom, LibraryAccountType};
 
 #[derive(Deserialize, Debug)]
+struct UploadedContracts {
+    code_ids: HashMap<String, u64>,
+}
+
+#[derive(Deserialize, Debug)]
 struct Parameters {
     general: General,
-    code_ids: CodeIds,
     ica: Ica,
     program: Program,
 }
@@ -26,20 +36,6 @@ struct General {
     grpc_port: String,
     chain_id: String,
     owner: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct CodeIds {
-    authorization: u64,
-    processor: u64,
-    base_account: u64,
-    interchain_account: u64,
-    forwarder: u64,
-    ica_ibc_transfer_library: u64,
-    supervaults_lper: u64,
-    supervaults_withdrawer: u64,
-    mars_lending: u64,
-    clearing_queue: u64,
 }
 
 #[derive(Deserialize, Debug)]
@@ -72,6 +68,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let params: Parameters = toml::from_str(&parameters).expect("Failed to parse TOML");
 
+    // Read code IDS from the code ids file
+    let code_ids_content = fs::read_to_string(current_dir.join("deploy/src/neutron_code_ids.toml"))
+        .expect("Failed to read code ids file");
+    let uploaded_contracts: UploadedContracts =
+        toml::from_str(&code_ids_content).expect("Failed to parse code ids");
+
     let neutron_client = NeutronClient::new(
         &params.general.grpc_url,
         &params.general.grpc_port,
@@ -86,14 +88,34 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .address
         .to_string();
 
-    let code_id_authorization = params.code_ids.authorization;
-    let code_id_processor = params.code_ids.processor;
+    // Get all code IDs
+    let code_id_authorization = *uploaded_contracts.code_ids.get("authorization").unwrap();
+    let code_id_processor = *uploaded_contracts.code_ids.get("processor").unwrap();
+    let code_id_ica_ibc_transfer_library =
+        *uploaded_contracts.code_ids.get("ica_ibc_transfer").unwrap();
+    let code_id_forwarder_library = *uploaded_contracts
+        .code_ids
+        .get("forwarder_library")
+        .unwrap();
+    let code_id_mars_lending = *uploaded_contracts.code_ids.get("mars_lending").unwrap();
+    let code_id_supervaults_lper = *uploaded_contracts.code_ids.get("supervaults_lper").unwrap();
+    let code_id_supervaults_withdrawer = *uploaded_contracts
+        .code_ids
+        .get("supervaults_withdrawer")
+        .unwrap();
+    let code_id_clearing_queue = *uploaded_contracts.code_ids.get("clearing_queue").unwrap();
+    let code_id_base_account = *uploaded_contracts.code_ids.get("base_account").unwrap();
+    let code_id_interchain_account = *uploaded_contracts
+        .code_ids
+        .get("interchain_account")
+        .unwrap();
 
     let now = SystemTime::now();
-    let salt = now
+    let salt_raw = now
         .duration_since(SystemTime::UNIX_EPOCH)?
         .as_secs()
         .to_string();
+    let salt = hex::encode(salt_raw.as_bytes());
 
     let predicted_processor_address = neutron_client
         .predict_instantiate2_addr(code_id_processor, salt.clone(), my_address.clone())
@@ -138,25 +160,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut salts = vec![];
     let mut predicted_base_accounts = vec![];
     for i in 0..6 {
-        salts.push(format!("{}-{}", salt, i));
+        let salt = hex::encode(format!("{}{}", salt_raw, i).as_bytes());
+        salts.push(salt.clone());
         let predicted_base_account_address = neutron_client
-            .predict_instantiate2_addr(
-                params.code_ids.base_account,
-                format!("{}-{}", salt, i),
-                my_address.clone(),
-            )
+            .predict_instantiate2_addr(code_id_base_account, salt.clone(), my_address.clone())
             .await?
             .address;
+        println!(
+            "Predicted base account address {}: {}",
+            i, predicted_base_account_address
+        );
         predicted_base_accounts.push(predicted_base_account_address);
     }
 
     // Predict the valence ICA address
     let predicted_valence_ica_address = neutron_client
-        .predict_instantiate2_addr(
-            params.code_ids.interchain_account,
-            salt.clone(),
-            my_address.clone(),
-        )
+        .predict_instantiate2_addr(code_id_interchain_account, salt.clone(), my_address.clone())
         .await?
         .address;
 
@@ -187,9 +206,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Instantiate the ICA IBC transfer library
     let ica_ibc_transfer_library_address = neutron_client
         .instantiate(
-            params.code_ids.ica_ibc_transfer_library,
+            code_id_ica_ibc_transfer_library,
             "ica_ibc_transfer".to_string(),
             instantiate_ica_ibc_transfer_msg,
+            None,
         )
         .await?;
     println!(
@@ -218,9 +238,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let deposit_forwarder_library_address = neutron_client
         .instantiate(
-            params.code_ids.forwarder,
+            code_id_forwarder_library,
             "deposit_forwarder".to_string(),
             instantiate_deposit_forwarder_msg,
+            None,
         )
         .await?;
     println!(
@@ -245,9 +266,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mars_lending_library_address = neutron_client
         .instantiate(
-            params.code_ids.mars_lending,
+            code_id_mars_lending,
             "mars_lending".to_string(),
             instantiate_mars_lending_msg,
+            None,
         )
         .await?;
     println!(
@@ -275,9 +297,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
     let phase_forwarder_library_address = neutron_client
         .instantiate(
-            params.code_ids.forwarder,
+            code_id_forwarder_library,
             "phase_forwarder".to_string(),
             instantiate_phase_forwarder_msg,
+            None,
         )
         .await?;
 
@@ -304,9 +327,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
     let supervaults_lper_library_address = neutron_client
         .instantiate(
-            params.code_ids.supervaults_lper,
+            code_id_supervaults_lper,
             "supervaults_lper".to_string(),
             instantiate_supervaults_lper_msg,
+            None,
         )
         .await?;
     println!(
@@ -337,9 +361,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
     let supervaults_withdrawer_library_address = neutron_client
         .instantiate(
-            params.code_ids.supervaults_withdrawer,
+            code_id_supervaults_withdrawer,
             "supervaults_withdrawer".to_string(),
             instantiate_supervaults_withdrawer_msg,
+            None,
         )
         .await?;
     println!(
@@ -362,9 +387,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let clearing_queue_library_address = neutron_client
         .instantiate(
-            params.code_ids.clearing_queue,
+            code_id_clearing_queue,
             "clearing_queue".to_string(),
             instantiate_clearing_queue_msg,
+            None,
         )
         .await?;
     println!(
@@ -384,7 +410,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
     let valence_ica_address = neutron_client
         .instantiate2(
-            params.code_ids.interchain_account,
+            code_id_interchain_account,
             "valence_ica".to_string(),
             valence_ica_instantiate_msg,
             Some(params.general.owner.clone()),
@@ -400,7 +426,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
     let ica_deposit_account_address = neutron_client
         .instantiate2(
-            params.code_ids.base_account,
+            code_id_base_account,
             "ica_deposit".to_string(),
             ica_deposit_account,
             Some(params.general.owner.clone()),
@@ -418,7 +444,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
     let mars_deposit_account_address = neutron_client
         .instantiate2(
-            params.code_ids.base_account,
+            code_id_base_account,
             "mars_deposit".to_string(),
             mars_deposit_account,
             Some(params.general.owner.clone()),
@@ -436,7 +462,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
     let mars_withdraw_account_address = neutron_client
         .instantiate2(
-            params.code_ids.base_account,
+            code_id_base_account,
             "mars_withdraw".to_string(),
             mars_withdraw_account,
             Some(params.general.owner.clone()),
@@ -454,7 +480,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
     let supervault_deposit_account_address = neutron_client
         .instantiate2(
-            params.code_ids.base_account,
+            code_id_base_account,
             "supervault_deposit".to_string(),
             supervault_deposit_account,
             Some(params.general.owner.clone()),
@@ -472,7 +498,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
     let supervault_position_account_address = neutron_client
         .instantiate2(
-            params.code_ids.base_account,
+            code_id_base_account,
             "supervault_position".to_string(),
             supervault_position_account,
             Some(params.general.owner.clone()),
@@ -490,7 +516,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
     let settlement_account_address = neutron_client
         .instantiate2(
-            params.code_ids.base_account,
+            code_id_base_account,
             "settlement".to_string(),
             settlement_account,
             Some(params.general.owner.clone()),
