@@ -2114,7 +2114,7 @@ dependencies = [
  "valence-mars-lending",
  "valence-processor-utils",
  "valence-supervaults-lper",
- "valence-supervaults-withdrawer",
+ "valence-verification-gateway",
 ]
 
 [[package]]
@@ -6882,21 +6882,6 @@ dependencies = [
  "neutron-std 5.1.2",
  "valence-account-utils",
  "valence-library-utils",
-]
-
-[[package]]
-name = "valence-supervaults-withdrawer"
-version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#cd45a4024e01667237bfa45981e29acb5c841473"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cw-ownable",
- "valence-account-utils",
- "valence-library-base",
- "valence-library-utils",
- "valence-macros",
- "valence-supervaults-utils",
 ]
 
 [[package]]

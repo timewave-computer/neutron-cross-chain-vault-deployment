@@ -99,15 +99,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .unwrap();
     let code_id_mars_lending = *uploaded_contracts.code_ids.get("mars_lending").unwrap();
     let code_id_supervaults_lper = *uploaded_contracts.code_ids.get("supervaults_lper").unwrap();
-    let code_id_supervaults_withdrawer = *uploaded_contracts
-        .code_ids
-        .get("supervaults_withdrawer")
-        .unwrap();
     let code_id_clearing_queue = *uploaded_contracts.code_ids.get("clearing_queue").unwrap();
     let code_id_base_account = *uploaded_contracts.code_ids.get("base_account").unwrap();
     let code_id_interchain_account = *uploaded_contracts
         .code_ids
         .get("interchain_account")
+        .unwrap();
+    let code_id_verification_gateway = *uploaded_contracts
+        .code_ids
+        .get("verification_gateway")
         .unwrap();
 
     let now = SystemTime::now();
@@ -156,10 +156,38 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .await?;
     println!("Processor instantiated: {}", processor_address);
 
-    // Predict all base accounts, we are going to store all salts for them as well. In total we need 6
+    // Instantiate the verification gateway
+    let instantiate_verification_gateway_msg = valence_verification_gateway::msg::InstantiateMsg {};
+    let verification_gateway = neutron_client
+        .instantiate(
+            code_id_verification_gateway,
+            "verification-gateway".to_string(),
+            instantiate_verification_gateway_msg,
+            None,
+        )
+        .await?;
+
+    // Set the verification gateway address on the authorization contract
+    let set_verification_gateway_msg =
+        valence_authorization_utils::msg::ExecuteMsg::PermissionedAction(
+            valence_authorization_utils::msg::PermissionedMsg::SetVerificationGateway {
+                verification_gateway,
+            },
+        );
+
+    neutron_client
+        .execute_wasm(
+            &authorization_address,
+            set_verification_gateway_msg,
+            vec![],
+            None,
+        )
+        .await?;
+
+    // Predict all base accounts, we are going to store all salts for them as well. In total we need 4
     let mut salts = vec![];
     let mut predicted_base_accounts = vec![];
-    for i in 0..6 {
+    for i in 0..4 {
         let salt = hex::encode(format!("{}{}", salt_raw, i).as_bytes());
         salts.push(salt.clone());
         let predicted_base_account_address = neutron_client
@@ -218,6 +246,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     );
 
     // Instantiate the deposit forwarder library
+    // This library will have Mars deposit account as output in phase 1 and supervault deposit account in phase 2
     let deposit_forwarder_config = valence_forwarder_library::msg::LibraryConfig {
         input_addr: LibraryAccountType::Addr(predicted_base_accounts[0].clone()),
         output_addr: LibraryAccountType::Addr(predicted_base_accounts[1].clone()),
@@ -250,9 +279,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     );
 
     // Instantiate the Mars lending library
+    // In Phase 1 the output account is the settlement account and in phase 2 this will be initial deposit account
     let mars_lending_config = valence_mars_lending::msg::LibraryConfig {
         input_addr: LibraryAccountType::Addr(predicted_base_accounts[1].clone()),
-        output_addr: LibraryAccountType::Addr(predicted_base_accounts[2].clone()),
+        output_addr: LibraryAccountType::Addr(predicted_base_accounts[3].clone()),
         credit_manager_addr: params.program.mars_credit_manager,
         denom: params.program.deposit_token_on_neutron_denom.clone(),
     };
@@ -277,37 +307,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         mars_lending_library_address
     );
 
-    // Instantiate phase forwarder library
-    // Initially this one will forward funds to settlement account
-    let phase_forwarder_config = valence_forwarder_library::msg::LibraryConfig {
-        input_addr: LibraryAccountType::Addr(predicted_base_accounts[2].clone()),
-        output_addr: LibraryAccountType::Addr(predicted_base_accounts[5].clone()),
-        forwarding_configs: vec![UncheckedForwardingConfig {
-            denom: UncheckedDenom::Native(params.program.deposit_token_on_neutron_denom.clone()),
-            max_amount: Uint128::MAX,
-        }],
-        forwarding_constraints: ForwardingConstraints::default(),
-    };
-    let instantiate_phase_forwarder_msg = valence_library_utils::msg::InstantiateMsg::<
-        valence_forwarder_library::msg::LibraryConfig,
-    > {
-        owner: params.general.owner.clone(),
-        processor: processor_address.clone(),
-        config: phase_forwarder_config,
-    };
-    let phase_forwarder_library_address = neutron_client
-        .instantiate(
-            code_id_forwarder_library,
-            "phase_forwarder".to_string(),
-            instantiate_phase_forwarder_msg,
-            None,
-        )
-        .await?;
-
     // Instantiate supervaults lper library
     let supervaults_lper_config = valence_supervaults_lper::msg::LibraryConfig {
-        input_addr: LibraryAccountType::Addr(predicted_base_accounts[3].clone()),
-        output_addr: LibraryAccountType::Addr(predicted_base_accounts[4].clone()),
+        input_addr: LibraryAccountType::Addr(predicted_base_accounts[2].clone()),
+        output_addr: LibraryAccountType::Addr(predicted_base_accounts[3].clone()),
         vault_addr: params.program.supervault.clone(),
         lp_config: valence_supervaults_lper::msg::LiquidityProviderConfig {
             asset_data: valence_library_utils::liquidity_utils::AssetData {
@@ -338,43 +341,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         supervaults_lper_library_address
     );
 
-    // Instantiate supervaults withdrawer library
-    let supervaults_withdrawer_config = valence_supervaults_withdrawer::msg::LibraryConfig {
-        input_addr: LibraryAccountType::Addr(predicted_base_accounts[4].clone()),
-        output_addr: LibraryAccountType::Addr(predicted_base_accounts[5].clone()),
-        vault_addr: params.program.supervault.clone(),
-        lw_config: valence_supervaults_withdrawer::msg::LiquidityWithdrawerConfig {
-            asset_data: valence_library_utils::liquidity_utils::AssetData {
-                asset1: params.program.supervault_asset1.clone(),
-                asset2: params.program.supervault_asset2.clone(),
-            },
-            lp_denom: params.program.supervault_lp_denom.clone(),
-        },
-    };
-
-    let instantiate_supervaults_withdrawer_msg = valence_library_utils::msg::InstantiateMsg::<
-        valence_supervaults_withdrawer::msg::LibraryConfig,
-    > {
-        owner: params.general.owner.clone(),
-        processor: processor_address.clone(),
-        config: supervaults_withdrawer_config,
-    };
-    let supervaults_withdrawer_library_address = neutron_client
-        .instantiate(
-            code_id_supervaults_withdrawer,
-            "supervaults_withdrawer".to_string(),
-            instantiate_supervaults_withdrawer_msg,
-            None,
-        )
-        .await?;
-    println!(
-        "Supervaults withdrawer library instantiated: {}",
-        supervaults_withdrawer_library_address
-    );
-
     // Finally instantiate the clearing queue library
     let clearing_config = valence_clearing_queue::msg::LibraryConfig {
-        settlement_acc_addr: LibraryAccountType::Addr(predicted_base_accounts[5].clone()),
+        settlement_acc_addr: LibraryAccountType::Addr(predicted_base_accounts[3].clone()),
         denom: params.program.deposit_token_on_neutron_denom.clone(),
         latest_id: None,
     };
@@ -456,24 +425,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         mars_deposit_account_address
     );
 
-    let mars_withdraw_account = valence_account_utils::msg::InstantiateMsg {
-        admin: params.general.owner.clone(),
-        approved_libraries: vec![phase_forwarder_library_address.clone()],
-    };
-    let mars_withdraw_account_address = neutron_client
-        .instantiate2(
-            code_id_base_account,
-            "mars_withdraw".to_string(),
-            mars_withdraw_account,
-            Some(params.general.owner.clone()),
-            salts[2].clone(),
-        )
-        .await?;
-    println!(
-        "Mars withdraw account instantiated: {}",
-        mars_withdraw_account_address
-    );
-
     let supervault_deposit_account = valence_account_utils::msg::InstantiateMsg {
         admin: params.general.owner.clone(),
         approved_libraries: vec![supervaults_lper_library_address.clone()],
@@ -484,30 +435,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
             "supervault_deposit".to_string(),
             supervault_deposit_account,
             Some(params.general.owner.clone()),
-            salts[3].clone(),
+            salts[2].clone(),
         )
         .await?;
     println!(
         "Supervault deposit account instantiated: {}",
         supervault_deposit_account_address
-    );
-
-    let supervault_position_account = valence_account_utils::msg::InstantiateMsg {
-        admin: params.general.owner.clone(),
-        approved_libraries: vec![supervaults_withdrawer_library_address.clone()],
-    };
-    let supervault_position_account_address = neutron_client
-        .instantiate2(
-            code_id_base_account,
-            "supervault_position".to_string(),
-            supervault_position_account,
-            Some(params.general.owner.clone()),
-            salts[4].clone(),
-        )
-        .await?;
-    println!(
-        "Supervault position account instantiated: {}",
-        supervault_position_account_address
     );
 
     let settlement_account = valence_account_utils::msg::InstantiateMsg {
@@ -520,7 +453,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             "settlement".to_string(),
             settlement_account,
             Some(params.general.owner.clone()),
-            salts[5].clone(),
+            salts[3].clone(),
         )
         .await?;
     println!(
@@ -537,7 +470,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let accounts = NeutronAccounts {
         deposit: ica_deposit_account_address,
         mars_deposit: mars_deposit_account_address,
-        mars_withdraw: mars_withdraw_account_address,
         supervault_deposit: supervault_deposit_account_address,
         settlement: settlement_account_address,
     };
@@ -545,9 +477,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let libraries = NeutronLibraries {
         deposit_forwarder: deposit_forwarder_library_address,
         mars_lending: mars_lending_library_address,
-        phase_forwarder: phase_forwarder_library_address,
         supervault_lper: supervaults_lper_library_address,
-        supervault_withdrawer: supervaults_withdrawer_library_address,
         clearing_queue: clearing_queue_library_address,
     };
 

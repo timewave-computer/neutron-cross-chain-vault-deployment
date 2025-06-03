@@ -48,8 +48,6 @@ pub struct NeutronAccounts {
     pub deposit: String,
     /// input account from which funds will be deposited into Mars
     pub mars_deposit: String,
-    /// input account from which funds will be forwarded to Settlement during phase 1 or to deposit account during phase 2
-    pub mars_withdraw: String,
     /// input account from which funds will be deposited into Supervault
     pub supervault_deposit: String,
     /// input account from which funds will be withdrawn from Supervault and put into Settlement account
@@ -62,12 +60,8 @@ pub struct NeutronLibraries {
     pub deposit_forwarder: String,
     /// Mars lending library
     pub mars_lending: String,
-    /// Phase forwarder library where funds will be moved to either settlement account (phase 1) or deposit account (phase 2)
-    pub phase_forwarder: String,
     /// Supervault lper
     pub supervault_lper: String,
-    /// Supervault withdrawer
-    pub supervault_withdrawer: String,
     /// Clearing queue
     pub clearing_queue: String,
 }
