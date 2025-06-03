@@ -4,12 +4,23 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-types                  = { path = "../types" }
-anyhow                 = "1"
-toml                   = "0.8"
-serde                  = { version = "1", features = ["derive"] }
-cosmwasm-std           = { workspace = true }
-dotenv                 = "0.15"
-tokio                  = { version = "1.45.1", features = ["macros", "rt-multi-thread"] }
-valence-domain-clients = { git = "https://github.com/timewave-computer/valence-domain-clients.git", tag = "v0.1.1" }
-alloy                  = { version = "0.9.2", features = ["full"] }
+types                        = { path = "../types" }
+anyhow                       = "1"
+toml                         = "0.8"
+serde                        = { version = "1", features = ["derive"] }
+cosmwasm-std                 = { workspace = true }
+dotenv                       = "0.15"
+tokio                        = { version = "1.45.1", features = ["macros", "rt-multi-thread"] }
+valence-domain-clients       = { git = "https://github.com/timewave-computer/valence-domain-clients.git", branch = "main" }
+alloy                        = { version = "0.9.2", features = ["full"] }
+hex                          = "0.4.3"
+valence-authorization-utils  = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
+valence-processor-utils      = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
+valence-library-utils        = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
+valence-account-utils        = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
+valence-ica-ibc-transfer     = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
+valence-forwarder-library    = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
+valence-mars-lending         = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
+valence-supervaults-lper     = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
+valence-clearing-queue       = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
+valence-verification-gateway = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }

@@ -4,8 +4,6 @@ use serde::{Deserialize, Serialize};
 pub struct EthereumStrategyConfig {
     /// ethereum node rpc url
     pub rpc_url: String,
-    /// strategist mnemonic
-    pub mnemonic: String,
 
     /// authorizations module
     pub authorizations: String,

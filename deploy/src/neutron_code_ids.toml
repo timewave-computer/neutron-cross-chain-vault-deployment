@@ -1,0 +1,11 @@
+[code_ids]
+verification_gateway = 3711
+supervaults_lper     = 3704
+interchain_account   = 3702
+clearing_queue       = 3706
+mars_lending         = 3707
+ica_ibc_transfer     = 3709
+processor            = 3708
+forwarder_library    = 3701
+base_account         = 3703
+authorization        = 3710
