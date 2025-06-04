@@ -91,13 +91,16 @@ impl Strategy {
         // TODO: doublecheck the precision conversion here
         let gaia_ica_balance = Uint128::from_str(&eth_deposit_acc_bal.to_string())?;
 
-        let _gaia_ica_bal = self.gaia_client.poll_until_expected_balance(
-            "TODO:GAIA_ICA",
-            &self.cfg.gaia.btc_denom,
-            gaia_ica_balance.u128(),
-            5,
-            10,
-        ).await?;
+        let _gaia_ica_bal = self
+            .gaia_client
+            .poll_until_expected_balance(
+                "TODO:GAIA_ICA",
+                &self.cfg.gaia.btc_denom,
+                gaia_ica_balance.u128(),
+                5,
+                10,
+            )
+            .await?;
 
         self.enqueue_neutron("ICA_IBC_UPDATE_AMOUNT", vec!["TODO"])
             .await?;
@@ -116,13 +119,15 @@ impl Strategy {
 
         // 6. block execution until funds arrive to the Neutron program deposit
         // account
-        self.neutron_client.poll_until_expected_balance(
-            &self.cfg.neutron.accounts.deposit,
-            &self.cfg.neutron.denoms.deposit_token,
-            gaia_ica_balance.u128(),
-            5,
-            10,
-        ).await?;
+        self.neutron_client
+            .poll_until_expected_balance(
+                &self.cfg.neutron.accounts.deposit,
+                &self.cfg.neutron.denoms.deposit_token,
+                gaia_ica_balance.u128(),
+                5,
+                10,
+            )
+            .await?;
 
         // 7. use Valence Forwarder to route funds from the Neutron program
         // deposit account to the Mars deposit account
