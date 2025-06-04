@@ -227,22 +227,23 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Create the Ethereum Strategy Config
     let denoms = EthereumDenoms {
-        deposit_token: parameters.vault.deposit_token.to_string(),
+        deposit_token: parameters.vault.deposit_token,
     };
 
     let accounts = EthereumAccounts {
-        deposit: deposit_account.to_string(),
+        deposit: deposit_account,
     };
 
     let libraries = EthereumLibraries {
-        one_way_vault: proxy.to_string(),
-        eureka_transfer: eureka_transfer.to_string(),
+        one_way_vault: proxy,
+        eureka_transfer,
     };
 
     let eth_cfg = EthereumStrategyConfig {
+        ibc_transfer_threshold_amt: U256::from(1_000_000),
         rpc_url: parameters.general.rpc_url,
-        authorizations: authorization.to_string(),
-        processor: processor_address.to_string(),
+        authorizations: authorization,
+        processor: processor_address,
         denoms,
         accounts,
         libraries,
