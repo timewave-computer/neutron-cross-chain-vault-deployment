@@ -3,3 +3,5 @@ target/
 
 # Output files
 deploy/src/ethereum_strategy_config.toml
+deploy/src/neutron_strategy_config.toml
+deploy/src/gaia_strategy_config.toml

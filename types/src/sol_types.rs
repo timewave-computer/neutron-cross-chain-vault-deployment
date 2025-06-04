@@ -45,3 +45,9 @@ sol!(
     IBCEurekaTransfer,
     "./../deploy/contracts/evm/IBCEurekaTransfer.sol/IBCEurekaTransfer.json",
 );
+
+sol!(
+    #[sol(rpc)]
+    SP1VerificationGateway,
+    "./../deploy/contracts/evm/SP1VerificationGateway.sol/SP1VerificationGateway.json",
+);

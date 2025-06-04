@@ -29,6 +29,8 @@ pub struct NeutronStrategyConfig {
     pub accounts: NeutronAccounts,
     /// all libraries relevant to the neutron-side of strategy
     pub libraries: NeutronLibraries,
+    /// All IDs of the coprocessor apps
+    pub coprocessor_app_ids: NeutronCoprocessorAppIds,
 }
 
 impl ValenceWorkerTomlSerde for NeutronStrategyConfig {}
@@ -45,6 +47,8 @@ pub struct NeutronDenoms {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NeutronAccounts {
+    /// Valence ICA
+    pub ica: String,
     /// deposit account where funds will arrive from cosmos hub
     pub deposit: String,
     /// input account from which funds will be deposited into Mars
@@ -63,6 +67,14 @@ pub struct NeutronLibraries {
     pub mars_lending: String,
     /// Supervault lper
     pub supervault_lper: String,
+    /// Clearing queue
+    pub clearing_queue: String,
+    /// ICA transfer library
+    pub ica_transfer: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NeutronCoprocessorAppIds {
     /// Clearing queue
     pub clearing_queue: String,
 }
