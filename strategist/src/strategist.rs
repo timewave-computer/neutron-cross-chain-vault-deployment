@@ -1,4 +1,4 @@
-use std::error::Error;
+use std::{collections::BTreeMap, error::Error, str::FromStr};
 
 use alloy::{
     primitives::{B256, Log, keccak256},
@@ -6,6 +6,7 @@ use alloy::{
     sol_types::SolEvent,
 };
 use async_trait::async_trait;
+use cosmwasm_std::Uint128;
 use log::{info, warn};
 use types::sol_types::{BaseAccount, ERC20, OneWayVault::WithdrawRequested};
 use valence_clearing_queue::msg::ObligationsResponse;
@@ -87,10 +88,16 @@ impl Strategy {
 
         // 4. block execution until the funds arrive to the Cosmos Hub ICA owned
         // by the Valence Interchain Account on Neutron
-        // TODO: make this into a blocking assertion query
-        self.gaia_client
-            .query_balance("TODO:GAIA_ICA", &self.cfg.gaia.btc_denom)
-            .await?;
+        // TODO: doublecheck the precision conversion here
+        let gaia_ica_balance = Uint128::from_str(&eth_deposit_acc_bal.to_string())?;
+
+        let _gaia_ica_bal = self.gaia_client.poll_until_expected_balance(
+            "TODO:GAIA_ICA",
+            &self.cfg.gaia.btc_denom,
+            gaia_ica_balance.u128(),
+            5,
+            10,
+        ).await?;
 
         self.enqueue_neutron("ICA_IBC_UPDATE_AMOUNT", vec!["TODO"])
             .await?;
@@ -109,13 +116,13 @@ impl Strategy {
 
         // 6. block execution until funds arrive to the Neutron program deposit
         // account
-        // TODO: make this into a blocking assertion query
-        self.neutron_client
-            .query_balance(
-                &self.cfg.neutron.accounts.deposit,
-                &self.cfg.neutron.denoms.deposit_token,
-            )
-            .await?;
+        self.neutron_client.poll_until_expected_balance(
+            &self.cfg.neutron.accounts.deposit,
+            &self.cfg.neutron.denoms.deposit_token,
+            gaia_ica_balance.u128(),
+            5,
+            10,
+        ).await?;
 
         // 7. use Valence Forwarder to route funds from the Neutron program
         // deposit account to the Mars deposit account
@@ -148,7 +155,7 @@ impl Strategy {
         eth_rp: &CustomProvider,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         // 1. query the Clearing Queue library for the latest posted withdraw request ID
-        let _clearing_queue_cfg: valence_clearing_queue::msg::Config = self
+        let clearing_queue_cfg: valence_clearing_queue::msg::Config = self
             .neutron_client
             .query_contract_state(
                 &self.cfg.neutron.libraries.clearing_queue,
@@ -173,9 +180,8 @@ impl Strategy {
 
         let logs = eth_rp.get_logs(&withdraw_event_filter).await?;
 
-        // todo: probably better use btreemap to have the events sorted
-        // by id on insertion below
-        let mut withdraw_requested_events = vec![];
+        // store collected events in a btreemap to keep them sorted by id (on insertion)
+        let mut withdraw_requested_events: BTreeMap<u64, Log<WithdrawRequested>> = BTreeMap::new();
 
         for log in logs {
             let alloy_log = Log::new(log.address(), log.topics().into(), log.data().clone().data)
@@ -184,7 +190,10 @@ impl Strategy {
             match WithdrawRequested::decode_log(&alloy_log, false) {
                 Ok(val) => {
                     info!("[BTC_STRATEGIST] decoded WithdrawRequested log: {:?}", val);
-                    withdraw_requested_events.push(val);
+                    // making no assumptions on what logs are returned so we filter manually
+                    if val.id > clearing_queue_cfg.latest_id.u64() {
+                        withdraw_requested_events.insert(val.id, val);
+                    }
                 }
                 Err(e) => warn!(
                     "[BTC_STRATEGIST] failed to decode WithdrawRequested log: {:?}",
