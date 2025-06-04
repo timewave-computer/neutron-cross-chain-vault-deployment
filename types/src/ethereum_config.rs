@@ -1,3 +1,4 @@
+use alloy::primitives::U256;
 use serde::{Deserialize, Serialize};
 use valence_strategist_utils::worker::ValenceWorkerTomlSerde;
 
@@ -5,6 +6,10 @@ use valence_strategist_utils::worker::ValenceWorkerTomlSerde;
 pub struct EthereumStrategyConfig {
     /// ethereum node rpc url
     pub rpc_url: String,
+
+    /// minimum eureka-transfer input account balance
+    /// to perform IBC transfer (taking fees into account)
+    pub ibc_transfer_threshold_amt: U256,
 
     /// authorizations module
     pub authorizations: String,

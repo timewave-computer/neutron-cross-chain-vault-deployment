@@ -240,6 +240,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let eth_cfg = EthereumStrategyConfig {
+        ibc_transfer_threshold_amt: U256::from(1_000_000),
         rpc_url: parameters.general.rpc_url,
         authorizations: authorization.to_string(),
         processor: processor_address.to_string(),

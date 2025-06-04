@@ -135,9 +135,8 @@ impl Strategy {
             ._0;
 
         // 2. validate that the deposit account balance exceeds the eureka routing
-        // threshold amount (from cfg)
-        // TODO: replace the hardcoded value
-        if eth_deposit_acc_bal < U256::from(1_000_000) {
+        // threshold amount
+        if eth_deposit_acc_bal < self.cfg.ethereum.ibc_transfer_threshold_amt {
             // early return if balance is too small for the eureka transfer
             // to be worth it
             return Ok(());
