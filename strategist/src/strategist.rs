@@ -1,7 +1,7 @@
-use std::{error::Error, str::FromStr};
+use std::error::Error;
 
 use alloy::{
-    primitives::{Address, B256, Log, keccak256},
+    primitives::{B256, Log, keccak256},
     providers::Provider,
     sol_types::SolEvent,
 };
@@ -44,9 +44,9 @@ impl ValenceWorker for Strategy {
         // carry out the settlements
         self.settlement().await?;
 
-        // after the deposit flow and having processed all new exit
-        // requests, the epoch is ready to be concluded. we perform the
-        // accounting flow and post vault update.
+        // having processed all new exit requests after the deposit flow,
+        // the epoch is ready to be concluded.
+        // we perform the final accounting flow and post vault update.
         self.update().await?;
 
         Ok(())
@@ -65,16 +65,8 @@ impl Strategy {
         &mut self,
         eth_rp: &CustomProvider,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let eth_wbtc_contract = ERC20::new(
-            // TODO: make ethereum cfg return `Address` instead of string
-            // for eth addresses
-            Address::from_str(&self.cfg.ethereum.denoms.deposit_token)?,
-            &eth_rp,
-        );
-        let eth_deposit_acc = BaseAccount::new(
-            Address::from_str(&self.cfg.ethereum.accounts.deposit)?,
-            &eth_rp,
-        );
+        let eth_wbtc_contract = ERC20::new(self.cfg.ethereum.denoms.deposit_token, &eth_rp);
+        let eth_deposit_acc = BaseAccount::new(self.cfg.ethereum.accounts.deposit, &eth_rp);
 
         // 1. query the ethereum deposit account balance
         let eth_deposit_acc_bal = self
@@ -166,12 +158,7 @@ impl Strategy {
 
         // 2. query the OneWayVault for emitted events and filter them such that
         // only requests with id greater than the one queried in step 1. are fetched
-        let vault_addr = self
-            .cfg
-            .ethereum
-            .libraries
-            .one_way_vault
-            .parse::<Address>()?;
+
         let event_signature = "WithdrawRequested(uint64,address,string,uint256)";
         let event_signature_hash = keccak256(event_signature.as_bytes());
         let event_topic = B256::from(event_signature_hash);
@@ -181,7 +168,7 @@ impl Strategy {
         // block on which that withdraw request was submitted to the vault and setting
         // that with .from_block()
         let withdraw_event_filter = alloy::rpc::types::Filter::new()
-            .address(vault_addr)
+            .address(self.cfg.ethereum.libraries.one_way_vault)
             .event_signature(event_topic);
 
         let logs = eth_rp.get_logs(&withdraw_event_filter).await?;
