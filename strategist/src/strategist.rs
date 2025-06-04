@@ -1,14 +1,17 @@
 use std::{collections::BTreeMap, error::Error, str::FromStr};
 
 use alloy::{
-    primitives::{B256, Log, keccak256},
+    primitives::{B256, Log, U256, keccak256},
     providers::Provider,
     sol_types::SolEvent,
 };
 use async_trait::async_trait;
 use cosmwasm_std::Uint128;
 use log::{info, warn};
-use types::sol_types::{BaseAccount, ERC20, OneWayVault::WithdrawRequested};
+use types::sol_types::{
+    BaseAccount, ERC20,
+    OneWayVault::{self, WithdrawRequested},
+};
 use valence_clearing_queue::msg::ObligationsResponse;
 use valence_domain_clients::{
     cosmos::{base_client::BaseClient, wasm_client::WasmClient},
@@ -48,7 +51,7 @@ impl ValenceWorker for Strategy {
         // having processed all new exit requests after the deposit flow,
         // the epoch is ready to be concluded.
         // we perform the final accounting flow and post vault update.
-        self.update().await?;
+        self.update(&eth_rp).await?;
 
         Ok(())
     }
@@ -56,7 +59,87 @@ impl ValenceWorker for Strategy {
 
 impl Strategy {
     /// performs the vault rate update
-    async fn update(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
+    async fn update(
+        &mut self,
+        eth_rp: &CustomProvider,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let eth_deposit_acc_contract =
+            BaseAccount::new(self.cfg.ethereum.accounts.deposit, &eth_rp);
+        let one_way_vault_contract =
+            OneWayVault::new(self.cfg.ethereum.libraries.one_way_vault, &eth_rp);
+        let eth_deposit_denom_contract =
+            ERC20::new(self.cfg.ethereum.denoms.deposit_token, &eth_rp);
+
+        let eth_deposit_acc_balance = self
+            .eth_client
+            .query(eth_deposit_denom_contract.balanceOf(*eth_deposit_acc_contract.address()))
+            .await?
+            ._0;
+        let eth_vault_issued_shares = self
+            .eth_client
+            .query(one_way_vault_contract.totalSupply())
+            .await?
+            ._0;
+
+        let gaia_ica_balance = self
+            .gaia_client
+            .query_balance("GAIA_ICA", &self.cfg.gaia.btc_denom)
+            .await?;
+
+        let neutron_deposit_acc_balance = self
+            .neutron_client
+            .query_balance(
+                &self.cfg.neutron.accounts.deposit,
+                &self.cfg.neutron.denoms.deposit_token,
+            )
+            .await?;
+
+        let neutron_settlement_acc_deposit_token_balance = self
+            .neutron_client
+            .query_balance(
+                &self.cfg.neutron.accounts.settlement,
+                &self.cfg.neutron.denoms.deposit_token,
+            )
+            .await?;
+        let neutron_settlement_acc_lp_token_balance = self
+            .neutron_client
+            .query_balance(
+                &self.cfg.neutron.accounts.settlement,
+                &self.cfg.neutron.denoms.supervault_lp,
+            )
+            .await?;
+
+        let neutron_mars_acc_balance = self
+            .neutron_client
+            .query_balance(
+                &self.cfg.neutron.accounts.mars_deposit,
+                &self.cfg.neutron.denoms.deposit_token,
+            )
+            .await?;
+
+        let neutron_supervault_acc_balance = self
+            .neutron_client
+            .query_balance(
+                &self.cfg.neutron.accounts.supervault_deposit,
+                &self.cfg.neutron.denoms.deposit_token,
+            )
+            .await?;
+
+        let neutron_mars_position_balance = "TODO".to_string();
+
+        let new_rate = U256::from(10);
+
+        let update_tx = one_way_vault_contract.update(new_rate);
+
+        let update_result = self
+            .eth_client
+            .execute_tx(update_tx.into_transaction_request())
+            .await?;
+
+        eth_rp
+            .get_transaction_receipt(update_result.transaction_hash)
+            .await?;
+
         Ok(())
     }
 
