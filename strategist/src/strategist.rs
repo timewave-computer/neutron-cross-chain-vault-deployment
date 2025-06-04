@@ -1,23 +1,23 @@
-use std::{error::Error, str::FromStr};
+use std::{collections::BTreeMap, error::Error, str::FromStr};
 
 use alloy::{
-    primitives::{Address, B256, Log, U256, keccak256},
+    primitives::{address, keccak256, Address, Log, B256, U256},
     providers::Provider,
     sol_types::SolEvent,
 };
 use async_trait::async_trait;
-use cosmwasm_std::{Uint64, to_json_binary};
+use cosmwasm_std::{to_json_binary, Uint64};
 use log::{info, warn};
+use serde::Serialize;
 use types::sol_types::{
-    Authorization, BaseAccount, ERC20, IBCEurekaTransfer,
-    OneWayVault::{self, WithdrawRequested},
-    processor_contract::LiteProcessor,
+    BaseAccount, ERC20,
+    OneWayVault::WithdrawRequested,
 };
 use valence_authorization_utils::msg::ProcessorMessage;
 use valence_clearing_queue::msg::ObligationsResponse;
 use valence_domain_clients::{
     cosmos::{base_client::BaseClient, wasm_client::WasmClient},
-    evm::{base_client::EvmBaseClient, request_provider_client::RequestProviderClient},
+    evm::{base_client::{CustomProvider, EvmBaseClient}, request_provider_client::RequestProviderClient},
 };
 use valence_strategist_utils::worker::ValenceWorker;
 
@@ -33,54 +33,92 @@ impl ValenceWorker for Strategy {
     }
 
     async fn cycle(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let worker_name = self.get_name();
-        info!("{worker_name}: Starting cycle...");
+        info!("{}: Starting cycle...", self.get_name());
 
-        let eth_rp = self.eth_client.get_request_provider().await?;
-
-        // ======================= ETH Side setup =============================
-        // here we build up the Ethereum domain state for the strategy cycle
-        let _eth_authorizations_contract = Authorization::new(
-            Address::from_str(&self.cfg.ethereum.authorizations)?,
-            &eth_rp,
-        );
-        let _eth_processor_contract =
-            LiteProcessor::new(Address::from_str(&self.cfg.ethereum.processor)?, &eth_rp);
-
-        let _eth_wbtc_contract = ERC20::new(
-            Address::from_str(&self.cfg.ethereum.denoms.deposit_token)?,
-            &eth_rp,
-        );
-        let _eth_one_way_vault_contract = OneWayVault::new(
-            Address::from_str(&self.cfg.ethereum.libraries.one_way_vault)?,
-            &eth_rp,
-        );
-        let _eth_eureka_transfer_contract = IBCEurekaTransfer::new(
-            Address::from_str(&self.cfg.ethereum.libraries.eureka_transfer)?,
-            &eth_rp,
-        );
+        let eth_rp: CustomProvider = self.eth_client.get_request_provider().await?;
 
         // first we carry out the deposit flow
-        self.deposit().await?;
+        self.deposit(&eth_rp).await?;
 
         // after deposit flow is complete, we process the new obligations
-        self.register_withdraw_obligations().await?;
+        self.register_withdraw_obligations(&eth_rp).await?;
 
         // with new obligations registered into the clearing queue, we
         // carry out the settlements
         self.settlement().await?;
+
+        // after the deposit flow and having processed all new exit
+        // requests, the epoch is ready to be concluded. we perform the
+        // accounting flow and post vault update.
+        self.update().await?;
 
         Ok(())
     }
 }
 
 impl Strategy {
+    /// enqueues a message on neutron
+    async fn enqueue_neutron<T>(
+        &mut self,
+        label: &str,
+        messages: Vec<T>,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> where
+        T: Serialize,
+    {
+        let mut encoded_messages = vec![];
+
+        for message in messages {
+            let encoded_msg = to_json_binary(&message)?;
+
+            let processor_msg = ProcessorMessage::CosmwasmExecuteMsg { msg: encoded_msg };
+
+            encoded_messages.push(processor_msg);
+        }
+
+        self.neutron_client.execute_wasm(
+            &self.cfg.neutron.authorizations,
+            valence_authorization_utils::msg::ExecuteMsg::PermissionlessAction(
+                valence_authorization_utils::msg::PermissionlessMsg::SendMsgs {
+                    label: label.to_string(),
+                    messages: encoded_messages,
+                    ttl: None,
+                },
+            ),
+            vec![],
+            None,
+        )
+        .await?;
+
+        Ok(())
+    }
+
+    /// ticks the processor on neutron
+    async fn tick_neutron(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.neutron_client
+            .execute_wasm(
+                &self.cfg.neutron.processor,
+                valence_processor_utils::msg::ExecuteMsg::PermissionlessAction(
+                    valence_processor_utils::msg::PermissionlessMsg::Tick {},
+                ),
+                vec![],
+                None,
+            )
+            .await?;
+
+        Ok(())
+    }
+
+    /// performs the vault rate update
+    async fn update(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
+        Ok(())
+    }
+
     /// carries out the steps needed to bring the new deposits from Ethereum to
     /// Neutron (via Cosmos Hub) before depositing them into Mars protocol.
-    async fn deposit(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let eth_rp = self.eth_client.get_request_provider().await?;
-
+    async fn deposit(&mut self, eth_rp: &CustomProvider) -> Result<(), Box<dyn Error + Send + Sync>> {
         let eth_wbtc_contract = ERC20::new(
+            // TODO: make ethereum cfg return `Address` instead of string
+            // for eth addresses
             Address::from_str(&self.cfg.ethereum.denoms.deposit_token)?,
             &eth_rp,
         );
@@ -114,33 +152,15 @@ impl Strategy {
             .query_balance("TODO:GAIA_ICA", &self.cfg.gaia.btc_denom)
             .await?;
 
+        self.enqueue_neutron("ICA_IBC_UPDATE_AMOUNT", vec!["TODO"]).await?;
+
+        self.tick_neutron().await?;
+
         // 5. Initiate ICA-IBC-Transfer from Cosmos Hub ICA to Neutron program
         // deposit account
-        self.neutron_client
-            .execute_wasm(
-                &self.cfg.neutron.authorizations,
-                valence_authorization_utils::msg::ExecuteMsg::PermissionlessAction(
-                    valence_authorization_utils::msg::PermissionlessMsg::SendMsgs {
-                        label: "ICA_IBC_TRANSFER".to_string(),
-                        messages: vec![],
-                        ttl: None,
-                    },
-                ),
-                vec![],
-                None,
-            )
-            .await?;
+        self.enqueue_neutron("ICA_IBC_TRANSFER", vec!["TODO"]).await?;
 
-        self.neutron_client
-            .execute_wasm(
-                &self.cfg.neutron.processor,
-                valence_processor_utils::msg::ExecuteMsg::PermissionlessAction(
-                    valence_processor_utils::msg::PermissionlessMsg::Tick {},
-                ),
-                vec![],
-                None,
-            )
-            .await?;
+        self.tick_neutron().await?;
 
         // 6. block execution until funds arrive to the Neutron program deposit
         // account
@@ -154,59 +174,15 @@ impl Strategy {
 
         // 7. use Valence Forwarder to route funds from the Neutron program
         // deposit account to the Mars deposit account
-        self.neutron_client
-            .execute_wasm(
-                &self.cfg.neutron.authorizations,
-                valence_authorization_utils::msg::ExecuteMsg::PermissionlessAction(
-                    valence_authorization_utils::msg::PermissionlessMsg::SendMsgs {
-                        label: "DEPOSIT_FWD".to_string(),
-                        messages: vec![],
-                        ttl: None,
-                    },
-                ),
-                vec![],
-                None,
-            )
-            .await?;
+        self.enqueue_neutron("DEPOSIT_FWD", vec!["TODO"]).await?;
 
-        self.neutron_client
-            .execute_wasm(
-                &self.cfg.neutron.processor,
-                valence_processor_utils::msg::ExecuteMsg::PermissionlessAction(
-                    valence_processor_utils::msg::PermissionlessMsg::Tick {},
-                ),
-                vec![],
-                None,
-            )
-            .await?;
+        self.tick_neutron().await?;
 
         // 8. use Mars Lending library to deposit funds from Mars deposit account
         // into Mars protocol
-        self.neutron_client
-            .execute_wasm(
-                &self.cfg.neutron.authorizations,
-                valence_authorization_utils::msg::ExecuteMsg::PermissionlessAction(
-                    valence_authorization_utils::msg::PermissionlessMsg::SendMsgs {
-                        label: "MARS_DEPOSIT".to_string(),
-                        messages: vec![],
-                        ttl: None,
-                    },
-                ),
-                vec![],
-                None,
-            )
-            .await?;
+        self.enqueue_neutron("MARS_DEPOSIT", vec!["TODO"]).await?;
 
-        self.neutron_client
-            .execute_wasm(
-                &self.cfg.neutron.processor,
-                valence_processor_utils::msg::ExecuteMsg::PermissionlessAction(
-                    valence_processor_utils::msg::PermissionlessMsg::Tick {},
-                ),
-                vec![],
-                None,
-            )
-            .await?;
+        self.tick_neutron().await?;
 
         Ok(())
     }
@@ -214,9 +190,7 @@ impl Strategy {
     /// reads the newly submitted withdrawal obligations that are not yet
     /// present in the Clearing Queue, generates their zero-knowledge proofs,
     /// and posts them into the Clearing queue in order.
-    async fn register_withdraw_obligations(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let eth_rp = self.eth_client.get_request_provider().await?;
-
+    async fn register_withdraw_obligations(&mut self, eth_rp: &CustomProvider) -> Result<(), Box<dyn Error + Send + Sync>> {
         // 1. query the Clearing Queue library for the latest posted withdraw request ID
         let _clearing_queue_cfg: valence_clearing_queue::msg::Config = self
             .neutron_client
@@ -225,9 +199,6 @@ impl Strategy {
                 valence_clearing_queue::msg::QueryMsg::GetLibraryConfig {},
             )
             .await?;
-
-        // TODO: fetch this from the cfg queried above
-        let _latest_registered_obligation_id = Uint64::new(10);
 
         // 2. query the OneWayVault for emitted events and filter them such that
         // only requests with id greater than the one queried in step 1. are fetched
@@ -242,13 +213,17 @@ impl Strategy {
         let event_topic = B256::from(event_signature_hash);
 
         // TODO: can we tune this filter such that only events with id (uint64 in signature)
-        // are fetched?
+        // are fetched? ideally by mapping a _clearing_queue_cfg.latest_id to the eth
+        // block on which that withdraw request was submitted to the vault and setting
+        // that with .from_block()
         let withdraw_event_filter = alloy::rpc::types::Filter::new()
             .address(vault_addr)
             .event_signature(event_topic);
 
         let logs = eth_rp.get_logs(&withdraw_event_filter).await?;
 
+        // todo: probably better use btreemap to have the events sorted
+        // by id on insertion below
         let mut withdraw_requested_events = vec![];
 
         for log in logs {
@@ -275,32 +250,10 @@ impl Strategy {
 
             //  4. preserving the order, post the ZKPs obtained in step 3. to the Neutron
             // Authorizations contract, enqueuing them to the processor
-            self.neutron_client
-                .execute_wasm(
-                    &self.cfg.neutron.authorizations,
-                    valence_authorization_utils::msg::ExecuteMsg::PermissionlessAction(
-                        valence_authorization_utils::msg::PermissionlessMsg::SendMsgs {
-                            label: "POST_ZKP".to_string(),
-                            messages: vec![],
-                            ttl: None,
-                        },
-                    ),
-                    vec![],
-                    None,
-                )
-                .await?;
+            self.enqueue_neutron("POST_ZKP", vec!["TODO"]).await?;
 
             // 5. tick the processor to register the obligations to the clearing queue
-            self.neutron_client
-                .execute_wasm(
-                    &self.cfg.neutron.processor,
-                    valence_processor_utils::msg::ExecuteMsg::PermissionlessAction(
-                        valence_processor_utils::msg::PermissionlessMsg::Tick {},
-                    ),
-                    vec![],
-                    None,
-                )
-                .await?;
+            self.tick_neutron().await?;
         }
 
         Ok(())
@@ -348,65 +301,21 @@ impl Strategy {
 
             // 4. call the Mars lending library to perform the withdrawal.
             // This will deposit the underlying assets directly to the settlement account.
-            self.neutron_client
-                .execute_wasm(
-                    &self.cfg.neutron.authorizations,
-                    valence_authorization_utils::msg::ExecuteMsg::PermissionlessAction(
-                        valence_authorization_utils::msg::PermissionlessMsg::SendMsgs {
-                            label: "TBD".to_string(),
-                            messages: vec![ProcessorMessage::CosmwasmExecuteMsg {
-                                msg: to_json_binary(
-                                    &valence_mars_lending::msg::FunctionMsgs::Withdraw {
-                                        amount: Some(obligations_delta.into()),
-                                    },
-                                )?,
-                            }],
-                            ttl: None,
-                        },
-                    ),
-                    vec![],
-                    None,
-                )
-                .await?;
-            self.neutron_client
-                .execute_wasm(
-                    &self.cfg.neutron.processor,
-                    valence_processor_utils::msg::ExecuteMsg::PermissionlessAction(
-                        valence_processor_utils::msg::PermissionlessMsg::Tick {},
-                    ),
-                    vec![],
-                    None,
-                )
-                .await?;
+            self.enqueue_neutron("MARS_WITHDRAW", vec![
+                &valence_mars_lending::msg::FunctionMsgs::Withdraw {
+                    amount: Some(obligations_delta.into()),
+                },
+            ]).await?;
+
+
+            self.tick_neutron().await?;
         }
 
         // 5. queue the Clearing Queue settlement requests to the processor
-        self.neutron_client
-            .execute_wasm(
-                &self.cfg.neutron.authorizations,
-                valence_authorization_utils::msg::ExecuteMsg::PermissionlessAction(
-                    valence_authorization_utils::msg::PermissionlessMsg::SendMsgs {
-                        label: "TBD".to_string(),
-                        messages: vec![],
-                        ttl: None,
-                    },
-                ),
-                vec![],
-                None,
-            )
-            .await?;
+        self.enqueue_neutron("CLEAR_SETTLEMENTS", vec![1]).await?;
 
         // 6. tick the processor until all withdraw obligations are settled
-        self.neutron_client
-            .execute_wasm(
-                &self.cfg.neutron.processor,
-                valence_processor_utils::msg::ExecuteMsg::PermissionlessAction(
-                    valence_processor_utils::msg::PermissionlessMsg::Tick {},
-                ),
-                vec![],
-                None,
-            )
-            .await?;
+        self.tick_neutron().await?;
 
         Ok(())
     }
