@@ -6,14 +6,20 @@ use alloy::{
     sol_types::SolValue,
 };
 use serde::Deserialize;
-use types::ethereum_config::{
-    EthereumAccounts, EthereumDenoms, EthereumLibraries, EthereumStrategyConfig,
+use types::{
+    ethereum_config::{
+        EthereumAccounts, EthereumDenoms, EthereumLibraries, EthereumStrategyConfig,
+    },
+    sol_types::{
+        processor_contract::LiteProcessor,
+        Authorization, BaseAccount, ERC1967Proxy, IBCEurekaTransfer,
+        OneWayVault::{self, FeeDistributionConfig, OneWayVaultConfig},
+    },
 };
 use valence_domain_clients::{
     clients::ethereum::EthereumClient,
     evm::{base_client::EvmBaseClient, request_provider_client::RequestProviderClient},
 };
-use OneWayVault::{FeeDistributionConfig, OneWayVaultConfig};
 
 #[derive(Deserialize, Debug)]
 struct Parameters {
@@ -48,45 +54,6 @@ struct EurekaTransfer {
     source_client: String,
     timeout: u64,
 }
-
-sol!(
-    #[sol(rpc)]
-    BaseAccount,
-    "./contracts/evm/BaseAccount.sol/BaseAccount.json",
-);
-
-// Need to use a module to avoid name conflicts with Authorization
-mod processor_contract {
-    alloy::sol!(
-        #[sol(rpc)]
-        LiteProcessor,
-        "./contracts/evm/LiteProcessor.sol/LiteProcessor.json",
-    );
-}
-
-sol!(
-    #[sol(rpc)]
-    Authorization,
-    "./contracts/evm/Authorization.sol/Authorization.json",
-);
-
-sol!(
-    #[sol(rpc)]
-    OneWayVault,
-    "./contracts/evm/OneWayVault.sol/OneWayVault.json",
-);
-
-sol!(
-    #[sol(rpc)]
-    IBCEurekaTransfer,
-    "./contracts/evm/IBCEurekaTransfer.sol/IBCEurekaTransfer.json",
-);
-
-sol!(
-    #[sol(rpc)]
-    ERC1967Proxy,
-    "./contracts/evm/ERC1967Proxy.sol/ERC1967Proxy.json",
-);
 
 const VERIFICATION_GATEWAY: &str = "0x397A5f7f3dBd538f23DE225B51f532c34448dA9B";
 
@@ -166,14 +133,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     eth_client.sign_and_send(initialize_tx).await?;
     println!("Vault initialized");
 
-    let processor = processor_contract::LiteProcessor::deploy_builder(
-        &rp,
-        FixedBytes::<32>::default(),
-        Address::ZERO,
-        0,
-        vec![],
-    )
-    .into_transaction_request();
+    let processor =
+        LiteProcessor::deploy_builder(&rp, FixedBytes::<32>::default(), Address::ZERO, 0, vec![])
+            .into_transaction_request();
 
     let processor_address = eth_client
         .sign_and_send(processor)
@@ -198,7 +160,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("Authorization deployed at: {authorization}");
 
     // Add authorization contract as an authorized address to the proccessor
-    let processor = processor_contract::LiteProcessor::new(processor_address, &rp);
+    let processor = LiteProcessor::new(processor_address, &rp);
 
     let add_authorization_tx = processor
         .addAuthorizedAddress(authorization)
