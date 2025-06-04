@@ -101,31 +101,10 @@ impl Strategy {
                 &self.cfg.neutron.denoms.deposit_token,
             )
             .await?;
-        let neutron_settlement_acc_lp_token_balance = self
-            .neutron_client
-            .query_balance(
-                &self.cfg.neutron.accounts.settlement,
-                &self.cfg.neutron.denoms.supervault_lp,
-            )
-            .await?;
 
-        let neutron_mars_acc_balance = self
-            .neutron_client
-            .query_balance(
-                &self.cfg.neutron.accounts.mars_deposit,
-                &self.cfg.neutron.denoms.deposit_token,
-            )
-            .await?;
+        let mars_tvl = self.mars_accounting().await?;
 
-        let neutron_supervault_acc_balance = self
-            .neutron_client
-            .query_balance(
-                &self.cfg.neutron.accounts.supervault_deposit,
-                &self.cfg.neutron.denoms.deposit_token,
-            )
-            .await?;
-
-        let neutron_mars_position_balance = "TODO".to_string();
+        let supervaults_tvl = self.supervaults_accounting().await?;
 
         let new_rate = U256::from(10);
 
@@ -141,6 +120,94 @@ impl Strategy {
             .await?;
 
         Ok(())
+    }
+
+    /// calculates total value of everything related to the Mars flow:
+    /// - mars input account
+    /// - mars position
+    ///
+    /// returns total amount expressed in the deposit token
+    async fn mars_accounting(&mut self) -> Result<u128, Box<dyn Error + Send + Sync>> {
+        let neutron_mars_deposit_acc_balance = self
+            .neutron_client
+            .query_balance(
+                &self.cfg.neutron.accounts.mars_deposit,
+                &self.cfg.neutron.denoms.deposit_token,
+            )
+            .await?;
+
+        let neutron_mars_position_balance = Uint128::one();
+
+        let total_mars_value =
+            neutron_mars_deposit_acc_balance + neutron_mars_position_balance.u128();
+
+        Ok(total_mars_value)
+    }
+
+    /// calculates total value of everything related to the Supervaults flow:
+    /// - supervaults input account
+    /// - supervaults LP shares (settlement account)
+    ///
+    /// returns total amount expressed in the deposit token
+    async fn supervaults_accounting(&mut self) -> Result<u128, Box<dyn Error + Send + Sync>> {
+        let neutron_supervault_acc_balance = self
+            .neutron_client
+            .query_balance(
+                &self.cfg.neutron.accounts.supervault_deposit,
+                &self.cfg.neutron.denoms.deposit_token,
+            )
+            .await?;
+
+        let neutron_settlement_acc_lp_token_balance = self
+            .neutron_client
+            .query_balance(
+                &self.cfg.neutron.accounts.settlement,
+                &self.cfg.neutron.denoms.supervault_lp,
+            )
+            .await?;
+
+        let supervault_cfg: mmvault::state::Config = self
+            .neutron_client
+            .query_contract_state(
+                &self.cfg.neutron.supervault,
+                mmvault::msg::QueryMsg::GetConfig {},
+            )
+            .await?;
+
+        let (withdraw_amount_0, withdraw_amount_1): (Uint128, Uint128) = self
+            .neutron_client
+            .query_contract_state(
+                &self.cfg.neutron.supervault,
+                mmvault::msg::QueryMsg::SimulateWithdrawLiquidity {
+                    amount: neutron_settlement_acc_lp_token_balance.into(),
+                },
+            )
+            .await?;
+
+        let simulate_withdraw_deposit_token = if self
+            .cfg
+            .neutron
+            .denoms
+            .deposit_token
+            .eq(&supervault_cfg.pair_data.token_0.denom)
+        {
+            withdraw_amount_0
+        } else if self
+            .cfg
+            .neutron
+            .denoms
+            .deposit_token
+            .eq(&supervault_cfg.pair_data.token_1.denom)
+        {
+            withdraw_amount_1
+        } else {
+            Uint128::zero()
+        };
+
+        let total_supervaults_assets =
+            simulate_withdraw_deposit_token.u128() + neutron_supervault_acc_balance;
+
+        Ok(total_supervaults_assets)
     }
 
     /// carries out the steps needed to bring the new deposits from Ethereum to

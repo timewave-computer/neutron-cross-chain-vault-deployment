@@ -5744,6 +5744,7 @@ dependencies = [
  "dotenv",
  "hex",
  "log",
+ "mmvault",
  "serde",
  "types",
  "valence-account-utils",
