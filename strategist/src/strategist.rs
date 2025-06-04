@@ -305,6 +305,7 @@ impl Strategy {
             )
             .await?;
 
+        // sum the total obligations amount
         let total_queue_obligations: u128 = clearing_queue
             .obligations
             .iter()
@@ -316,7 +317,6 @@ impl Strategy {
         if settlement_acc_bal < total_queue_obligations {
             // 3. simulate Mars protocol withdrawal to obtain the funds necessary
             // to fulfill all active withdrawal requests
-            // TODO: check for underflows
             let obligations_delta = total_queue_obligations - settlement_acc_bal;
 
             // 4. call the Mars lending library to perform the withdrawal.
@@ -332,15 +332,17 @@ impl Strategy {
             self.tick_neutron().await?;
         }
 
-        // 5. queue the Clearing Queue settlement requests to the processor
-        self.enqueue_neutron(
-            "CLEAR_SETTLEMENTS",
-            vec![valence_clearing_queue::msg::FunctionMsgs::SettleNextObligation {}],
-        )
-        .await?;
+        // 5. process the Clearing Queue settlement requests by enqueuing the settlement
+        // messages to the processor and ticking
+        for _ in clearing_queue.obligations {
+            self.enqueue_neutron(
+                "CLEAR_SETTLEMENTS",
+                vec![valence_clearing_queue::msg::FunctionMsgs::SettleNextObligation {}],
+            )
+            .await?;
 
-        // 6. tick the processor until all withdraw obligations are settled
-        self.tick_neutron().await?;
+            self.tick_neutron().await?;
+        }
 
         Ok(())
     }
