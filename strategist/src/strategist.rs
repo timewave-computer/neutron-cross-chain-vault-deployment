@@ -83,7 +83,7 @@ impl Strategy {
 
         let gaia_ica_balance = self
             .gaia_client
-            .query_balance("GAIA_ICA", &self.cfg.gaia.btc_denom)
+            .query_balance("GAIA_ICA", &self.cfg.gaia.denoms.deposit_token)
             .await?;
 
         let neutron_deposit_acc_balance = self
@@ -136,10 +136,40 @@ impl Strategy {
             )
             .await?;
 
-        let neutron_mars_position_balance = Uint128::one();
+        let mars_input_acc_credit_accounts: Vec<valence_lending_utils::mars::Account> = self
+            .neutron_client
+            .query_contract_state(
+                &self.cfg.neutron.mars_pool,
+                valence_lending_utils::mars::QueryMsg::Accounts {
+                    owner: self.cfg.neutron.accounts.mars_deposit.to_string(),
+                    start_after: None,
+                    limit: None,
+                },
+            )
+            .await?;
+
+        let mars_input_credit_account_id = mars_input_acc_credit_accounts[0].id.to_string();
+
+        let mars_positions_response: valence_lending_utils::mars::Positions = self
+            .neutron_client
+            .query_contract_state(
+                &self.cfg.neutron.mars_pool,
+                valence_lending_utils::mars::QueryMsg::Positions {
+                    account_id: mars_input_credit_account_id,
+                },
+            )
+            .await?;
+
+        let mut mars_lending_deposit_token_amount = Uint128::zero();
+
+        for lend in mars_positions_response.lends {
+            if lend.denom == self.cfg.neutron.denoms.deposit_token {
+                mars_lending_deposit_token_amount = lend.amount;
+            }
+        }
 
         let total_mars_value =
-            neutron_mars_deposit_acc_balance + neutron_mars_position_balance.u128();
+            neutron_mars_deposit_acc_balance + mars_lending_deposit_token_amount.u128();
 
         Ok(total_mars_value)
     }
@@ -245,7 +275,7 @@ impl Strategy {
             .gaia_client
             .poll_until_expected_balance(
                 "TODO:GAIA_ICA",
-                &self.cfg.gaia.btc_denom,
+                &self.cfg.gaia.denoms.deposit_token,
                 gaia_ica_balance.u128(),
                 5,
                 10,

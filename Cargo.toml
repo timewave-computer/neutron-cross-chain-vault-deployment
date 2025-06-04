@@ -21,4 +21,5 @@ valence-supervaults-lper     = { git = "https://github.com/timewave-computer/val
 valence-clearing-queue       = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
 valence-verification-gateway = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
 valence-strategist-utils     = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
+valence-lending-utils        = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
 log                          = "0.4.22"
