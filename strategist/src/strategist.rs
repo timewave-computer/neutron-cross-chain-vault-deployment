@@ -6,7 +6,7 @@ use alloy::{
     sol_types::SolEvent,
 };
 use async_trait::async_trait;
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{Decimal, Uint128, Uint256};
 use log::{info, warn};
 use types::sol_types::{
     BaseAccount, ERC20,
@@ -75,11 +75,20 @@ impl Strategy {
             .query(eth_deposit_denom_contract.balanceOf(*eth_deposit_acc_contract.address()))
             .await?
             ._0;
+        let eth_deposit_token_total_uint256 =
+            Uint256::from_be_bytes(eth_deposit_acc_balance.to_be_bytes());
+        let eth_deposit_token_total_uint128 =
+            Uint128::from_str(&eth_deposit_token_total_uint256.to_string())?;
+
         let eth_vault_issued_shares = self
             .eth_client
             .query(one_way_vault_contract.totalSupply())
             .await?
             ._0;
+        let eth_vault_issued_shares_uint256 =
+            Uint256::from_be_bytes(eth_vault_issued_shares.to_be_bytes());
+        let eth_vault_issued_shares_uint128 =
+            Uint128::from_str(&eth_vault_issued_shares_uint256.to_string())?;
 
         let gaia_ica_balance = self
             .gaia_client
@@ -102,13 +111,35 @@ impl Strategy {
             )
             .await?;
 
+        // both mars and supervaults positions are derivatives of the
+        // underlying denom. we do the necessary accounting for both and
+        // fetch the tvl expressed in the underlying deposit token.
         let mars_tvl = self.mars_accounting().await?;
-
         let supervaults_tvl = self.supervaults_accounting().await?;
 
-        let new_rate = U256::from(10);
+        // sum all deposit assets
+        let deposit_token_total: u128 = [
+            mars_tvl,
+            supervaults_tvl,
+            gaia_ica_balance,
+            neutron_deposit_acc_balance,
+            neutron_settlement_acc_deposit_token_balance,
+            eth_deposit_token_total_uint128.u128(),
+        ]
+        .iter()
+        .sum();
 
-        let update_tx = one_way_vault_contract.update(new_rate);
+        // rate =  effective_total_assets / (effective_vault_shares * scaling_factor)
+        let redemption_rate_decimal = Decimal::from_ratio(
+            deposit_token_total,
+            // multiplying the denominator by the scaling factor
+            // TODO: check if this scaling factor makes sense
+            eth_vault_issued_shares_uint128.checked_mul(1_000_000_000_000u128.into())?,
+        );
+
+        let redemption_rate_sol_u256 = U256::from(redemption_rate_decimal.atomics().u128());
+
+        let update_tx = one_way_vault_contract.update(redemption_rate_sol_u256);
 
         let update_result = self
             .eth_client
