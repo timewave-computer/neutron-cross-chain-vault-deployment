@@ -8,7 +8,8 @@ use alloy::{
 use serde::Deserialize;
 use types::{
     ethereum_config::{
-        EthereumAccounts, EthereumDenoms, EthereumLibraries, EthereumStrategyConfig,
+        EthereumAccounts, EthereumCoprocessorAppIds, EthereumDenoms, EthereumLibraries,
+        EthereumStrategyConfig,
     },
     sol_types::{
         processor_contract::LiteProcessor,
@@ -27,6 +28,7 @@ struct Parameters {
     general: General,
     vault: Vault,
     eureka_transfer: EurekaTransfer,
+    coprocessor_app: CoprocessorApp,
 }
 
 #[derive(Deserialize, Debug)]
@@ -55,6 +57,11 @@ struct EurekaTransfer {
     recipient: String,
     source_client: String,
     timeout: u64,
+}
+
+#[derive(Deserialize, Debug)]
+struct CoprocessorApp {
+    eureka_transfer_coprocessor_app_id: String,
 }
 
 const SP1_VERIFIER: &str = "0x397A5f7f3dBd538f23DE225B51f532c34448dA9B";
@@ -281,6 +288,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
         eureka_transfer,
     };
 
+    let coprocessor_app_ids = EthereumCoprocessorAppIds {
+        ibc_eureka: parameters
+            .coprocessor_app
+            .eureka_transfer_coprocessor_app_id,
+    };
+
     let eth_cfg = EthereumStrategyConfig {
         ibc_transfer_threshold_amt: U256::from(1_000_000),
         rpc_url: parameters.general.rpc_url,
@@ -289,6 +302,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         denoms,
         accounts,
         libraries,
+        coprocessor_app_ids,
     };
 
     println!("Ethereum Strategy Config created successfully");

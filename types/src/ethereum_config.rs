@@ -22,6 +22,8 @@ pub struct EthereumStrategyConfig {
     pub accounts: EthereumAccounts,
     /// all libraries relevant to the eth-side of strategy
     pub libraries: EthereumLibraries,
+    /// all coprocessor app ids relevant to the eth-side of strategy
+    pub coprocessor_app_ids: EthereumCoprocessorAppIds,
 }
 
 impl ValenceWorkerTomlSerde for EthereumStrategyConfig {}
@@ -45,4 +47,10 @@ pub struct EthereumLibraries {
     pub one_way_vault: Address,
     /// IBC-Eureka transfer
     pub eureka_transfer: Address,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EthereumCoprocessorAppIds {
+    /// IBC Eureka
+    pub ibc_eureka: String,
 }

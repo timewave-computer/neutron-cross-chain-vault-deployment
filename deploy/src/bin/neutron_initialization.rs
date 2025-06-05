@@ -482,6 +482,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .await?;
     println!("ZK Authorization created successfully");
 
+    // TODO: Transfer ownership of authorization contract to owner
+
     // Last thing we will do is register the ICA on the valence ICA
     let register_ica_msg = valence_account_utils::ica::ExecuteMsg::RegisterIca {};
     neutron_client
