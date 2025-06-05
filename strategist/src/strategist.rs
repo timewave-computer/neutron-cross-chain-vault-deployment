@@ -30,6 +30,8 @@ use valence_strategist_utils::worker::ValenceWorker;
 
 use crate::strategy_config::Strategy;
 
+const SCALING_FACTOR: u128 = 1_000_000_000_000;
+
 // implement the ValenceWorker trait for the Strategy struct.
 // This trait defines the main loop of the strategy and inherits
 // the default implementation for spawning the worker.
@@ -140,7 +142,7 @@ impl Strategy {
             deposit_token_total,
             // multiplying the denominator by the scaling factor
             // TODO: check if this scaling factor makes sense
-            eth_vault_issued_shares_uint128.checked_mul(1_000_000_000_000u128.into())?,
+            eth_vault_issued_shares_uint128.checked_mul(SCALING_FACTOR.into())?,
         );
 
         let redemption_rate_sol_u256 = U256::from(redemption_rate_decimal.atomics().u128());
