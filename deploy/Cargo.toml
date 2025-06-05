@@ -4,23 +4,24 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-types                        = { path = "../types" }
-anyhow                       = "1"
-toml                         = "0.8"
-serde                        = { version = "1", features = ["derive"] }
-cosmwasm-std                 = { workspace = true }
-dotenv                       = { workspace = true }
-tokio                        = { workspace = true }
-valence-domain-clients       = { workspace = true }
-alloy                        = { workspace = true }
-hex                          = { workspace = true }
-valence-authorization-utils  = { workspace = true }
-valence-processor-utils      = { workspace = true }
-valence-library-utils        = { workspace = true }
-valence-account-utils        = { workspace = true }
-valence-ica-ibc-transfer     = { workspace = true }
-valence-forwarder-library    = { workspace = true }
-valence-mars-lending         = { workspace = true }
-valence-supervaults-lper     = { workspace = true }
-valence-clearing-queue       = { workspace = true }
-valence-verification-gateway = { workspace = true }
+types                              = { path = "../types" }
+anyhow                             = "1"
+toml                               = "0.8"
+serde                              = { workspace = true }
+cosmwasm-std                       = { workspace = true }
+cosmrs                             = { workspace = true }
+dotenv                             = { workspace = true }
+tokio                              = { workspace = true }
+valence-domain-clients             = { workspace = true }
+alloy                              = { workspace = true }
+hex                                = { workspace = true }
+valence-authorization-utils        = { workspace = true }
+valence-processor-utils            = { workspace = true }
+valence-library-utils              = { workspace = true }
+valence-account-utils              = { workspace = true }
+valence-ica-ibc-transfer           = { workspace = true }
+valence-forwarder-library          = { workspace = true }
+valence-mars-lending               = { workspace = true }
+valence-supervaults-lper           = { workspace = true }
+valence-clearing-queue-supervaults = { workspace = true }
+valence-verification-gateway       = { workspace = true }
