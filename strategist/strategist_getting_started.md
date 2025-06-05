@@ -178,17 +178,10 @@ RestartSec=10
 WantedBy=multi-user.target
 ```
 
-Create the environment file `/etc/strategist/environment`:
+Create the environment file `/etc/strategist/environment` containing your mnemonic:
 
 ```bash
 MNEMONIC=your_24_word_mnemonic_phrase_here
-```
-
-Secure the environment file:
-
-```bash
-sudo chmod 600 /etc/strategist/environment
-sudo chown strategist:strategist /etc/strategist/environment
 ```
 
 Enable and start the service:
@@ -201,17 +194,14 @@ sudo systemctl start neutron-strategist
 
 ## Stopping the Strategist
 
-### Manual Stop
+#### Manual Stop
 
 ```bash
-# Graceful stop (Ctrl+C if running in foreground)
+# Stope the strategist
 pkill -f "strategist"
-
-# Force stop
-pkill -9 -f "strategist"
 ```
 
-### Systemd Stop
+#### Systemd Stop
 
 ```bash
 # Stop the service
@@ -260,7 +250,7 @@ export RUST_LOG="trace"                   # Maximum verbosity
 #### Log Locations
 
 **Development:**
-- Console output when running with `cargo run`
+Logs output to console when running with `cargo run`
 
 **Production (systemd):**
 ```bash
@@ -280,8 +270,8 @@ All logs are can be found at `/var/log/strategist.log`
 
 It's a good idea to keep track of these log messages:
 
-1. **Cycle Execution**: Successful completion of deposit/withdrawal/settlement cycles
-2. **RPC Connectivity**: Connection status to all three chains
+1. **Cycle Execution**: Successful completion of deposit, withdrawal, and settlement cycles
+2. **RPC Connectivity**: Connection status to all three chains and Coprocessor
 3. **Transaction Success**: Success rate of submitted transactions
 4. **Error Rates**: Frequency and types of errors encountered
 
@@ -322,19 +312,13 @@ cargo run --bin validate-config
 sudo systemctl start neutron-strategist
 ```
 
-#### Emergency Operations
+#### Read-only Mode
 
-**Emergency Stop:**
-```bash
-# Immediate stop
-sudo systemctl stop neutron-strategist
-```
-
-**Safe Mode (read-only operations):**
 - Set `ibc_transfer_threshold_amt` to a very high value
 - This prevents actual fund transfers while maintaining monitoring
 
-**Recovery Procedures:**
+#### Recovery
+
 1. Stop strategist
 2. Check chain synchronization status
 3. Verify account balances
