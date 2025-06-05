@@ -29,6 +29,7 @@ struct Parameters {
     general: General,
     ica: Ica,
     program: Program,
+    coprocessor_app: CoprocessorApp,
 }
 
 #[derive(Deserialize, Debug)]
@@ -56,6 +57,10 @@ struct Program {
     supervault_asset1: String,
     supervault_asset2: String,
     supervault_lp_denom: String,
+}
+
+#[derive(Deserialize, Debug)]
+struct CoprocessorApp {
     id_clearing_queue_coprocessor_app: String,
 }
 
@@ -493,7 +498,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let coprocessor_app_ids = NeutronCoprocessorAppIds {
-        clearing_queue: params.program.id_clearing_queue_coprocessor_app,
+        clearing_queue: params.coprocessor_app.id_clearing_queue_coprocessor_app,
     };
 
     let neutron_cfg = NeutronStrategyConfig {
