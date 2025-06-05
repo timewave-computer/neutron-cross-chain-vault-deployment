@@ -98,7 +98,7 @@ impl Strategy {
 
         let gaia_ica_balance = self
             .gaia_client
-            .query_balance("GAIA_ICA", &self.cfg.gaia.deposit_denom)
+            .query_balance(&self.cfg.gaia.ica_address, &self.cfg.gaia.deposit_denom)
             .await?;
 
         let neutron_deposit_acc_balance = self
@@ -173,6 +173,7 @@ impl Strategy {
             )
             .await?;
 
+        // query the mars credit account created and owned by the mars input account
         let mars_input_acc_credit_accounts: Vec<valence_lending_utils::mars::Account> = self
             .neutron_client
             .query_contract_state(
@@ -185,8 +186,12 @@ impl Strategy {
             )
             .await?;
 
+        // extract the credit account id. while credit accounts are returned as a vec,
+        // mars lending library should only ever create one credit account and re-use it
+        // for all LP actions, so we get the [0]
         let mars_input_credit_account_id = mars_input_acc_credit_accounts[0].id.to_string();
 
+        // query mars positions owned by the credit account id
         let mars_positions_response: valence_lending_utils::mars::Positions = self
             .neutron_client
             .query_contract_state(
@@ -197,8 +202,8 @@ impl Strategy {
             )
             .await?;
 
+        // find the relevant denom among the active lends
         let mut mars_lending_deposit_token_amount = Uint128::zero();
-
         for lend in mars_positions_response.lends {
             if lend.denom == self.cfg.neutron.denoms.deposit_token {
                 mars_lending_deposit_token_amount = lend.amount;
@@ -233,6 +238,7 @@ impl Strategy {
             )
             .await?;
 
+        // query the supervault config to get the pair denom ordering
         let supervault_cfg: mmvault::state::Config = self
             .neutron_client
             .query_contract_state(
@@ -241,6 +247,8 @@ impl Strategy {
             )
             .await?;
 
+        // simulate the liquidation of all LP shares owned by the settlement account.
+        // this simulation returns a tuple of expected asset amounts, in order.
         let (withdraw_amount_0, withdraw_amount_1): (Uint128, Uint128) = self
             .neutron_client
             .query_contract_state(
@@ -251,6 +259,14 @@ impl Strategy {
             )
             .await?;
 
+        // TODO: validate whether this logic is correct. Depending
+        // on whether withdraw simulation results in both vault assets
+        // or just the one that was deposited, the matching should is
+        // done differently. If it turns out that both assets are returned,
+        // there are two options:
+        // 1. simulate the non-deposit token liquidation for the deposit token (safe)
+        // 2. multiply the deposit token amount by 2 (naive, assuming liquidation
+        // returns both assets of equal value)
         let simulate_withdraw_deposit_token = if self
             .cfg
             .neutron
