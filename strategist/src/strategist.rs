@@ -8,9 +8,15 @@ use alloy::{
 use async_trait::async_trait;
 use cosmwasm_std::{Decimal, Uint128, Uint256};
 use log::{info, warn};
-use types::sol_types::{
-    BaseAccount, ERC20,
-    OneWayVault::{self, WithdrawRequested},
+use types::{
+    labels::{
+        ICA_TRANSFER_LABEL, MARS_LEND_LABEL, MARS_WITHDRAW_LABEL, REGISTER_OBLIGATION_LABEL,
+        SETTLE_OBLIGATION_LABEL,
+    },
+    sol_types::{
+        BaseAccount, ERC20,
+        OneWayVault::{self, WithdrawRequested},
+    },
 };
 use valence_clearing_queue_supervaults::msg::ObligationsResponse;
 use valence_domain_clients::{
@@ -305,7 +311,7 @@ impl Strategy {
         let _gaia_ica_bal = self
             .gaia_client
             .poll_until_expected_balance(
-                "TODO:GAIA_ICA",
+                &self.cfg.gaia.ica_address,
                 &self.cfg.gaia.deposit_denom,
                 gaia_ica_balance.u128(),
                 5,
@@ -313,15 +319,11 @@ impl Strategy {
             )
             .await?;
 
-        self.enqueue_neutron("ICA_IBC_UPDATE_AMOUNT", vec!["TODO"])
-            .await?;
-
-        self.tick_neutron().await?;
-
-        // 5. Initiate ICA-IBC-Transfer from Cosmos Hub ICA to Neutron program
-        // deposit account
+        // 5. enqueue:
+        // - TODO: gaia ICA transfer update
+        // - gaia ICA transfer
         self.enqueue_neutron(
-            "ICA_IBC_TRANSFER",
+            ICA_TRANSFER_LABEL,
             vec![valence_ica_ibc_transfer::msg::FunctionMsgs::Transfer {}],
         )
         .await?;
@@ -342,19 +344,14 @@ impl Strategy {
 
         // 7. use Valence Forwarder to route funds from the Neutron program
         // deposit account to the Mars deposit account
-        self.enqueue_neutron(
-            "DEPOSIT_FWD",
-            vec![valence_forwarder_library::msg::FunctionMsgs::Forward {}],
-        )
-        .await?;
-
-        self.tick_neutron().await?;
-
         // 8. use Mars Lending library to deposit funds from Mars deposit account
         // into Mars protocol
         self.enqueue_neutron(
-            "MARS_DEPOSIT",
-            vec![valence_mars_lending::msg::FunctionMsgs::Lend {}],
+            MARS_LEND_LABEL,
+            vec![
+                valence_forwarder_library::msg::FunctionMsgs::Forward {},
+                // valence_mars_lending::msg::FunctionMsgs::Lend {},
+            ],
         )
         .await?;
 
@@ -426,7 +423,8 @@ impl Strategy {
 
             //  4. preserving the order, post the ZKPs obtained in step 3. to the Neutron
             // Authorizations contract, enqueuing them to the processor
-            self.enqueue_neutron("POST_ZKP", vec!["TODO"]).await?;
+            self.enqueue_neutron(REGISTER_OBLIGATION_LABEL, vec!["TODO"])
+                .await?;
 
             // 5. tick the processor to register the obligations to the clearing queue
             self.tick_neutron().await?;
@@ -478,7 +476,7 @@ impl Strategy {
             // 4. call the Mars lending library to perform the withdrawal.
             // This will deposit the underlying assets directly to the settlement account.
             self.enqueue_neutron(
-                "MARS_WITHDRAW",
+                MARS_WITHDRAW_LABEL,
                 vec![&valence_mars_lending::msg::FunctionMsgs::Withdraw {
                     amount: Some(obligations_delta.into()),
                 }],
@@ -492,7 +490,7 @@ impl Strategy {
         // messages to the processor and ticking
         for _ in clearing_queue.obligations {
             self.enqueue_neutron(
-                "CLEAR_SETTLEMENTS",
+                SETTLE_OBLIGATION_LABEL,
                 vec![
                     valence_clearing_queue_supervaults::msg::FunctionMsgs::SettleNextObligation {},
                 ],
