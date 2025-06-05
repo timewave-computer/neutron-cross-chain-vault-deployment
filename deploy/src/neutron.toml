@@ -1,8 +1,9 @@
 [general]
-grpc_url  = "https://rpc.neutron.quokkastake.io"
-grpc_port = "9090"
-chain_id  = "neutron-1"
-owner     = "neutron1h2lzp88kjk24sf7jfyrpd27xzfp52qerwvyxx2ds23pwavhz72asrpacva" # Neutron DAO
+grpc_url   = "https://rpc.neutron.quokkastake.io"
+grpc_port  = "9090"
+chain_id   = "neutron-1"
+owner      = "neutron1h2lzp88kjk24sf7jfyrpd27xzfp52qerwvyxx2ds23pwavhz72asrpacva" # Neutron DAO
+strategist = "neutron14mlpd48k5vkeset4x7f78myz3m47jcax3ysjkp" # Should be strategist address
 
 [ica]
 deposit_token_on_hub_denom = "ibc/D742E8566B0B8CC8F569D950051C09CF57988A88F0E45574BFB3079D41DE6462" # WBTC
@@ -17,4 +18,7 @@ mars_credit_manager = "neutron1qdzn3l4kn7gsjna2tfpg3g3mwd6kunx4p50lfya59k02846xa
 supervault = "neutron1qdzn3l4kn7gsjna2tfpg3g3mwd6kunx4p50lfya59k02846xas6qslgs3r" # Need to figure this out, not sure if this one
 supervault_asset1 = "ibc/D742E8566B0B8CC8F569D950051C09CF57988A88F0E45574BFB3079D41DE6462" # TBD
 supervault_asset2 = "ibc/4B8F0A1D3C6E5F7B8A9D3E4F5B6C7D8E9F0A1B2C3D4E5F6A7B8C9D0E1F2A3B" # TBD
-supervault_lp_denom = "factory/..."
+supervault_lp_denom = "factory/..." # TBD after supervaults are deployed
+clearing_queue_coprocessor_app_id = "..." # TBD after we have the app deployed
+clearing_queue_coprocessor_app_vk = "..." # Give this already in the right format (Binary - base64 wrapped)
+domain_vk = "..." # Give this already in the right format (Binary - base64 wrapped)

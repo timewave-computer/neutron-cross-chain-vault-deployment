@@ -9,7 +9,8 @@ use std::{
 use cosmwasm_std::{Uint128, Uint64};
 use serde::Deserialize;
 use types::neutron_config::{
-    NeutronAccounts, NeutronDenoms, NeutronLibraries, NeutronStrategyConfig,
+    NeutronAccounts, NeutronCoprocessorAppIds, NeutronDenoms, NeutronLibraries,
+    NeutronStrategyConfig,
 };
 use valence_domain_clients::{
     clients::neutron::NeutronClient,
@@ -55,6 +56,7 @@ struct Program {
     supervault_asset1: String,
     supervault_asset2: String,
     supervault_lp_denom: String,
+    id_clearing_queue_coprocessor_app: String,
 }
 
 #[tokio::main]
@@ -99,7 +101,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .unwrap();
     let code_id_mars_lending = *uploaded_contracts.code_ids.get("mars_lending").unwrap();
     let code_id_supervaults_lper = *uploaded_contracts.code_ids.get("supervaults_lper").unwrap();
-    let code_id_clearing_queue = *uploaded_contracts.code_ids.get("clearing_queue").unwrap();
+    let code_id_clearing_queue = *uploaded_contracts
+        .code_ids
+        .get("clearing_queue_supervaults")
+        .unwrap();
     let code_id_base_account = *uploaded_contracts.code_ids.get("base_account").unwrap();
     let code_id_interchain_account = *uploaded_contracts
         .code_ids
@@ -342,17 +347,21 @@ async fn main() -> Result<(), Box<dyn Error>> {
     );
 
     // Finally instantiate the clearing queue library
-    let clearing_config = valence_clearing_queue::msg::LibraryConfig {
+    let clearing_config = valence_clearing_queue_supervaults::msg::LibraryConfig {
         settlement_acc_addr: LibraryAccountType::Addr(predicted_base_accounts[3].clone()),
         denom: params.program.deposit_token_on_neutron_denom.clone(),
         latest_id: None,
+        supervault_addr: params.program.supervault.clone(),
+        supervaults_sender: predicted_base_accounts[2].clone(), // Input account of supervaults lper library
+        supervaults_phase: false,                               // Set to false for phase 1
     };
-    let instantiate_clearing_queue_msg =
-        valence_library_utils::msg::InstantiateMsg::<valence_clearing_queue::msg::LibraryConfig> {
-            owner: params.general.owner.clone(),
-            processor: processor_address.clone(),
-            config: clearing_config,
-        };
+    let instantiate_clearing_queue_msg = valence_library_utils::msg::InstantiateMsg::<
+        valence_clearing_queue_supervaults::msg::LibraryConfig,
+    > {
+        owner: params.general.owner.clone(),
+        processor: processor_address.clone(),
+        config: clearing_config,
+    };
 
     let clearing_queue_library_address = neutron_client
         .instantiate(
@@ -468,6 +477,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let accounts = NeutronAccounts {
+        ica: valence_ica_address,
         deposit: ica_deposit_account_address,
         mars_deposit: mars_deposit_account_address,
         supervault_deposit: supervault_deposit_account_address,
@@ -479,6 +489,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
         mars_lending: mars_lending_library_address,
         supervault_lper: supervaults_lper_library_address,
         clearing_queue: clearing_queue_library_address,
+        ica_transfer: ica_ibc_transfer_library_address,
+    };
+
+    let coprocessor_app_ids = NeutronCoprocessorAppIds {
+        clearing_queue: params.program.id_clearing_queue_coprocessor_app,
     };
 
     let neutron_cfg = NeutronStrategyConfig {
@@ -493,6 +508,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         min_ibc_fee: Uint128::one(),
         authorizations: authorization_address,
         processor: processor_address,
+        coprocessor_app_ids,
     };
 
     println!("Neutron Strategy Config created successfully");

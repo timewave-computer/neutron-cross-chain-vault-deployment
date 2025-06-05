@@ -51,7 +51,7 @@ impl Strategy {
             &cfg.gaia.grpc_port,
             &mnemonic,
             &cfg.gaia.chain_id,
-            &cfg.gaia.denoms.atom,
+            &cfg.gaia.chain_denom,
         )
         .await?;
 

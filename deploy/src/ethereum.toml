@@ -1,6 +1,7 @@
 [general]
 rpc_url = "http://localhost:8545"
 owner   = "0x54a37ac81263C482D6BE56F5Bd796e06e9Afa344" # Neutron multisig address
+coprocessor_root = "0x0000000000000000000000000000000000000000000000000000000000000000" # Bytes32 hash of coprocessor root
 
 [vault]
 deposit_token            = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"

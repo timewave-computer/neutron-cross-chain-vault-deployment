@@ -1,29 +1,29 @@
 [package]
-name = "strategist"
+name    = "strategist"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-types                        = { path = "../types" }
-deploy                       = { path = "../deploy" }
-dotenv                       = { workspace = true }
-cosmwasm-std                 = { workspace = true }
-serde                        = { workspace = true }
-valence-domain-clients       = { workspace = true }
-alloy                        = { workspace = true }
-hex                          = { workspace = true }
-valence-authorization-utils  = { workspace = true }
-valence-processor-utils      = { workspace = true }
-valence-library-utils        = { workspace = true }
-valence-account-utils        = { workspace = true }
-valence-ica-ibc-transfer     = { workspace = true }
-valence-forwarder-library    = { workspace = true }
-valence-mars-lending         = { workspace = true }
-valence-supervaults-lper     = { workspace = true }
-valence-clearing-queue       = { workspace = true }
-valence-verification-gateway = { workspace = true }
-valence-strategist-utils     = { workspace = true }
-valence-lending-utils        = { workspace = true }
-log                          = { workspace = true }
-async-trait                  = "0.1.77"
-mmvault                      = { git = "https://github.com/neutron-org/slinky-vault", package = "mmvault" }
+types                              = { path = "../types" }
+deploy                             = { path = "../deploy" }
+dotenv                             = { workspace = true }
+cosmwasm-std                       = { workspace = true }
+serde                              = { workspace = true }
+valence-domain-clients             = { workspace = true }
+alloy                              = { workspace = true }
+hex                                = { workspace = true }
+valence-authorization-utils        = { workspace = true }
+valence-processor-utils            = { workspace = true }
+valence-library-utils              = { workspace = true }
+valence-account-utils              = { workspace = true }
+valence-ica-ibc-transfer           = { workspace = true }
+valence-forwarder-library          = { workspace = true }
+valence-mars-lending               = { workspace = true }
+valence-supervaults-lper           = { workspace = true }
+valence-clearing-queue-supervaults = { workspace = true }
+valence-verification-gateway       = { workspace = true }
+valence-strategist-utils           = { workspace = true }
+log                                = { workspace = true }
+async-trait                        = "0.1.77"
+valence-lending-utils              = { workspace = true }
+mmvault                            = { git = "https://github.com/neutron-org/slinky-vault", package = "mmvault" }

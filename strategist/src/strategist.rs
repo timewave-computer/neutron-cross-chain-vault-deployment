@@ -12,7 +12,7 @@ use types::sol_types::{
     BaseAccount, ERC20,
     OneWayVault::{self, WithdrawRequested},
 };
-use valence_clearing_queue::msg::ObligationsResponse;
+use valence_clearing_queue_supervaults::msg::ObligationsResponse;
 use valence_domain_clients::{
     cosmos::{base_client::BaseClient, wasm_client::WasmClient},
     evm::{
@@ -92,7 +92,7 @@ impl Strategy {
 
         let gaia_ica_balance = self
             .gaia_client
-            .query_balance("GAIA_ICA", &self.cfg.gaia.denoms.deposit_token)
+            .query_balance("GAIA_ICA", &self.cfg.gaia.deposit_denom)
             .await?;
 
         let neutron_deposit_acc_balance = self
@@ -306,7 +306,7 @@ impl Strategy {
             .gaia_client
             .poll_until_expected_balance(
                 "TODO:GAIA_ICA",
-                &self.cfg.gaia.denoms.deposit_token,
+                &self.cfg.gaia.deposit_denom,
                 gaia_ica_balance.u128(),
                 5,
                 10,
@@ -371,11 +371,11 @@ impl Strategy {
         eth_rp: &CustomProvider,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         // 1. query the Clearing Queue library for the latest posted withdraw request ID
-        let clearing_queue_cfg: valence_clearing_queue::msg::Config = self
+        let clearing_queue_cfg: valence_clearing_queue_supervaults::msg::Config = self
             .neutron_client
             .query_contract_state(
                 &self.cfg.neutron.libraries.clearing_queue,
-                valence_clearing_queue::msg::QueryMsg::GetLibraryConfig {},
+                valence_clearing_queue_supervaults::msg::QueryMsg::GetLibraryConfig {},
             )
             .await?;
 
@@ -454,7 +454,7 @@ impl Strategy {
             .neutron_client
             .query_contract_state(
                 &self.cfg.neutron.libraries.clearing_queue,
-                valence_clearing_queue::msg::QueryMsg::PendingObligations {
+                valence_clearing_queue_supervaults::msg::QueryMsg::PendingObligations {
                     from: None,
                     to: None,
                 },
@@ -493,7 +493,9 @@ impl Strategy {
         for _ in clearing_queue.obligations {
             self.enqueue_neutron(
                 "CLEAR_SETTLEMENTS",
-                vec![valence_clearing_queue::msg::FunctionMsgs::SettleNextObligation {}],
+                vec![
+                    valence_clearing_queue_supervaults::msg::FunctionMsgs::SettleNextObligation {},
+                ],
             )
             .await?;
 

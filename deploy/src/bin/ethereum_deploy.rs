@@ -1,4 +1,4 @@
-use std::{env, error::Error, fs, str::FromStr};
+use std::{env, error::Error, fs};
 
 use alloy::{
     primitives::{Address, Bytes, FixedBytes, U256},
@@ -14,6 +14,7 @@ use types::{
         processor_contract::LiteProcessor,
         Authorization, BaseAccount, ERC1967Proxy, IBCEurekaTransfer,
         OneWayVault::{self, FeeDistributionConfig, OneWayVaultConfig},
+        SP1VerificationGateway,
     },
 };
 use valence_domain_clients::{
@@ -32,6 +33,7 @@ struct Parameters {
 struct General {
     rpc_url: String,
     owner: Address,
+    coprocessor_root: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -55,7 +57,7 @@ struct EurekaTransfer {
     timeout: u64,
 }
 
-const VERIFICATION_GATEWAY: &str = "0x397A5f7f3dBd538f23DE225B51f532c34448dA9B";
+const SP1_VERIFIER: &str = "0x397A5f7f3dBd538f23DE225B51f532c34448dA9B";
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -144,11 +146,51 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .unwrap();
     println!("Processor deployed at: {processor_address}");
 
+    let verification_gateway =
+        SP1VerificationGateway::deploy_builder(&rp).into_transaction_request();
+    let verification_gateway_implementation = eth_client
+        .sign_and_send(verification_gateway)
+        .await?
+        .contract_address
+        .unwrap();
+
+    let proxy_tx =
+        ERC1967Proxy::deploy_builder(&rp, verification_gateway_implementation, Bytes::new())
+            .into_transaction_request();
+    let verification_gateway_address = eth_client
+        .sign_and_send(proxy_tx)
+        .await?
+        .contract_address
+        .unwrap();
+    println!("Verification Gateway deployed at: {verification_gateway_address}");
+    // Initialize the verification gateway
+    let verification_gateway = SP1VerificationGateway::new(verification_gateway_address, &rp);
+    let initialize_verification_gateway_tx = verification_gateway
+        .initialize(
+            parameters.general.coprocessor_root.parse().unwrap(),
+            SP1_VERIFIER.parse().unwrap(),
+        )
+        .into_transaction_request();
+    eth_client
+        .sign_and_send(initialize_verification_gateway_tx)
+        .await?;
+    println!("Verification Gateway initialized");
+
+    // Transfer the ownership of the verification gateway
+    let transfer_ownership_tx = verification_gateway
+        .transferOwnership(parameters.general.owner)
+        .into_transaction_request();
+    eth_client.sign_and_send(transfer_ownership_tx).await?;
+    println!(
+        "Verification Gateway ownership transferred to: {}",
+        parameters.general.owner
+    );
+
     let authorization = Authorization::deploy_builder(
         &rp,
         my_address, // We will be initial owners to eventually add the authorizations, then we need to transfer ownership
         processor_address,
-        Address::from_str(VERIFICATION_GATEWAY).unwrap(),
+        verification_gateway_address,
         true, // Store callbacks
     );
 
