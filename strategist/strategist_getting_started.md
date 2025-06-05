@@ -13,6 +13,7 @@ The strategist requires access to:
 - **Neutron gRPC**: For CosmWasm contract interactions
 - **Cosmos Hub gRPC**: For IBC and Interchain Account operations
 - **Valence Coprocessor RPC**: For generating zero-knowledge proofs for cross-chain state verification
+- **Indexer API**: For efficient event querying and transaction tracking
 
 ## Configuration
 
@@ -24,6 +25,8 @@ Create a `.env` file in the project root with the following required variables:
 # Required environment variables
 MNEMONIC="your 24-word mnemonic phrase here"
 LABEL="strategist-production"  # or "strategist-testnet", etc.
+INDEXER_API_KEY="neutron_team_api_key"
+INDEXER_API_URL="https://indexer.valence.zone"
 
 # Optional logging configuration
 RUST_LOG="info,strategist=debug"
@@ -100,7 +103,7 @@ btc_denom = "ibc/D742E8566B0B8CC8F569D950051C09CF57988A88F0E45574BFB3079D41DE646
 # Note: mnemonic is read from MNEMONIC environment variable, not stored in config
 ```
 
-#### 4. Valence Coprocessor Configuration (`coprocessor_config.toml`)
+### Valence Coprocessor Configuration (`coprocessor_config.toml`)
 
 ```toml
 # Replace with actual Valence Coprocessor endpoint when available
@@ -197,7 +200,7 @@ sudo systemctl start neutron-strategist
 #### Manual Stop
 
 ```bash
-# Stope the strategist
+# Stop the strategist
 pkill -f "strategist"
 ```
 
@@ -266,7 +269,7 @@ sudo journalctl -u neutron-strategist -p err
 
 #### Local Strategist Process Monitoring
 
-All logs are can be found at `/var/log/strategist.log`
+All logs can be found at `/var/log/strategist.log`
 
 It's a good idea to keep track of these log messages:
 
@@ -281,6 +284,8 @@ It's a good idea to keep track of these log messages:
 **Valence Program Explorer**: [https://app.valence.zone/programs](https://app.valence.zone/programs)
 - View account balances for program accounts
 - Monitor on-chain contract state and configurations
+- Debug Neutron-side transactions and contract interactions
+- Track program execution history and state changes
 
 *Note: Currently Neutron only*
 
@@ -344,4 +349,11 @@ curl -s http://prover.timewave.computer:37281/api/registry/domain/ethereum-alpha
 
 # Check coprocessor status
 curl -s http://prover.timewave.computer:37281/api/stats
+
+# Check indexer API connectivity
+curl -s "https://indexer.valence.zone/health" --header "X-Api-Key: ${INDEXER_API_KEY}"
+
+# Example indexer query for vault withdraw requests
+curl -s "https://indexer.valence.zone/v1/vault/0xf2B85C389A771035a9Bd147D4BF87987A7F9cf98/withdrawRequests?from=0" \
+  --header "X-Api-Key: ${INDEXER_API_KEY}"
 ```
