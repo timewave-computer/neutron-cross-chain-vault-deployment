@@ -19,3 +19,8 @@ handler       = "0xfc2d0487a0ae42ae7329a80dc269916a9184cf7c"
 recipient     = "cosmos1...."
 source_client = "cosmoshub-0"
 timeout       = 43200                                        # 12 hours in seconds
+
+[coprocessor_app]
+eureka_transfer_coprocessor_app_id = "..." # TBD after we have the app deployed
+eureka_transfer_coprocessor_app_vk = "..." # Give this already in the right format (Binary - base64 wrapped)
+domain_vk = "..." # Give this already in the right format (Binary - base64 wrapped)

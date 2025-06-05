@@ -25,7 +25,7 @@ use valence_library_utils::LibraryAccountType;
 struct Parameters {
     general: General,
     ica: Ica,
-    program: Program,
+    coprocessor_app: CoprocessorApp,
 }
 
 #[derive(Deserialize, Debug)]
@@ -39,7 +39,7 @@ struct Ica {
 }
 
 #[derive(Deserialize, Debug)]
-struct Program {
+struct CoprocessorApp {
     clearing_queue_coprocessor_app_vk: Binary,
     domain_vk: Binary,
 }
@@ -461,8 +461,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         label: REGISTER_OBLIGATION_LABEL.to_string(),
         mode: authorization_permissioned_mode,
         registry: 0,
-        vk: ntrn_params.program.clearing_queue_coprocessor_app_vk,
-        domain_vk: ntrn_params.program.domain_vk,
+        vk: ntrn_params
+            .coprocessor_app
+            .clearing_queue_coprocessor_app_vk,
+        domain_vk: ntrn_params.coprocessor_app.domain_vk,
         validate_last_block_execution: false,
     };
 
@@ -486,7 +488,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .execute_wasm(
             &ntrn_strategy_config.accounts.ica,
             register_ica_msg,
-            vec![cosmrs::Coin::new(10_000_000u128, "untrn").unwrap()],
+            vec![cosmrs::Coin::new(1_000_000u128, "untrn").unwrap()],
             None,
         )
         .await?;
