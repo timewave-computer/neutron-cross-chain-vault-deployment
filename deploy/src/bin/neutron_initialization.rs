@@ -486,7 +486,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .execute_wasm(
             &ntrn_strategy_config.accounts.ica,
             register_ica_msg,
-            vec![cosmrs::Coin::new(10_000_000u128, "untrn").unwrap()],
+            vec![cosmrs::Coin::new(1_000_000u128, "untrn").unwrap()],
             None,
         )
         .await?;
