@@ -5,7 +5,8 @@ use types::{
     neutron_config::NeutronStrategyConfig,
 };
 use valence_domain_clients::clients::{
-    coprocessor::CoprocessorClient, ethereum::EthereumClient, gaia::CosmosHubClient, neutron::NeutronClient, valence_indexer::OneWayVaultIndexerClient
+    coprocessor::CoprocessorClient, ethereum::EthereumClient, gaia::CosmosHubClient,
+    neutron::NeutronClient, valence_indexer::OneWayVaultIndexerClient,
 };
 
 use serde::{Deserialize, Serialize};
@@ -88,7 +89,7 @@ impl Strategy {
             neutron_client,
             label,
             indexer_client,
-            coprocessor_client
+            coprocessor_client,
         })
     }
 

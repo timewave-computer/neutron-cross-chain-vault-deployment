@@ -4,7 +4,7 @@ use alloy::{primitives::U256, providers::Provider};
 use async_trait::async_trait;
 use cosmwasm_std::{Decimal, Uint128, Uint256};
 use log::info;
-use serde_json::{json, Value};
+use serde_json::json;
 use types::{
     labels::{
         ICA_TRANSFER_LABEL, MARS_LEND_LABEL, MARS_WITHDRAW_LABEL, REGISTER_OBLIGATION_LABEL,
@@ -17,10 +17,13 @@ use types::{
 };
 use valence_clearing_queue_supervaults::msg::ObligationsResponse;
 use valence_domain_clients::{
-    clients::coprocessor::CoprocessorClient, coprocessor::base_client::CoprocessorBaseClient, cosmos::{base_client::BaseClient, wasm_client::WasmClient}, evm::{
+    coprocessor::base_client::CoprocessorBaseClient,
+    cosmos::{base_client::BaseClient, wasm_client::WasmClient},
+    evm::{
         base_client::{CustomProvider, EvmBaseClient},
         request_provider_client::RequestProviderClient,
-    }, indexer::one_way_vault::OneWayVaultIndexer
+    },
+    indexer::one_way_vault::OneWayVaultIndexer,
 };
 use valence_strategist_utils::worker::ValenceWorker;
 
@@ -400,6 +403,7 @@ impl Strategy {
         // 4. process the new OneWayVault Withdraw events in order from the oldest
         // to the newest, posting them to the coprocessor to obtain a ZKP
         for (obligation_id, owner, ntrn_receiver, shares) in new_obligations {
+            // TODO: this may be unnecessary
             let _withdraw_requested = WithdrawRequested {
                 id: obligation_id,
                 owner,
@@ -407,18 +411,39 @@ impl Strategy {
                 shares,
             };
 
+            // build the json input for coprocessor client
             let withdraw_id_json = json!({"withdrawal_request_id": obligation_id});
 
-            let zkp_response = self.coprocessor_client
-                .prove("what_is_circuit", &withdraw_id_json)
+            // 5. post the proof request to the coprocessor client & await
+            let _zkp_response = self
+                .coprocessor_client
+                .prove("TBD", &withdraw_id_json)
                 .await?;
 
-            // 6. preserving the order, post the obligation built above to the
-            // Neutron Authorizations contract, enqueuing them to the processor
-            self.enqueue_neutron(REGISTER_OBLIGATION_LABEL, vec!["TODO"])
+            // need to set these values to correct ones, placeholding for now
+            let execute_zk_authorization_msg =
+                valence_authorization_utils::msg::PermissionlessMsg::ExecuteZkAuthorization {
+                    label: REGISTER_OBLIGATION_LABEL.to_string(),
+                    message: cosmwasm_std::Binary::default(),
+                    proof: cosmwasm_std::Binary::default(),
+                    domain_message: cosmwasm_std::Binary::default(),
+                    domain_proof: cosmwasm_std::Binary::default(),
+                };
+
+            // 6. execute the zk authorization. this will perform the verification
+            // and, if successful, push the msg to the processor
+            self.neutron_client
+                .execute_wasm(
+                    &self.cfg.neutron.authorizations,
+                    valence_authorization_utils::msg::ExecuteMsg::PermissionlessAction(
+                        execute_zk_authorization_msg,
+                    ),
+                    vec![],
+                    None,
+                )
                 .await?;
 
-            // 7. tick the processor to register the obligations to the clearing queue
+            // 7. tick the processor to register the obligation to the clearing queue
             self.tick_neutron().await?;
         }
 
