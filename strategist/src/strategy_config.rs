@@ -6,6 +6,7 @@ use types::{
 };
 use valence_domain_clients::clients::{
     ethereum::EthereumClient, gaia::CosmosHubClient, neutron::NeutronClient,
+    valence_indexer::OneWayVaultIndexerClient,
 };
 
 use serde::{Deserialize, Serialize};
@@ -34,6 +35,8 @@ pub struct Strategy {
     pub(crate) gaia_client: CosmosHubClient,
     /// active neutron client
     pub(crate) neutron_client: NeutronClient,
+    /// active one way vault indexer client
+    pub(crate) indexer_client: OneWayVaultIndexerClient,
 }
 
 #[allow(dead_code)]
@@ -45,6 +48,10 @@ impl Strategy {
         dotenv::dotenv().ok();
         let mnemonic = env::var("MNEMONIC").expect("mnemonic must be provided");
         let label = env::var("LABEL").expect("label must be provided");
+        let indexer_api_key =
+            env::var("INDEXER_API_KEY").expect("indexer api key must be provided");
+        let indexer_api_url =
+            env::var("INDEXER_API_URL").expect("indexer url key must be provided");
 
         let gaia_client = CosmosHubClient::new(
             &cfg.gaia.grpc_url,
@@ -65,12 +72,19 @@ impl Strategy {
 
         let eth_client = EthereumClient::new(&cfg.ethereum.rpc_url, &mnemonic, None)?;
 
+        let indexer_client = OneWayVaultIndexerClient::new(
+            &indexer_api_url,
+            &indexer_api_key,
+            &cfg.ethereum.libraries.one_way_vault.to_string(),
+        );
+
         Ok(Self {
             cfg,
             eth_client,
             gaia_client,
             neutron_client,
             label,
+            indexer_client,
         })
     }
 
