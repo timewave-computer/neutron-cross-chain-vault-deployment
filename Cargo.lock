@@ -6893,7 +6893,7 @@ dependencies = [
 [[package]]
 name = "valence-domain-clients"
 version = "0.1.0"
-source = "git+https://github.com/timewave-computer/valence-domain-clients.git?branch=main#f44b6b5cdbfc5a239fc9c7eb6839a444431226e2"
+source = "git+https://github.com/timewave-computer/valence-domain-clients.git?branch=benskey%2Fvalence-indexer-client#674cbf3a6791eab1672ed96caa0e65df7887aee5"
 dependencies = [
  "alloy",
  "alloy-primitives 0.7.7",

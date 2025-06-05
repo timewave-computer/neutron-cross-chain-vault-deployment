@@ -1,13 +1,9 @@
-use std::{collections::BTreeMap, error::Error, str::FromStr};
+use std::{error::Error, str::FromStr};
 
-use alloy::{
-    primitives::{B256, Log, U256, keccak256},
-    providers::Provider,
-    sol_types::SolEvent,
-};
+use alloy::{primitives::U256, providers::Provider};
 use async_trait::async_trait;
 use cosmwasm_std::{Decimal, Uint128, Uint256};
-use log::{info, warn};
+use log::info;
 use types::{
     labels::{
         ICA_TRANSFER_LABEL, MARS_LEND_LABEL, MARS_WITHDRAW_LABEL, REGISTER_OBLIGATION_LABEL,
@@ -25,6 +21,7 @@ use valence_domain_clients::{
         base_client::{CustomProvider, EvmBaseClient},
         request_provider_client::RequestProviderClient,
     },
+    indexer::one_way_vault::OneWayVaultIndexer,
 };
 use valence_strategist_utils::worker::ValenceWorker;
 
@@ -50,7 +47,7 @@ impl ValenceWorker for Strategy {
         self.deposit(&eth_rp).await?;
 
         // after deposit flow is complete, we process the new obligations
-        self.register_withdraw_obligations(&eth_rp).await?;
+        self.register_withdraw_obligations().await?;
 
         // with new obligations registered into the clearing queue, we
         // carry out the settlements
@@ -381,10 +378,7 @@ impl Strategy {
     /// reads the newly submitted withdrawal obligations that are not yet
     /// present in the Clearing Queue, generates their zero-knowledge proofs,
     /// and posts them into the Clearing queue in order.
-    async fn register_withdraw_obligations(
-        &mut self,
-        eth_rp: &CustomProvider,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+    async fn register_withdraw_obligations(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
         // 1. query the Clearing Queue library for the latest posted withdraw request ID
         let clearing_queue_cfg: valence_clearing_queue_supervaults::msg::Config = self
             .neutron_client
@@ -394,49 +388,26 @@ impl Strategy {
             )
             .await?;
 
-        // 2. query the OneWayVault for emitted events and filter them such that
-        // only requests with id greater than the one queried in step 1. are fetched
+        // 2. get id of the latest obligation request that was registered on neutron
+        let latest_registered_obligation_id = clearing_queue_cfg.latest_id.u64();
 
-        let event_signature = "WithdrawRequested(uint64,address,string,uint256)";
-        let event_signature_hash = keccak256(event_signature.as_bytes());
-        let event_topic = B256::from(event_signature_hash);
+        // 3. query the OneWayVault indexer to fetch all obligations that were registered
+        // on the vault but are not yet registered into the queue on Neutron
+        let new_obligations = self
+            .indexer_client
+            .query_vault_withdraw_requests(Some(latest_registered_obligation_id + 1))
+            .await?;
 
-        // TODO: can we tune this filter such that only events with id (uint64 in signature)
-        // are fetched? ideally by mapping a _clearing_queue_cfg.latest_id to the eth
-        // block on which that withdraw request was submitted to the vault and setting
-        // that with .from_block()
-        let withdraw_event_filter = alloy::rpc::types::Filter::new()
-            .address(self.cfg.ethereum.libraries.one_way_vault)
-            .event_signature(event_topic);
-
-        let logs = eth_rp.get_logs(&withdraw_event_filter).await?;
-
-        // store collected events in a btreemap to keep them sorted by id (on insertion)
-        let mut withdraw_requested_events: BTreeMap<u64, Log<WithdrawRequested>> = BTreeMap::new();
-
-        for log in logs {
-            let alloy_log = Log::new(log.address(), log.topics().into(), log.data().clone().data)
-                .unwrap_or_default();
-
-            match WithdrawRequested::decode_log(&alloy_log, false) {
-                Ok(val) => {
-                    info!("[BTC_STRATEGIST] decoded WithdrawRequested log: {:?}", val);
-                    // making no assumptions on what logs are returned so we filter manually
-                    if val.id > clearing_queue_cfg.latest_id.u64() {
-                        withdraw_requested_events.insert(val.id, val);
-                    }
-                }
-                Err(e) => warn!(
-                    "[BTC_STRATEGIST] failed to decode WithdrawRequested log: {:?}",
-                    e
-                ),
-            }
-        }
-
-        // 3. process the new OneWayVault Withdraw events in order from the oldest
+        // 4. process the new OneWayVault Withdraw events in order from the oldest
         // to the newest, posting them to the coprocessor to obtain a ZKP
+        for (obligation_id, owner, ntrn_receiver, shares) in new_obligations {
+            let _withdraw_requested = WithdrawRequested {
+                id: obligation_id,
+                owner,
+                receiver: ntrn_receiver,
+                shares,
+            };
 
-        for _withdraw_request in withdraw_requested_events {
             // TODO: post to coprocessor, get ZKP
 
             //  4. preserving the order, post the ZKPs obtained in step 3. to the Neutron
