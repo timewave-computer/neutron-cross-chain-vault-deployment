@@ -4,6 +4,7 @@ use alloy::{primitives::U256, providers::Provider};
 use async_trait::async_trait;
 use cosmwasm_std::{Decimal, Uint128, Uint256};
 use log::info;
+use serde_json::{json, Value};
 use types::{
     labels::{
         ICA_TRANSFER_LABEL, MARS_LEND_LABEL, MARS_WITHDRAW_LABEL, REGISTER_OBLIGATION_LABEL,
@@ -16,12 +17,10 @@ use types::{
 };
 use valence_clearing_queue_supervaults::msg::ObligationsResponse;
 use valence_domain_clients::{
-    cosmos::{base_client::BaseClient, wasm_client::WasmClient},
-    evm::{
+    clients::coprocessor::CoprocessorClient, coprocessor::base_client::CoprocessorBaseClient, cosmos::{base_client::BaseClient, wasm_client::WasmClient}, evm::{
         base_client::{CustomProvider, EvmBaseClient},
         request_provider_client::RequestProviderClient,
-    },
-    indexer::one_way_vault::OneWayVaultIndexer,
+    }, indexer::one_way_vault::OneWayVaultIndexer
 };
 use valence_strategist_utils::worker::ValenceWorker;
 
@@ -408,7 +407,11 @@ impl Strategy {
                 shares,
             };
 
-            // TODO: post the request to coprocessor and get the response
+            let withdraw_id_json = json!({"withdrawal_request_id": obligation_id});
+
+            let zkp_response = self.coprocessor_client
+                .prove("what_is_circuit", &withdraw_id_json)
+                .await?;
 
             // 6. preserving the order, post the obligation built above to the
             // Neutron Authorizations contract, enqueuing them to the processor
