@@ -5,8 +5,8 @@ use types::{
     neutron_config::NeutronStrategyConfig,
 };
 use valence_domain_clients::clients::{
-    ethereum::EthereumClient, gaia::CosmosHubClient, neutron::NeutronClient,
-    valence_indexer::OneWayVaultIndexerClient,
+    coprocessor::CoprocessorClient, ethereum::EthereumClient, gaia::CosmosHubClient,
+    neutron::NeutronClient, valence_indexer::OneWayVaultIndexerClient,
 };
 
 use serde::{Deserialize, Serialize};
@@ -37,6 +37,8 @@ pub struct Strategy {
     pub(crate) neutron_client: NeutronClient,
     /// active one way vault indexer client
     pub(crate) indexer_client: OneWayVaultIndexerClient,
+    /// active coprocessor client
+    pub(crate) coprocessor_client: CoprocessorClient,
 }
 
 #[allow(dead_code)]
@@ -78,6 +80,8 @@ impl Strategy {
             &cfg.ethereum.libraries.one_way_vault.to_string(),
         );
 
+        let coprocessor_client = CoprocessorClient::default();
+
         Ok(Self {
             cfg,
             eth_client,
@@ -85,6 +89,7 @@ impl Strategy {
             neutron_client,
             label,
             indexer_client,
+            coprocessor_client,
         })
     }
 

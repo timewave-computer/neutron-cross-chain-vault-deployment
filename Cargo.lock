@@ -5863,6 +5863,7 @@ dependencies = [
  "log",
  "mmvault",
  "serde",
+ "serde_json",
  "types",
  "valence-account-utils",
  "valence-authorization-utils",

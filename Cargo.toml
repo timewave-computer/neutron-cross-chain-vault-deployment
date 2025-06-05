@@ -24,3 +24,6 @@ valence-verification-gateway       = { git = "https://github.com/timewave-comput
 valence-strategist-utils           = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
 log                                = "0.4.22"
 valence-lending-utils              = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
+serde_json                         = { version = "1.0.140", default-features = false, features = [
+  "alloc",
+] }
