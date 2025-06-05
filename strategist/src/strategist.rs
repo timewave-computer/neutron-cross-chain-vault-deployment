@@ -408,14 +408,14 @@ impl Strategy {
                 shares,
             };
 
-            // TODO: post to coprocessor, get ZKP
+            // TODO: post the request to coprocessor and get the response
 
-            //  4. preserving the order, post the ZKPs obtained in step 3. to the Neutron
-            // Authorizations contract, enqueuing them to the processor
+            // 6. preserving the order, post the obligation built above to the
+            // Neutron Authorizations contract, enqueuing them to the processor
             self.enqueue_neutron(REGISTER_OBLIGATION_LABEL, vec!["TODO"])
                 .await?;
 
-            // 5. tick the processor to register the obligations to the clearing queue
+            // 7. tick the processor to register the obligations to the clearing queue
             self.tick_neutron().await?;
         }
 
