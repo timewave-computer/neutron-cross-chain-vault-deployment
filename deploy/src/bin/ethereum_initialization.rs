@@ -76,7 +76,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Send the transaction
     eth_client.sign_and_send(tx).await?;
-    println!("Eureka Transfer library approved from deposit account");
+    println!("Authorization created successfully");
 
     // TODO: Keep the ownership fo the authorization contract for now but we should transfer it eventually
 
