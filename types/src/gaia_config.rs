@@ -16,3 +16,11 @@ pub struct GaiaStrategyConfig {
 }
 
 impl ValenceWorkerTomlSerde for GaiaStrategyConfig {}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GaiaDenoms {
+    /// e.g. WBTC
+    pub deposit_token: String,
+    /// gas fee denom
+    pub atom: String,
+}

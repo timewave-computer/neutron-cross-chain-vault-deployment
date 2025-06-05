@@ -1,14 +1,23 @@
 use std::{collections::BTreeMap, error::Error, str::FromStr};
 
 use alloy::{
-    primitives::{B256, Log, keccak256},
+    primitives::{B256, Log, U256, keccak256},
     providers::Provider,
     sol_types::SolEvent,
 };
 use async_trait::async_trait;
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{Decimal, Uint128, Uint256};
 use log::{info, warn};
-use types::sol_types::{BaseAccount, ERC20, OneWayVault::WithdrawRequested};
+use types::{
+    labels::{
+        ICA_TRANSFER_LABEL, MARS_LEND_LABEL, MARS_WITHDRAW_LABEL, REGISTER_OBLIGATION_LABEL,
+        SETTLE_OBLIGATION_LABEL,
+    },
+    sol_types::{
+        BaseAccount, ERC20,
+        OneWayVault::{self, WithdrawRequested},
+    },
+};
 use valence_clearing_queue_supervaults::msg::ObligationsResponse;
 use valence_domain_clients::{
     cosmos::{base_client::BaseClient, wasm_client::WasmClient},
@@ -20,6 +29,8 @@ use valence_domain_clients::{
 use valence_strategist_utils::worker::ValenceWorker;
 
 use crate::strategy_config::Strategy;
+
+const SCALING_FACTOR: u128 = 1_000_000_000_000;
 
 // implement the ValenceWorker trait for the Strategy struct.
 // This trait defines the main loop of the strategy and inherits
@@ -48,7 +59,7 @@ impl ValenceWorker for Strategy {
         // having processed all new exit requests after the deposit flow,
         // the epoch is ready to be concluded.
         // we perform the final accounting flow and post vault update.
-        self.update().await?;
+        self.update(&eth_rp).await?;
 
         Ok(())
     }
@@ -56,8 +67,232 @@ impl ValenceWorker for Strategy {
 
 impl Strategy {
     /// performs the vault rate update
-    async fn update(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
+    async fn update(
+        &mut self,
+        eth_rp: &CustomProvider,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let eth_deposit_acc_contract =
+            BaseAccount::new(self.cfg.ethereum.accounts.deposit, &eth_rp);
+        let one_way_vault_contract =
+            OneWayVault::new(self.cfg.ethereum.libraries.one_way_vault, &eth_rp);
+        let eth_deposit_denom_contract =
+            ERC20::new(self.cfg.ethereum.denoms.deposit_token, &eth_rp);
+
+        let eth_deposit_acc_balance = self
+            .eth_client
+            .query(eth_deposit_denom_contract.balanceOf(*eth_deposit_acc_contract.address()))
+            .await?
+            ._0;
+        let eth_deposit_token_total_uint256 =
+            Uint256::from_be_bytes(eth_deposit_acc_balance.to_be_bytes());
+        let eth_deposit_token_total_uint128 =
+            Uint128::from_str(&eth_deposit_token_total_uint256.to_string())?;
+
+        let eth_vault_issued_shares = self
+            .eth_client
+            .query(one_way_vault_contract.totalSupply())
+            .await?
+            ._0;
+        let eth_vault_issued_shares_uint256 =
+            Uint256::from_be_bytes(eth_vault_issued_shares.to_be_bytes());
+        let eth_vault_issued_shares_uint128 =
+            Uint128::from_str(&eth_vault_issued_shares_uint256.to_string())?;
+
+        let gaia_ica_balance = self
+            .gaia_client
+            .query_balance(&self.cfg.gaia.ica_address, &self.cfg.gaia.deposit_denom)
+            .await?;
+
+        let neutron_deposit_acc_balance = self
+            .neutron_client
+            .query_balance(
+                &self.cfg.neutron.accounts.deposit,
+                &self.cfg.neutron.denoms.deposit_token,
+            )
+            .await?;
+
+        let neutron_settlement_acc_deposit_token_balance = self
+            .neutron_client
+            .query_balance(
+                &self.cfg.neutron.accounts.settlement,
+                &self.cfg.neutron.denoms.deposit_token,
+            )
+            .await?;
+
+        // both mars and supervaults positions are derivatives of the
+        // underlying denom. we do the necessary accounting for both and
+        // fetch the tvl expressed in the underlying deposit token.
+        let mars_tvl = self.mars_accounting().await?;
+        let supervaults_tvl = self.supervaults_accounting().await?;
+
+        // sum all deposit assets
+        let deposit_token_total: u128 = [
+            mars_tvl,
+            supervaults_tvl,
+            gaia_ica_balance,
+            neutron_deposit_acc_balance,
+            neutron_settlement_acc_deposit_token_balance,
+            eth_deposit_token_total_uint128.u128(),
+        ]
+        .iter()
+        .sum();
+
+        // rate =  effective_total_assets / (effective_vault_shares * scaling_factor)
+        let redemption_rate_decimal = Decimal::from_ratio(
+            deposit_token_total,
+            // multiplying the denominator by the scaling factor
+            // TODO: check if this scaling factor makes sense
+            eth_vault_issued_shares_uint128.checked_mul(SCALING_FACTOR.into())?,
+        );
+
+        let redemption_rate_sol_u256 = U256::from(redemption_rate_decimal.atomics().u128());
+
+        let update_tx = one_way_vault_contract.update(redemption_rate_sol_u256);
+
+        let update_result = self
+            .eth_client
+            .execute_tx(update_tx.into_transaction_request())
+            .await?;
+
+        eth_rp
+            .get_transaction_receipt(update_result.transaction_hash)
+            .await?;
+
         Ok(())
+    }
+
+    /// calculates total value of everything related to the Mars flow:
+    /// - mars input account
+    /// - mars position
+    ///
+    /// returns total amount expressed in the deposit token
+    async fn mars_accounting(&mut self) -> Result<u128, Box<dyn Error + Send + Sync>> {
+        let neutron_mars_deposit_acc_balance = self
+            .neutron_client
+            .query_balance(
+                &self.cfg.neutron.accounts.mars_deposit,
+                &self.cfg.neutron.denoms.deposit_token,
+            )
+            .await?;
+
+        // query the mars credit account created and owned by the mars input account
+        let mars_input_acc_credit_accounts: Vec<valence_lending_utils::mars::Account> = self
+            .neutron_client
+            .query_contract_state(
+                &self.cfg.neutron.mars_pool,
+                valence_lending_utils::mars::QueryMsg::Accounts {
+                    owner: self.cfg.neutron.accounts.mars_deposit.to_string(),
+                    start_after: None,
+                    limit: None,
+                },
+            )
+            .await?;
+
+        // extract the credit account id. while credit accounts are returned as a vec,
+        // mars lending library should only ever create one credit account and re-use it
+        // for all LP actions, so we get the [0]
+        let mars_input_credit_account_id = mars_input_acc_credit_accounts[0].id.to_string();
+
+        // query mars positions owned by the credit account id
+        let mars_positions_response: valence_lending_utils::mars::Positions = self
+            .neutron_client
+            .query_contract_state(
+                &self.cfg.neutron.mars_pool,
+                valence_lending_utils::mars::QueryMsg::Positions {
+                    account_id: mars_input_credit_account_id,
+                },
+            )
+            .await?;
+
+        // find the relevant denom among the active lends
+        let mut mars_lending_deposit_token_amount = Uint128::zero();
+        for lend in mars_positions_response.lends {
+            if lend.denom == self.cfg.neutron.denoms.deposit_token {
+                mars_lending_deposit_token_amount = lend.amount;
+            }
+        }
+
+        let total_mars_value =
+            neutron_mars_deposit_acc_balance + mars_lending_deposit_token_amount.u128();
+
+        Ok(total_mars_value)
+    }
+
+    /// calculates total value of everything related to the Supervaults flow:
+    /// - supervaults input account
+    /// - supervaults LP shares (settlement account)
+    ///
+    /// returns total amount expressed in the deposit token
+    async fn supervaults_accounting(&mut self) -> Result<u128, Box<dyn Error + Send + Sync>> {
+        let neutron_supervault_acc_balance = self
+            .neutron_client
+            .query_balance(
+                &self.cfg.neutron.accounts.supervault_deposit,
+                &self.cfg.neutron.denoms.deposit_token,
+            )
+            .await?;
+
+        let neutron_settlement_acc_lp_token_balance = self
+            .neutron_client
+            .query_balance(
+                &self.cfg.neutron.accounts.settlement,
+                &self.cfg.neutron.denoms.supervault_lp,
+            )
+            .await?;
+
+        // query the supervault config to get the pair denom ordering
+        let supervault_cfg: mmvault::state::Config = self
+            .neutron_client
+            .query_contract_state(
+                &self.cfg.neutron.supervault,
+                mmvault::msg::QueryMsg::GetConfig {},
+            )
+            .await?;
+
+        // simulate the liquidation of all LP shares owned by the settlement account.
+        // this simulation returns a tuple of expected asset amounts, in order.
+        let (withdraw_amount_0, withdraw_amount_1): (Uint128, Uint128) = self
+            .neutron_client
+            .query_contract_state(
+                &self.cfg.neutron.supervault,
+                mmvault::msg::QueryMsg::SimulateWithdrawLiquidity {
+                    amount: neutron_settlement_acc_lp_token_balance.into(),
+                },
+            )
+            .await?;
+
+        // TODO: validate whether this logic is correct. Depending
+        // on whether withdraw simulation results in both vault assets
+        // or just the one that was deposited, the matching should is
+        // done differently. If it turns out that both assets are returned,
+        // there are two options:
+        // 1. simulate the non-deposit token liquidation for the deposit token (safe)
+        // 2. multiply the deposit token amount by 2 (naive, assuming liquidation
+        // returns both assets of equal value)
+        let simulate_withdraw_deposit_token = if self
+            .cfg
+            .neutron
+            .denoms
+            .deposit_token
+            .eq(&supervault_cfg.pair_data.token_0.denom)
+        {
+            withdraw_amount_0
+        } else if self
+            .cfg
+            .neutron
+            .denoms
+            .deposit_token
+            .eq(&supervault_cfg.pair_data.token_1.denom)
+        {
+            withdraw_amount_1
+        } else {
+            Uint128::zero()
+        };
+
+        let total_supervaults_assets =
+            simulate_withdraw_deposit_token.u128() + neutron_supervault_acc_balance;
+
+        Ok(total_supervaults_assets)
     }
 
     /// carries out the steps needed to bring the new deposits from Ethereum to
@@ -94,7 +329,7 @@ impl Strategy {
         let _gaia_ica_bal = self
             .gaia_client
             .poll_until_expected_balance(
-                "TODO:GAIA_ICA",
+                &self.cfg.gaia.ica_address,
                 &self.cfg.gaia.deposit_denom,
                 gaia_ica_balance.u128(),
                 5,
@@ -102,15 +337,11 @@ impl Strategy {
             )
             .await?;
 
-        self.enqueue_neutron("ICA_IBC_UPDATE_AMOUNT", vec!["TODO"])
-            .await?;
-
-        self.tick_neutron().await?;
-
-        // 5. Initiate ICA-IBC-Transfer from Cosmos Hub ICA to Neutron program
-        // deposit account
+        // 5. enqueue:
+        // - TODO: gaia ICA transfer update
+        // - gaia ICA transfer
         self.enqueue_neutron(
-            "ICA_IBC_TRANSFER",
+            ICA_TRANSFER_LABEL,
             vec![valence_ica_ibc_transfer::msg::FunctionMsgs::Transfer {}],
         )
         .await?;
@@ -131,19 +362,14 @@ impl Strategy {
 
         // 7. use Valence Forwarder to route funds from the Neutron program
         // deposit account to the Mars deposit account
-        self.enqueue_neutron(
-            "DEPOSIT_FWD",
-            vec![valence_forwarder_library::msg::FunctionMsgs::Forward {}],
-        )
-        .await?;
-
-        self.tick_neutron().await?;
-
         // 8. use Mars Lending library to deposit funds from Mars deposit account
         // into Mars protocol
         self.enqueue_neutron(
-            "MARS_DEPOSIT",
-            vec![valence_mars_lending::msg::FunctionMsgs::Lend {}],
+            MARS_LEND_LABEL,
+            vec![
+                valence_forwarder_library::msg::FunctionMsgs::Forward {},
+                // valence_mars_lending::msg::FunctionMsgs::Lend {},
+            ],
         )
         .await?;
 
@@ -215,7 +441,8 @@ impl Strategy {
 
             //  4. preserving the order, post the ZKPs obtained in step 3. to the Neutron
             // Authorizations contract, enqueuing them to the processor
-            self.enqueue_neutron("POST_ZKP", vec!["TODO"]).await?;
+            self.enqueue_neutron(REGISTER_OBLIGATION_LABEL, vec!["TODO"])
+                .await?;
 
             // 5. tick the processor to register the obligations to the clearing queue
             self.tick_neutron().await?;
@@ -267,7 +494,7 @@ impl Strategy {
             // 4. call the Mars lending library to perform the withdrawal.
             // This will deposit the underlying assets directly to the settlement account.
             self.enqueue_neutron(
-                "MARS_WITHDRAW",
+                MARS_WITHDRAW_LABEL,
                 vec![&valence_mars_lending::msg::FunctionMsgs::Withdraw {
                     amount: Some(obligations_delta.into()),
                 }],
@@ -281,7 +508,7 @@ impl Strategy {
         // messages to the processor and ticking
         for _ in clearing_queue.obligations {
             self.enqueue_neutron(
-                "CLEAR_SETTLEMENTS",
+                SETTLE_OBLIGATION_LABEL,
                 vec![
                     valence_clearing_queue_supervaults::msg::FunctionMsgs::SettleNextObligation {},
                 ],
