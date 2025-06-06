@@ -6859,8 +6859,8 @@ dependencies = [
 
 [[package]]
 name = "valence-coprocessor"
-version = "0.2.2"
-source = "git+https://github.com/timewave-computer/valence-coprocessor.git?tag=v0.2.2#0a8c8eec90dd95bc9d4a4f89dcced1c9f877da0d"
+version = "0.2.3"
+source = "git+https://github.com/timewave-computer/valence-coprocessor.git?tag=v0.2.3#f4934a104d9a4c279dfa8156d47013e55aa1d799"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -6877,8 +6877,8 @@ dependencies = [
 
 [[package]]
 name = "valence-coprocessor-client"
-version = "0.2.2"
-source = "git+https://github.com/timewave-computer/valence-coprocessor.git?tag=v0.2.2#0a8c8eec90dd95bc9d4a4f89dcced1c9f877da0d"
+version = "0.2.3"
+source = "git+https://github.com/timewave-computer/valence-coprocessor.git?tag=v0.2.3#f4934a104d9a4c279dfa8156d47013e55aa1d799"
 dependencies = [
  "anyhow",
  "hex",
@@ -6892,9 +6892,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "valence-coprocessor-domain-prover"
+version = "0.2.0"
+source = "git+https://github.com/timewave-computer/valence-coprocessor-domain-prover.git?tag=v0.2.0#026f6ac1119f03fa5e609f6f6696f98ea0f262ee"
+dependencies = [
+ "anyhow",
+ "hex",
+ "msgpacker",
+ "serde_json",
+ "valence-coprocessor",
+ "valence-coprocessor-client",
+]
+
+[[package]]
 name = "valence-domain-clients"
 version = "0.1.0"
-source = "git+https://github.com/timewave-computer/valence-domain-clients.git?branch=main#5c6f7a63f56a6b8ee913d05378e914364281de92"
+source = "git+https://github.com/timewave-computer/valence-domain-clients.git?branch=main#a4e8287de7ee8481e9a647fc13da057022a27103"
 dependencies = [
  "alloy",
  "alloy-primitives 0.7.7",
@@ -6915,8 +6928,7 @@ dependencies = [
  "thiserror 1.0.69",
  "tokio",
  "tonic",
- "valence-coprocessor",
- "valence-coprocessor-client",
+ "valence-coprocessor-domain-prover",
 ]
 
 [[package]]
