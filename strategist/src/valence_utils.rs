@@ -1,8 +1,8 @@
 pub(crate) mod neutron {
     use std::error::Error;
 
-    use cosmwasm_std::to_json_binary;
-    use serde::Serialize;
+    use cosmwasm_std::Binary;
+
     use valence_authorization_utils::msg::ProcessorMessage;
     use valence_domain_clients::cosmos::wasm_client::WasmClient;
 
@@ -10,20 +10,15 @@ pub(crate) mod neutron {
 
     impl Strategy {
         /// enqueues a message on neutron
-        pub async fn enqueue_neutron<T>(
+        pub async fn enqueue_neutron(
             &mut self,
             label: &str,
-            messages: Vec<T>,
-        ) -> Result<(), Box<dyn Error + Send + Sync>>
-        where
-            T: Serialize,
-        {
+            messages: Vec<Binary>,
+        ) -> Result<(), Box<dyn Error + Send + Sync>> {
             let mut encoded_messages = vec![];
 
             for message in messages {
-                let encoded_msg = to_json_binary(&message)?;
-
-                let processor_msg = ProcessorMessage::CosmwasmExecuteMsg { msg: encoded_msg };
+                let processor_msg = ProcessorMessage::CosmwasmExecuteMsg { msg: message };
 
                 encoded_messages.push(processor_msg);
             }

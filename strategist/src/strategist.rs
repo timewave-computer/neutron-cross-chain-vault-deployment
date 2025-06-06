@@ -5,7 +5,7 @@ use alloy::{
     providers::Provider,
 };
 use async_trait::async_trait;
-use cosmwasm_std::{Addr, Decimal, Uint128, Uint256};
+use cosmwasm_std::{Addr, Decimal, Uint128, Uint256, to_json_binary};
 use log::info;
 use serde_json::json;
 use types::{
@@ -15,7 +15,7 @@ use types::{
     },
     sol_types::{
         Authorization, BaseAccount, ERC20,
-        OneWayVault::{self, WithdrawRequested},
+        OneWayVault::{self},
     },
 };
 use valence_clearing_queue_supervaults::msg::ObligationsResponse;
@@ -28,6 +28,7 @@ use valence_domain_clients::{
     },
     indexer::one_way_vault::OneWayVaultIndexer,
 };
+use valence_library_utils::OptionUpdate;
 use valence_strategist_utils::worker::ValenceWorker;
 
 use crate::strategy_config::Strategy;
@@ -346,7 +347,7 @@ impl Strategy {
         let coprocessor_input = json!({"skip_response": skip_api_response});
         let skip_response_zkp = self
             .coprocessor_client
-            .prove(&self.cp_program_id, &coprocessor_input)
+            .prove(&self.cp_eureka_circuit_id, &coprocessor_input)
             .await?;
 
         // extract the program and domain parameters by decoding the zkp
@@ -375,7 +376,7 @@ impl Strategy {
         // TODO: doublecheck the precision conversion here
         let gaia_ica_balance = Uint128::from_str(&eth_deposit_acc_bal.to_string())?;
 
-        let _gaia_ica_bal = self
+        let gaia_ica_bal = self
             .gaia_client
             .poll_until_expected_balance(
                 &self.cfg.gaia.ica_address,
@@ -386,12 +387,24 @@ impl Strategy {
             )
             .await?;
 
-        // 5. enqueue:
-        // - TODO: gaia ICA transfer update
-        // - gaia ICA transfer
+        // 5. enqueue: gaia ICA transfer amount update & gaia ica transfer messages
+        let ica_ibc_transfer_update_msg =
+            to_json_binary(&valence_ica_ibc_transfer::msg::LibraryConfigUpdate {
+                input_addr: None,
+                amount: Some(gaia_ica_bal.into()),
+                denom: None,
+                receiver: None,
+                memo: None,
+                remote_chain_info: None,
+                denom_to_pfm_map: None,
+                eureka_config: OptionUpdate::None,
+            })?;
+        let ica_ibc_transfer_msg =
+            to_json_binary(&valence_ica_ibc_transfer::msg::FunctionMsgs::Transfer {})?;
+
         self.enqueue_neutron(
             ICA_TRANSFER_LABEL,
-            vec![valence_ica_ibc_transfer::msg::FunctionMsgs::Transfer {}],
+            vec![ica_ibc_transfer_update_msg, ica_ibc_transfer_msg],
         )
         .await?;
 
@@ -413,14 +426,11 @@ impl Strategy {
         // deposit account to the Mars deposit account
         // 8. use Mars Lending library to deposit funds from Mars deposit account
         // into Mars protocol
-        self.enqueue_neutron(
-            MARS_LEND_LABEL,
-            vec![
-                valence_forwarder_library::msg::FunctionMsgs::Forward {},
-                // valence_mars_lending::msg::FunctionMsgs::Lend {},
-            ],
-        )
-        .await?;
+        let forward_msg =
+            to_json_binary(&valence_forwarder_library::msg::FunctionMsgs::Forward {})?;
+        let mars_lend_msg = to_json_binary(&valence_mars_lending::msg::FunctionMsgs::Lend {})?;
+        self.enqueue_neutron(MARS_LEND_LABEL, vec![forward_msg, mars_lend_msg])
+            .await?;
 
         self.tick_neutron().await?;
 
@@ -452,32 +462,28 @@ impl Strategy {
 
         // 4. process the new OneWayVault Withdraw events in order from the oldest
         // to the newest, posting them to the coprocessor to obtain a ZKP
-        for (obligation_id, owner, ntrn_receiver, shares) in new_obligations {
-            // TODO: this may be unnecessary
-            let _withdraw_requested = WithdrawRequested {
-                id: obligation_id,
-                owner,
-                receiver: ntrn_receiver,
-                shares,
-            };
-
+        for (obligation_id, ..) in new_obligations {
             // build the json input for coprocessor client
             let withdraw_id_json = json!({"withdrawal_request_id": obligation_id});
 
             // 5. post the proof request to the coprocessor client & await
-            let _zkp_response = self
+            let vault_zkp_response = self
                 .coprocessor_client
-                .prove("TBD", &withdraw_id_json)
+                .prove(&self.cp_vault_circuit_id, &withdraw_id_json)
                 .await?;
+
+            // extract the program and domain parameters by decoding the zkp
+            let (proof_program, inputs_program) = vault_zkp_response.program.decode()?;
+            let (proof_domain, inputs_domain) = vault_zkp_response.domain.decode()?;
 
             // need to set these values to correct ones, placeholding for now
             let execute_zk_authorization_msg =
                 valence_authorization_utils::msg::PermissionlessMsg::ExecuteZkAuthorization {
                     label: REGISTER_OBLIGATION_LABEL.to_string(),
-                    message: cosmwasm_std::Binary::default(),
-                    proof: cosmwasm_std::Binary::default(),
-                    domain_message: cosmwasm_std::Binary::default(),
-                    domain_proof: cosmwasm_std::Binary::default(),
+                    message: cosmwasm_std::Binary::from(inputs_program),
+                    proof: cosmwasm_std::Binary::from(proof_program),
+                    domain_message: cosmwasm_std::Binary::from(inputs_domain),
+                    domain_proof: cosmwasm_std::Binary::from(proof_domain),
                 };
 
             // 6. execute the zk authorization. this will perform the verification
@@ -542,13 +548,13 @@ impl Strategy {
 
             // 4. call the Mars lending library to perform the withdrawal.
             // This will deposit the underlying assets directly to the settlement account.
-            self.enqueue_neutron(
-                MARS_WITHDRAW_LABEL,
-                vec![&valence_mars_lending::msg::FunctionMsgs::Withdraw {
+            let mars_withdraw_msg =
+                to_json_binary(&valence_mars_lending::msg::FunctionMsgs::Withdraw {
                     amount: Some(obligations_delta.into()),
-                }],
-            )
-            .await?;
+                })?;
+
+            self.enqueue_neutron(MARS_WITHDRAW_LABEL, vec![mars_withdraw_msg])
+                .await?;
 
             self.tick_neutron().await?;
         }
@@ -556,13 +562,12 @@ impl Strategy {
         // 5. process the Clearing Queue settlement requests by enqueuing the settlement
         // messages to the processor and ticking
         for _ in clearing_queue.obligations {
-            self.enqueue_neutron(
-                SETTLE_OBLIGATION_LABEL,
-                vec![
-                    valence_clearing_queue_supervaults::msg::FunctionMsgs::SettleNextObligation {},
-                ],
-            )
-            .await?;
+            let obligation_settlement_msg = to_json_binary(
+                &valence_clearing_queue_supervaults::msg::FunctionMsgs::SettleNextObligation {},
+            )?;
+
+            self.enqueue_neutron(SETTLE_OBLIGATION_LABEL, vec![obligation_settlement_msg])
+                .await?;
 
             self.tick_neutron().await?;
         }

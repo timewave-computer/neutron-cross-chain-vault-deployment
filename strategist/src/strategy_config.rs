@@ -27,8 +27,9 @@ pub struct Strategy {
     /// strategy name
     pub label: String,
 
-    /// coprocessor circuit/program ID
-    pub cp_program_id: String,
+    /// coprocessor circuit IDs
+    pub cp_eureka_circuit_id: String,
+    pub cp_vault_circuit_id: String,
 
     /// top level strategy configuration
     pub cfg: StrategyConfig,
@@ -67,8 +68,10 @@ impl Strategy {
             env::var("EUREKA_SRC_CHAIN_ID").expect("IBC Eureka src chain id must be provided");
         let eureka_dest_chain_id =
             env::var("EUREKA_DEST_CHAIN_ID").expect("IBC Eureka dest chain id must be provided");
-        let cp_program_id =
-            env::var("COPROCESSOR_PROGRAM_ID").expect("Co-processor program ID must be provided");
+        let cp_vault_circuit_id = env::var("COPROCESSOR_VAULT_CIRCUIT_ID")
+            .expect("Co-processor vault circuit ID must be provided");
+        let cp_eureka_circuit_id = env::var("COPROCESSOR_EUREKA_CIRCUIT_ID")
+            .expect("Co-processor eureka circuit ID must be provided");
 
         let gaia_client = CosmosHubClient::new(
             &cfg.gaia.grpc_url,
@@ -114,7 +117,8 @@ impl Strategy {
             indexer_client,
             coprocessor_client,
             ibc_eureka_client,
-            cp_program_id,
+            cp_eureka_circuit_id,
+            cp_vault_circuit_id,
         })
     }
 
