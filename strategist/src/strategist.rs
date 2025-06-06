@@ -2,7 +2,7 @@ use std::{error::Error, str::FromStr};
 
 use alloy::{primitives::U256, providers::Provider};
 use async_trait::async_trait;
-use cosmwasm_std::{Decimal, Uint128, Uint256};
+use cosmwasm_std::{Addr, Decimal, Uint128, Uint256};
 use log::info;
 use serde_json::json;
 use types::{
@@ -117,6 +117,20 @@ impl Strategy {
                 &self.cfg.neutron.denoms.deposit_token,
             )
             .await?;
+        let neutron_mars_deposit_acc_balance = self
+            .neutron_client
+            .query_balance(
+                &self.cfg.neutron.accounts.mars_deposit,
+                &self.cfg.neutron.denoms.deposit_token,
+            )
+            .await?;
+        let neutron_supervault_acc_balance = self
+            .neutron_client
+            .query_balance(
+                &self.cfg.neutron.accounts.supervault_deposit,
+                &self.cfg.neutron.denoms.deposit_token,
+            )
+            .await?;
 
         // both mars and supervaults positions are derivatives of the
         // underlying denom. we do the necessary accounting for both and
@@ -126,6 +140,8 @@ impl Strategy {
 
         // sum all deposit assets
         let deposit_token_total: u128 = [
+            neutron_supervault_acc_balance,
+            neutron_mars_deposit_acc_balance,
             mars_tvl,
             supervaults_tvl,
             gaia_ica_balance,
@@ -160,20 +176,9 @@ impl Strategy {
         Ok(())
     }
 
-    /// calculates total value of everything related to the Mars flow:
-    /// - mars input account
-    /// - mars position
-    ///
-    /// returns total amount expressed in the deposit token
+    /// calculates total value of the active Mars lending position,
+    /// expressed in the deposit token
     async fn mars_accounting(&mut self) -> Result<u128, Box<dyn Error + Send + Sync>> {
-        let neutron_mars_deposit_acc_balance = self
-            .neutron_client
-            .query_balance(
-                &self.cfg.neutron.accounts.mars_deposit,
-                &self.cfg.neutron.denoms.deposit_token,
-            )
-            .await?;
-
         // query the mars credit account created and owned by the mars input account
         let mars_input_acc_credit_accounts: Vec<valence_lending_utils::mars::Account> = self
             .neutron_client
@@ -211,33 +216,20 @@ impl Strategy {
             }
         }
 
-        let total_mars_value =
-            neutron_mars_deposit_acc_balance + mars_lending_deposit_token_amount.u128();
-
-        Ok(total_mars_value)
+        Ok(mars_lending_deposit_token_amount.u128())
     }
 
-    /// calculates total value of everything related to the Supervaults flow:
-    /// - supervaults input account
-    /// - supervaults LP shares (settlement account)
-    ///
-    /// returns total amount expressed in the deposit token
+    /// calculates total value of the active supervault position,
+    /// expressed in the deposit token denom
     async fn supervaults_accounting(&mut self) -> Result<u128, Box<dyn Error + Send + Sync>> {
-        let neutron_supervault_acc_balance = self
-            .neutron_client
-            .query_balance(
-                &self.cfg.neutron.accounts.supervault_deposit,
-                &self.cfg.neutron.denoms.deposit_token,
-            )
-            .await?;
-
-        let neutron_settlement_acc_lp_token_balance = self
+        let lp_shares_balance: Uint128 = self
             .neutron_client
             .query_balance(
                 &self.cfg.neutron.accounts.settlement,
                 &self.cfg.neutron.denoms.supervault_lp,
             )
-            .await?;
+            .await?
+            .into();
 
         // query the supervault config to get the pair denom ordering
         let supervault_cfg: mmvault::state::Config = self
@@ -255,43 +247,64 @@ impl Strategy {
             .query_contract_state(
                 &self.cfg.neutron.supervault,
                 mmvault::msg::QueryMsg::SimulateWithdrawLiquidity {
-                    amount: neutron_settlement_acc_lp_token_balance.into(),
+                    amount: lp_shares_balance,
                 },
             )
             .await?;
 
-        // TODO: validate whether this logic is correct. Depending
-        // on whether withdraw simulation results in both vault assets
-        // or just the one that was deposited, the matching should is
-        // done differently. If it turns out that both assets are returned,
-        // there are two options:
-        // 1. simulate the non-deposit token liquidation for the deposit token (safe)
-        // 2. multiply the deposit token amount by 2 (naive, assuming liquidation
-        // returns both assets of equal value)
-        let simulate_withdraw_deposit_token = if self
-            .cfg
-            .neutron
-            .denoms
-            .deposit_token
-            .eq(&supervault_cfg.pair_data.token_0.denom)
-        {
-            withdraw_amount_0
-        } else if self
-            .cfg
-            .neutron
-            .denoms
-            .deposit_token
-            .eq(&supervault_cfg.pair_data.token_1.denom)
-        {
-            withdraw_amount_1
-        } else {
-            Uint128::zero()
-        };
+        // the returned amounts above include a non-deposit denom which is not
+        // relevant for our TVL calculation that is denominated in the deposit
+        // denom. to deal with that, we need to express the LP shares entirely
+        // in terms of the deposit denom.
+        // we do this by:
+        // 1. finding our deposit token withdraw amount
+        // 2. simulating LP for that amount to know the deposit_token -> shares
+        // exchange rate
+        // 3. assuming the same rate for whole position
+        let exchange_rate =
+            if self.cfg.neutron.denoms.deposit_token == supervault_cfg.pair_data.token_0.denom {
+                // simulate LP with the deposit token. amount here does not really matter,
+                // but to avoid some rounding errors with small amounts we pass the expected
+                // withdraw amount to get a reasonable value.
+                let expected_lp_shares: Uint128 = self
+                    .neutron_client
+                    .query_contract_state(
+                        &self.cfg.neutron.supervault,
+                        mmvault::msg::QueryMsg::SimulateProvideLiquidity {
+                            amount_0: withdraw_amount_0,
+                            amount_1: Uint128::zero(),
+                            sender: Addr::unchecked(
+                                self.cfg.neutron.accounts.supervault_deposit.to_string(),
+                            ),
+                        },
+                    )
+                    .await?;
 
-        let total_supervaults_assets =
-            simulate_withdraw_deposit_token.u128() + neutron_supervault_acc_balance;
+                Decimal::from_ratio(withdraw_amount_0, expected_lp_shares)
+            } else {
+                let expected_lp_shares: Uint128 = self
+                    .neutron_client
+                    .query_contract_state(
+                        &self.cfg.neutron.supervault,
+                        mmvault::msg::QueryMsg::SimulateProvideLiquidity {
+                            amount_0: Uint128::zero(),
+                            amount_1: withdraw_amount_1,
+                            sender: Addr::unchecked(
+                                self.cfg.neutron.accounts.supervault_deposit.to_string(),
+                            ),
+                        },
+                    )
+                    .await?;
 
-        Ok(total_supervaults_assets)
+                Decimal::from_ratio(withdraw_amount_1, expected_lp_shares)
+            };
+
+        // multiply the lp_shares balance by the derived (deposit_token / lp_shares) exchange rate
+        // to get the lp_shares balance value expressed in deposit token denom
+        let lp_shares_deposit_denom_equivalent =
+            lp_shares_balance.checked_mul_floor(exchange_rate)?;
+
+        Ok(lp_shares_deposit_denom_equivalent.u128())
     }
 
     /// carries out the steps needed to bring the new deposits from Ethereum to
