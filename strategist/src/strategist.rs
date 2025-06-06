@@ -15,7 +15,7 @@ use types::{
     },
     sol_types::{
         Authorization, BaseAccount, ERC20,
-        OneWayVault::{self, WithdrawRequested},
+        OneWayVault::{self},
     },
 };
 use valence_clearing_queue_supervaults::msg::ObligationsResponse;
@@ -347,7 +347,7 @@ impl Strategy {
         let coprocessor_input = json!({"skip_response": skip_api_response});
         let skip_response_zkp = self
             .coprocessor_client
-            .prove(&self.cp_program_id, &coprocessor_input)
+            .prove(&self.cp_eureka_circuit_id, &coprocessor_input)
             .await?;
 
         // extract the program and domain parameters by decoding the zkp
@@ -462,32 +462,28 @@ impl Strategy {
 
         // 4. process the new OneWayVault Withdraw events in order from the oldest
         // to the newest, posting them to the coprocessor to obtain a ZKP
-        for (obligation_id, owner, ntrn_receiver, shares) in new_obligations {
-            // TODO: this may be unnecessary
-            let _withdraw_requested = WithdrawRequested {
-                id: obligation_id,
-                owner,
-                receiver: ntrn_receiver,
-                shares,
-            };
-
+        for (obligation_id, ..) in new_obligations {
             // build the json input for coprocessor client
             let withdraw_id_json = json!({"withdrawal_request_id": obligation_id});
 
             // 5. post the proof request to the coprocessor client & await
-            let _zkp_response = self
+            let vault_zkp_response = self
                 .coprocessor_client
-                .prove("TBD", &withdraw_id_json)
+                .prove(&self.cp_vault_circuit_id, &withdraw_id_json)
                 .await?;
+
+            // extract the program and domain parameters by decoding the zkp
+            let (proof_program, inputs_program) = vault_zkp_response.program.decode()?;
+            let (proof_domain, inputs_domain) = vault_zkp_response.domain.decode()?;
 
             // need to set these values to correct ones, placeholding for now
             let execute_zk_authorization_msg =
                 valence_authorization_utils::msg::PermissionlessMsg::ExecuteZkAuthorization {
                     label: REGISTER_OBLIGATION_LABEL.to_string(),
-                    message: cosmwasm_std::Binary::default(),
-                    proof: cosmwasm_std::Binary::default(),
-                    domain_message: cosmwasm_std::Binary::default(),
-                    domain_proof: cosmwasm_std::Binary::default(),
+                    message: cosmwasm_std::Binary::from(inputs_program),
+                    proof: cosmwasm_std::Binary::from(proof_program),
+                    domain_message: cosmwasm_std::Binary::from(inputs_domain),
+                    domain_proof: cosmwasm_std::Binary::from(proof_domain),
                 };
 
             // 6. execute the zk authorization. this will perform the verification
