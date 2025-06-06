@@ -1,6 +1,9 @@
 use std::{error::Error, str::FromStr};
 
-use alloy::{primitives::{Bytes, U256}, providers::Provider};
+use alloy::{
+    primitives::{Bytes, U256},
+    providers::Provider,
+};
 use async_trait::async_trait;
 use cosmwasm_std::{Addr, Decimal, Uint128, Uint256, to_json_binary};
 use log::info;
@@ -11,7 +14,9 @@ use types::{
         SETTLE_OBLIGATION_LABEL,
     },
     sol_types::{
-        processor_contract::LiteProcessor, Authorization, BaseAccount, OneWayVault::{self, WithdrawRequested}, ERC20
+        Authorization, BaseAccount, ERC20,
+        OneWayVault::{self, WithdrawRequested},
+        processor_contract::LiteProcessor,
     },
 };
 use valence_clearing_queue_supervaults::msg::ObligationsResponse;
@@ -315,7 +320,8 @@ impl Strategy {
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         let eth_wbtc_contract = ERC20::new(self.cfg.ethereum.denoms.deposit_token, &eth_rp);
         let eth_deposit_acc = BaseAccount::new(self.cfg.ethereum.accounts.deposit, &eth_rp);
-        let eth_authorizations_contract = Authorization::new(self.cfg.ethereum.authorizations, &eth_rp);
+        let eth_authorizations_contract =
+            Authorization::new(self.cfg.ethereum.authorizations, &eth_rp);
         let eth_processor_contract = LiteProcessor::new(self.cfg.ethereum.processor, &eth_rp);
 
         // 1. query the ethereum deposit account balance
@@ -334,22 +340,6 @@ impl Strategy {
         }
 
         // 3. perform IBC-Eureka transfer to Cosmos Hub ICA
-
-
-        // let eth_auth_zk_execute_msg = eth_authorizations_contract.executeZKMessage(
-        //     Bytes::new(),
-        //     Bytes::new(),
-        // );
-
-        // let eth_zk_exec_result = self
-        //     .eth_client
-        //     .execute_tx(eth_auth_zk_execute_msg.into_transaction_request())
-        //     .await?;
-
-        // eth_rp
-        //     .get_transaction_receipt(eth_zk_exec_result.transaction_hash)
-        //     .await?;
-
 
         // 4. block execution until the funds arrive to the Cosmos Hub ICA owned
         // by the Valence Interchain Account on Neutron
