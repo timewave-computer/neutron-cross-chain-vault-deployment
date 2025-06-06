@@ -5,8 +5,10 @@ use alloy::{
     primitives::{Address, Bytes, FixedBytes, U256},
 };
 use serde_json::{json, Value};
+use sp1_sdk::{HashableKey, SP1VerifyingKey};
 use types::sol_types::{
-    processor_contract::LiteProcessor, Authorization, ERC1967Proxy, IBCEurekaTransfer, SP1VerificationGateway, ERC20
+    processor_contract::LiteProcessor, Authorization, ERC1967Proxy, IBCEurekaTransfer,
+    SP1VerificationGateway, ERC20,
 };
 use valence_domain_clients::{
     clients::{coprocessor::CoprocessorClient, ethereum::EthereumClient},
@@ -26,8 +28,6 @@ const OWNER_ACCOUNT: &str = "0xd9A23b58e684B985F661Ce7005AA8E10630150c1";
 const SP1_VERIFIER: &str = "0x397A5f7f3dBd538f23DE225B51f532c34448dA9B";
 
 const PROGRAM_ID: &str = "e6cde4039d5445dbce4de54f4504805356dc871f906cc46946181aa84754fd46";
-const PROGRAM_VK: &str = "0x00cb777ce71261cdbc20f148a8aa7574ade921b330eb39d2c3e35f4ebbc74f4d";
-const DOMAIN_VK: &str = "0x00cb777ce71261cdbc20f148a8aa7574ade921b330eb39d2c3e35f4ebbc74f4d";
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -133,11 +133,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("Deposit account funded with WBTC");
 
     // Now we can create the authorization that will trigger the transfer
+    let coprocessor_client = CoprocessorClient::default();
+    let program_vk = coprocessor_client.get_vk(PROGRAM_ID).await?;
+    let domain_vk = coprocessor_client.get_domain_vk().await?;
+
+    let sp1_program_vk: SP1VerifyingKey = bincode::deserialize(&program_vk)?;
+    let sp1_domain_vk: SP1VerifyingKey = bincode::deserialize(&domain_vk)?;
+
     let authorization = Authorization::new(authorization, &rp);
     let registries = vec![0]; // Only one and IBC Eureka app will use registry 0
     let authorized_addresses = vec![Address::ZERO];
-    let vks = vec![FixedBytes::<32>::from_hex(PROGRAM_VK).unwrap()]; // Program verification key
-    let domain_vk = FixedBytes::<32>::from_hex(DOMAIN_VK).unwrap(); // Domain verification key
+    let vks = vec![FixedBytes::<32>::from_hex(sp1_program_vk.bytes32()).unwrap()]; // Program verification key
+    let domain_vk = FixedBytes::<32>::from_hex(sp1_domain_vk.bytes32()).unwrap(); // Domain verification key
 
     // Remember we send arrays because we allow  multiple registries added at once
     let tx = authorization
@@ -184,21 +191,21 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let response_json: Value = serde_json::from_str(&response)?;
 
-    let coprocessor_client = CoprocessorClient::default();
     let proof = coprocessor_client
         .prove(PROGRAM_ID, &json!({"skip_response": response_json}))
         .await?;
 
     println!("Proof received!");
 
-    let (proof, inputs) = proof.decode()?;
+    let (proof_program, inputs_program) = proof.program.decode()?;
+    let (proof_domain, inputs_domain) = proof.domain.decode()?;
     // These should be different but for now just test with the same VK to verify it works
     let execute_tx = authorization
         .executeZKMessage(
-            Bytes::from(inputs.clone()),
-            Bytes::from(proof.clone()),
-            Bytes::from(inputs),
-            Bytes::from(proof),
+            Bytes::from(inputs_program),
+            Bytes::from(proof_program),
+            Bytes::from(inputs_domain),
+            Bytes::from(proof_domain),
         )
         .into_transaction_request();
 
@@ -214,9 +221,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("Transfer executed successfully");
 
     // Also check that we got the callback
-    let callback = authorization.callbacks(0)
-        .call()
-        .await?;
+    let callback = authorization.callbacks(0).call().await?;
 
     assert_eq!(callback.executionResult, 0); // 0 means success
     println!("Executed succesfully!");
