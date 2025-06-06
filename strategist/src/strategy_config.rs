@@ -6,7 +6,8 @@ use types::{
 };
 use valence_domain_clients::clients::{
     coprocessor::CoprocessorClient, ethereum::EthereumClient, gaia::CosmosHubClient,
-    neutron::NeutronClient, valence_indexer::OneWayVaultIndexerClient,
+    ibc_eureka_route_client::IBCEurekaRouteClient, neutron::NeutronClient,
+    valence_indexer::OneWayVaultIndexerClient,
 };
 
 use serde::{Deserialize, Serialize};
@@ -26,6 +27,9 @@ pub struct Strategy {
     /// strategy name
     pub label: String,
 
+    /// coprocessor circuit/program ID
+    pub cp_program_id: String,
+
     /// top level strategy configuration
     pub cfg: StrategyConfig,
 
@@ -37,6 +41,8 @@ pub struct Strategy {
     pub(crate) neutron_client: NeutronClient,
     /// active one way vault indexer client
     pub(crate) indexer_client: OneWayVaultIndexerClient,
+    /// skip route client for IBC eureka
+    pub(crate) ibc_eureka_client: IBCEurekaRouteClient,
     /// active coprocessor client
     pub(crate) coprocessor_client: CoprocessorClient,
 }
@@ -54,6 +60,15 @@ impl Strategy {
             env::var("INDEXER_API_KEY").expect("indexer api key must be provided");
         let indexer_api_url =
             env::var("INDEXER_API_URL").expect("indexer url key must be provided");
+        let eureka_api_url =
+            env::var("EUREKA_API_URL").expect("IBC Eureka route api url must be provided");
+        // TODO: these shouldn't be pulled from env
+        let eureka_src_chain_id =
+            env::var("EUREKA_SRC_CHAIN_ID").expect("IBC Eureka src chain id must be provided");
+        let eureka_dest_chain_id =
+            env::var("EUREKA_DEST_CHAIN_ID").expect("IBC Eureka dest chain id must be provided");
+        let cp_program_id =
+            env::var("COPROCESSOR_PROGRAM_ID").expect("Co-processor program ID must be provided");
 
         let gaia_client = CosmosHubClient::new(
             &cfg.gaia.grpc_url,
@@ -82,6 +97,14 @@ impl Strategy {
 
         let coprocessor_client = CoprocessorClient::default();
 
+        let ibc_eureka_client = IBCEurekaRouteClient::new(
+            &eureka_api_url,
+            &eureka_src_chain_id,
+            &cfg.ethereum.denoms.deposit_token.to_string(),
+            &eureka_dest_chain_id,
+            &cfg.gaia.deposit_denom,
+        );
+
         Ok(Self {
             cfg,
             eth_client,
@@ -90,6 +113,8 @@ impl Strategy {
             label,
             indexer_client,
             coprocessor_client,
+            ibc_eureka_client,
+            cp_program_id,
         })
     }
 

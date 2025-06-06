@@ -16,7 +16,6 @@ use types::{
     sol_types::{
         Authorization, BaseAccount, ERC20,
         OneWayVault::{self, WithdrawRequested},
-        processor_contract::LiteProcessor,
     },
 };
 use valence_clearing_queue_supervaults::msg::ObligationsResponse;
@@ -320,9 +319,7 @@ impl Strategy {
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         let eth_wbtc_contract = ERC20::new(self.cfg.ethereum.denoms.deposit_token, &eth_rp);
         let eth_deposit_acc = BaseAccount::new(self.cfg.ethereum.accounts.deposit, &eth_rp);
-        let eth_authorizations_contract =
-            Authorization::new(self.cfg.ethereum.authorizations, &eth_rp);
-        let eth_processor_contract = LiteProcessor::new(self.cfg.ethereum.processor, &eth_rp);
+        let eth_auth_contract = Authorization::new(self.cfg.ethereum.authorizations, &eth_rp);
 
         // 1. query the ethereum deposit account balance
         let eth_deposit_acc_bal = self
@@ -339,7 +336,40 @@ impl Strategy {
             return Ok(());
         }
 
-        // 3. perform IBC-Eureka transfer to Cosmos Hub ICA
+        // 3. fetch the IBC-Eureka route from eureka client
+        let skip_api_response = self
+            .ibc_eureka_client
+            .query_skip_eureka_route(eth_deposit_acc_bal.to_string())
+            .await?;
+
+        // format the response in format expected by the coprocessor and post it
+        // there for proof
+        let coprocessor_input = json!({"skip_response": skip_api_response});
+        let skip_response_zkp = self
+            .coprocessor_client
+            .prove(&self.cp_program_id, &coprocessor_input)
+            .await?;
+
+        // extract the program and domain parameters by decoding the zkp
+        let (proof_program, inputs_program) = skip_response_zkp.program.decode()?;
+        let (proof_domain, inputs_domain) = skip_response_zkp.domain.decode()?;
+
+        // build the eureka transfer zk message from decoded params
+        let auth_eureka_transfer_zk_msg = eth_auth_contract.executeZKMessage(
+            Bytes::from(inputs_program),
+            Bytes::from(proof_program),
+            Bytes::from(inputs_domain),
+            Bytes::from(proof_domain),
+        );
+
+        // sign and execute the tx & await its tx receipt before proceeding
+        let zk_auth_exec_response = self
+            .eth_client
+            .sign_and_send(auth_eureka_transfer_zk_msg.into_transaction_request())
+            .await?;
+        eth_rp
+            .get_transaction_receipt(zk_auth_exec_response.transaction_hash)
+            .await?;
 
         // 4. block execution until the funds arrive to the Cosmos Hub ICA owned
         // by the Valence Interchain Account on Neutron
