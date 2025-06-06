@@ -25,3 +25,5 @@ valence-mars-lending               = { workspace = true }
 valence-supervaults-lper           = { workspace = true }
 valence-clearing-queue-supervaults = { workspace = true }
 valence-verification-gateway       = { workspace = true }
+sp1-sdk                            = { version = "4.2.0", default-features = false }
+bincode                            = "1.3.3"

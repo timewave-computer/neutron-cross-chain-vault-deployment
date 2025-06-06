@@ -2,6 +2,7 @@ use std::{env, error::Error, fs};
 
 use cosmwasm_std::{to_json_binary, Binary, Uint128};
 use serde::Deserialize;
+use sp1_sdk::{HashableKey, SP1VerifyingKey};
 use types::{
     gaia_config::GaiaStrategyConfig,
     labels::{
@@ -18,7 +19,11 @@ use valence_authorization_utils::{
     function::AtomicFunction,
     zk_authorization::ZkAuthorizationInfo,
 };
-use valence_domain_clients::{clients::neutron::NeutronClient, cosmos::wasm_client::WasmClient};
+use valence_domain_clients::{
+    clients::{coprocessor::CoprocessorClient, neutron::NeutronClient},
+    coprocessor::base_client::CoprocessorBaseClient,
+    cosmos::wasm_client::WasmClient,
+};
 use valence_library_utils::LibraryAccountType;
 
 #[derive(Deserialize, Debug)]
@@ -40,8 +45,7 @@ struct Ica {
 
 #[derive(Deserialize, Debug)]
 struct CoprocessorApp {
-    clearing_queue_coprocessor_app_vk: Binary,
-    domain_vk: Binary,
+    clearing_queue_coprocessor_app_id: String,
 }
 
 #[tokio::main]
@@ -456,15 +460,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .await?;
     println!("Authorizations created successfully");
 
+    // Get the VK for the coprocessor app
+    let coprocessor_client = CoprocessorClient::default();
+    let program_vk = coprocessor_client
+        .get_vk(
+            &ntrn_params
+                .coprocessor_app
+                .clearing_queue_coprocessor_app_id,
+        )
+        .await?;
+
+    let sp1_program_vk: SP1VerifyingKey = bincode::deserialize(&program_vk)?;
+
     // Now we create the zk authorization
     let zk_authorization = ZkAuthorizationInfo {
         label: REGISTER_OBLIGATION_LABEL.to_string(),
         mode: authorization_permissioned_mode,
         registry: 0,
-        vk: ntrn_params
-            .coprocessor_app
-            .clearing_queue_coprocessor_app_vk,
-        domain_vk: ntrn_params.coprocessor_app.domain_vk,
+        vk: Binary::from(sp1_program_vk.bytes32().as_bytes()),
         validate_last_block_execution: false,
     };
 

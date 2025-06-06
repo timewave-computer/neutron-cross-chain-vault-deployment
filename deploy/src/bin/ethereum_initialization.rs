@@ -1,10 +1,15 @@
 use std::{env, error::Error, fs};
 
-use alloy::primitives::{Address, FixedBytes};
+use alloy::{
+    hex::FromHex,
+    primitives::{Address, FixedBytes},
+};
 use serde::Deserialize;
+use sp1_sdk::{HashableKey, SP1VerifyingKey};
 use types::{ethereum_config::EthereumStrategyConfig, sol_types::Authorization};
 use valence_domain_clients::{
-    clients::ethereum::EthereumClient,
+    clients::{coprocessor::CoprocessorClient, ethereum::EthereumClient},
+    coprocessor::base_client::CoprocessorBaseClient,
     evm::{base_client::EvmBaseClient, request_provider_client::RequestProviderClient},
 };
 
@@ -27,8 +32,7 @@ struct Vault {
 
 #[derive(Deserialize, Debug)]
 struct CoprocessorApp {
-    eureka_transfer_coprocessor_app_vk: FixedBytes<32>,
-    domain_vk: FixedBytes<32>,
+    eureka_transfer_coprocessor_app_id: String,
 }
 
 #[tokio::main]
@@ -54,24 +58,25 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let authorization = Authorization::new(eth_stg_cfg.authorizations, &rp);
 
+    // Get the VK for the coprocessor app
+    let coprocessor_client = CoprocessorClient::default();
+    let program_vk = coprocessor_client
+        .get_vk(
+            &parameters
+                .coprocessor_app
+                .eureka_transfer_coprocessor_app_id,
+        )
+        .await?;
+
+    let sp1_program_vk: SP1VerifyingKey = bincode::deserialize(&program_vk)?;
+    let program_vk = FixedBytes::<32>::from_hex(sp1_program_vk.bytes32()).unwrap();
     let registries = vec![0]; // Only one and IBC Eureka app will use registry 0
     let authorized_addresses = vec![parameters.vault.strategist];
-    let vks = vec![
-        parameters
-            .coprocessor_app
-            .eureka_transfer_coprocessor_app_vk,
-    ];
-    let domain_vk = parameters.coprocessor_app.domain_vk;
+    let vks = vec![program_vk];
 
     // Remember we send arrays because we allow  multiple registries added at once
     let tx = authorization
-        .addRegistries(
-            registries,
-            vec![authorized_addresses],
-            vks,
-            domain_vk,
-            vec![false],
-        )
+        .addRegistries(registries, vec![authorized_addresses], vks, vec![false])
         .into_transaction_request();
 
     // Send the transaction
