@@ -1,4 +1,4 @@
-use std::{env, error::Error};
+use std::{alloc::System, env, error::Error, time::SystemTime};
 
 use alloy::{
     hex::FromHex,
@@ -191,11 +191,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let response_json: Value = serde_json::from_str(&response)?;
 
+    let now = SystemTime::now();
+
     let proof = coprocessor_client
         .prove(PROGRAM_ID, &json!({"skip_response": response_json}))
         .await?;
 
     println!("Proof received!");
+
+    let after = SystemTime::now();
+    let duration = after.duration_since(now).unwrap();
+    println!("Proof generation took: {:?}", duration);
 
     let (proof_program, inputs_program) = proof.program.decode()?;
     let (proof_domain, inputs_domain) = proof.domain.decode()?;
