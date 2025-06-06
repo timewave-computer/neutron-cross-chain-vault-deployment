@@ -1,11 +1,13 @@
 use std::{env, error::Error, fs};
 
 use alloy::{
+    hex::FromHex,
     primitives::{Address, Bytes, FixedBytes, U256},
     sol,
     sol_types::SolValue,
 };
 use serde::Deserialize;
+use sp1_sdk::{HashableKey, SP1VerifyingKey};
 use types::{
     ethereum_config::{
         EthereumAccounts, EthereumCoprocessorAppIds, EthereumDenoms, EthereumLibraries,
@@ -19,7 +21,8 @@ use types::{
     },
 };
 use valence_domain_clients::{
-    clients::ethereum::EthereumClient,
+    clients::{coprocessor::CoprocessorClient, ethereum::EthereumClient},
+    coprocessor::base_client::CoprocessorBaseClient,
     evm::{base_client::EvmBaseClient, request_provider_client::RequestProviderClient},
 };
 
@@ -35,6 +38,7 @@ struct Parameters {
 struct General {
     rpc_url: String,
     owner: Address,
+    valence_owner: Address,
     coprocessor_root: String,
 }
 
@@ -170,12 +174,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .contract_address
         .unwrap();
     println!("Verification Gateway deployed at: {verification_gateway_address}");
+
     // Initialize the verification gateway
+    // We need to get the domain vk of the coprocessor
+    let coprocessor_client = CoprocessorClient::default();
+    let domain_vk = coprocessor_client.get_domain_vk().await?;
+    let sp1_domain_vk: SP1VerifyingKey = bincode::deserialize(&domain_vk)?;
+    let domain_vk = FixedBytes::<32>::from_hex(sp1_domain_vk.bytes32()).unwrap();
+
     let verification_gateway = SP1VerificationGateway::new(verification_gateway_address, &rp);
     let initialize_verification_gateway_tx = verification_gateway
         .initialize(
             parameters.general.coprocessor_root.parse().unwrap(),
             SP1_VERIFIER.parse().unwrap(),
+            domain_vk,
         )
         .into_transaction_request();
     eth_client
@@ -185,12 +197,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Transfer the ownership of the verification gateway
     let transfer_ownership_tx = verification_gateway
-        .transferOwnership(parameters.general.owner)
+        .transferOwnership(parameters.general.valence_owner)
         .into_transaction_request();
     eth_client.sign_and_send(transfer_ownership_tx).await?;
     println!(
         "Verification Gateway ownership transferred to: {}",
-        parameters.general.owner
+        parameters.general.valence_owner
     );
 
     let authorization = Authorization::deploy_builder(

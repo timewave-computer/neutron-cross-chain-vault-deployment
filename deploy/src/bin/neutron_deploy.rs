@@ -6,14 +6,16 @@ use std::{
     time::SystemTime,
 };
 
-use cosmwasm_std::{Uint128, Uint64};
+use cosmwasm_std::{Binary, Uint128, Uint64};
 use serde::Deserialize;
+use sp1_sdk::{HashableKey, SP1VerifyingKey};
 use types::neutron_config::{
     NeutronAccounts, NeutronCoprocessorAppIds, NeutronDenoms, NeutronLibraries,
     NeutronStrategyConfig,
 };
 use valence_domain_clients::{
-    clients::neutron::NeutronClient,
+    clients::{coprocessor::CoprocessorClient, neutron::NeutronClient},
+    coprocessor::base_client::CoprocessorBaseClient,
     cosmos::{grpc_client::GrpcSigningClient, wasm_client::WasmClient},
 };
 use valence_forwarder_library::msg::{ForwardingConstraints, UncheckedForwardingConfig};
@@ -38,6 +40,7 @@ struct General {
     grpc_port: String,
     chain_id: String,
     owner: String,
+    valence_owner: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -61,7 +64,7 @@ struct Program {
 
 #[derive(Deserialize, Debug)]
 struct CoprocessorApp {
-    id_clearing_queue_coprocessor_app: String,
+    clearing_queue_coprocessor_app_id: String,
 }
 
 #[tokio::main]
@@ -167,7 +170,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("Processor instantiated: {}", processor_address);
 
     // Instantiate the verification gateway
-    let instantiate_verification_gateway_msg = valence_verification_gateway::msg::InstantiateMsg {};
+    // Get the domain verification key from coprocessor
+    let coprocessor_client = CoprocessorClient::default();
+    let domain_vk = coprocessor_client.get_domain_vk().await?;
+    let sp1_domain_vk: SP1VerifyingKey = bincode::deserialize(&domain_vk)?;
+
+    let instantiate_verification_gateway_msg = valence_verification_gateway::msg::InstantiateMsg {
+        owner: params.general.valence_owner.clone(),
+        domain_vk: Binary::from(sp1_domain_vk.bytes32().as_bytes()),
+    };
+
     let verification_gateway = neutron_client
         .instantiate(
             code_id_verification_gateway,
@@ -498,7 +510,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let coprocessor_app_ids = NeutronCoprocessorAppIds {
-        clearing_queue: params.coprocessor_app.id_clearing_queue_coprocessor_app,
+        clearing_queue: params.coprocessor_app.clearing_queue_coprocessor_app_id,
     };
 
     let neutron_cfg = NeutronStrategyConfig {

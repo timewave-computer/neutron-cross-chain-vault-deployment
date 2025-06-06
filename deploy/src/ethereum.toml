@@ -22,5 +22,3 @@ timeout       = 43200                                        # 12 hours in secon
 
 [coprocessor_app]
 eureka_transfer_coprocessor_app_id = "..." # TBD after we have the app deployed
-eureka_transfer_coprocessor_app_vk = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef" # Give this in Bytes32 format
-domain_vk = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef" # Give this in Bytes32 format
