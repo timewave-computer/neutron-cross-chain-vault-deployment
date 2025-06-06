@@ -1,4 +1,4 @@
-use std::{alloc::System, env, error::Error, time::SystemTime};
+use std::{env, error::Error, time::SystemTime};
 
 use alloy::{
     hex::FromHex,
