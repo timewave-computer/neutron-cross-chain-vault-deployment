@@ -25,3 +25,5 @@ valence-mars-lending               = { workspace = true }
 valence-supervaults-lper           = { workspace = true }
 valence-clearing-queue-supervaults = { workspace = true }
 valence-verification-gateway       = { workspace = true }
+reqwest                            = { version = "0.12.19", features = ["json"] }
+serde_json                         = "1.0.140"
