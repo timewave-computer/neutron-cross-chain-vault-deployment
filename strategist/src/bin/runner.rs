@@ -1,5 +1,5 @@
 use dotenv::dotenv;
-use std::{env, error::Error, fs};
+use std::{env, error::Error};
 use valence_strategist_utils::worker::ValenceWorker;
 
 use strategist::strategy_config::Strategy;
@@ -23,6 +23,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let strategy =
         Strategy::from_files(&neutron_cfg_path, &gaia_cfg_path, &ethereum_cfg_path).await?;
 
+    // start the strategy and get the thread join handle
     let _strategist_join_handle = strategy.start();
 
     Ok(())

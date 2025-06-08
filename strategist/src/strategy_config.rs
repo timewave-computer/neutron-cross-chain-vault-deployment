@@ -68,6 +68,7 @@ impl Strategy {
             env::var("EUREKA_SRC_CHAIN_ID").expect("IBC Eureka src chain id must be provided");
         let eureka_dest_chain_id =
             env::var("EUREKA_DEST_CHAIN_ID").expect("IBC Eureka dest chain id must be provided");
+        // TODO: create a dedicated coprocessor config type and load it from toml
         let cp_vault_circuit_id = env::var("COPROCESSOR_VAULT_CIRCUIT_ID")
             .expect("Co-processor vault circuit ID must be provided");
         let cp_eureka_circuit_id = env::var("COPROCESSOR_EUREKA_CIRCUIT_ID")
@@ -134,9 +135,12 @@ impl Strategy {
         gaia_path: P,
         eth_path: P,
     ) -> Result<Self, Box<dyn Error>> {
-        let neutron_cfg = NeutronStrategyConfig::from_file(neutron_path)?;
-        let eth_cfg = EthereumStrategyConfig::from_file(eth_path)?;
-        let gaia_cfg = GaiaStrategyConfig::from_file(gaia_path)?;
+        let neutron_cfg = NeutronStrategyConfig::from_file(neutron_path)
+            .map_err(|e| format!("invalid neutron config: {:?}", e))?;
+        let eth_cfg = EthereumStrategyConfig::from_file(eth_path)
+            .map_err(|e| format!("invalid ethereum config: {:?}", e))?;
+        let gaia_cfg = GaiaStrategyConfig::from_file(gaia_path)
+            .map_err(|e| format!("invalid gaia config: {:?}", e))?;
 
         let strategy_cfg = StrategyConfig {
             ethereum: eth_cfg,
