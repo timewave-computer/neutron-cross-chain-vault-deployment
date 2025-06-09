@@ -25,6 +25,16 @@ The system operates across three blockchain networks:
 5. Withdrawal requests use ZK proofs for cross-chain state verification
 6. The Strategist orchestrates the cross-chain program and updates the redemption rate on Ethereum
 
+## Roles and Permissions
+
+| Role | Description | Responsible Entity | Network |
+|------|-------------|------------|---------|
+| Strategist | Orchestrates cross-chain operations with highly constrained actions limited to pre-defined routes. Critical responsibility is to update the redemption rate regularly. Failure to update the rate automatically pauses the vault, requiring the owner to unpause | Hadron Labs | Both Neutron and Ethereum |
+| Vault Owner | Controls the vault contract parameters and emergency functions. Only the owner can upgrade and pause the contracts | [Neutron DAO (multisig)](https://app.safe.global/home?safe=eth:0x54a37ac81263C482D6BE56F5Bd796e06e9Afa344) on Ethereum, [Neutron Valence-specific security DAO](https://daodao.zone/dao/neutron1h2lzp88kjk24sf7jfyrpd27xzfp52qerwvyxx2ds23pwavhz72asrpacva/home) on Neutron | Both Neutron and Ethereum |
+| Verification Gateway Owner | Manages the verification gateway for cross-chain state verification | Valency Security Committee | Both Neutron and Ethereum |
+
+The co-processor and light client services are trustless services managed by Valence.
+
 ## Quick Start
 
 ```bash
