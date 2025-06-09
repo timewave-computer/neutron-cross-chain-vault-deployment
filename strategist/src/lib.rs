@@ -1,4 +1,3 @@
-mod runner;
-mod strategist;
-mod strategy_config;
-mod valence_utils;
+pub mod strategist;
+pub mod strategy_config;
+pub mod valence_utils;

@@ -347,7 +347,7 @@ impl Strategy {
         let coprocessor_input = json!({"skip_response": skip_api_response});
         let skip_response_zkp = self
             .coprocessor_client
-            .prove(&self.cp_eureka_circuit_id, &coprocessor_input)
+            .prove(&self.cfg.coprocessor.eureka_circuit_id, &coprocessor_input)
             .await?;
 
         // extract the program and domain parameters by decoding the zkp
@@ -469,7 +469,7 @@ impl Strategy {
             // 5. post the proof request to the coprocessor client & await
             let vault_zkp_response = self
                 .coprocessor_client
-                .prove(&self.cp_vault_circuit_id, &withdraw_id_json)
+                .prove(&self.cfg.coprocessor.vault_circuit_id, &withdraw_id_json)
                 .await?;
 
             // extract the program and domain parameters by decoding the zkp

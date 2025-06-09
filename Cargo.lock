@@ -7301,6 +7301,7 @@ dependencies = [
  "mmvault",
  "serde",
  "serde_json",
+ "tokio",
  "types",
  "valence-account-utils",
  "valence-authorization-utils",

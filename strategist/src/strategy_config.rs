@@ -1,8 +1,8 @@
 use std::{env, error::Error, path::Path};
 
 use types::{
-    ethereum_config::EthereumStrategyConfig, gaia_config::GaiaStrategyConfig,
-    neutron_config::NeutronStrategyConfig,
+    coprocessor_config::CoprocessorStrategyConfig, ethereum_config::EthereumStrategyConfig,
+    gaia_config::GaiaStrategyConfig, neutron_config::NeutronStrategyConfig,
 };
 use valence_domain_clients::clients::{
     coprocessor::CoprocessorClient, ethereum::EthereumClient, gaia::CosmosHubClient,
@@ -19,6 +19,7 @@ pub struct StrategyConfig {
     pub ethereum: EthereumStrategyConfig,
     pub neutron: NeutronStrategyConfig,
     pub gaia: GaiaStrategyConfig,
+    pub coprocessor: CoprocessorStrategyConfig,
 }
 
 // main strategy struct that wraps around the StrategyConfig
@@ -26,10 +27,6 @@ pub struct StrategyConfig {
 pub struct Strategy {
     /// strategy name
     pub label: String,
-
-    /// coprocessor circuit IDs
-    pub cp_eureka_circuit_id: String,
-    pub cp_vault_circuit_id: String,
 
     /// top level strategy configuration
     pub cfg: StrategyConfig,
@@ -68,10 +65,6 @@ impl Strategy {
             env::var("EUREKA_SRC_CHAIN_ID").expect("IBC Eureka src chain id must be provided");
         let eureka_dest_chain_id =
             env::var("EUREKA_DEST_CHAIN_ID").expect("IBC Eureka dest chain id must be provided");
-        let cp_vault_circuit_id = env::var("COPROCESSOR_VAULT_CIRCUIT_ID")
-            .expect("Co-processor vault circuit ID must be provided");
-        let cp_eureka_circuit_id = env::var("COPROCESSOR_EUREKA_CIRCUIT_ID")
-            .expect("Co-processor eureka circuit ID must be provided");
 
         let gaia_client = CosmosHubClient::new(
             &cfg.gaia.grpc_url,
@@ -117,8 +110,6 @@ impl Strategy {
             indexer_client,
             coprocessor_client,
             ibc_eureka_client,
-            cp_eureka_circuit_id,
-            cp_vault_circuit_id,
         })
     }
 
@@ -133,15 +124,22 @@ impl Strategy {
         neutron_path: P,
         gaia_path: P,
         eth_path: P,
+        coprocessor_path: P,
     ) -> Result<Self, Box<dyn Error>> {
-        let neutron_cfg = NeutronStrategyConfig::from_file(neutron_path)?;
-        let eth_cfg = EthereumStrategyConfig::from_file(eth_path)?;
-        let gaia_cfg = GaiaStrategyConfig::from_file(gaia_path)?;
+        let neutron_cfg = NeutronStrategyConfig::from_file(neutron_path)
+            .map_err(|e| format!("invalid neutron config: {:?}", e))?;
+        let eth_cfg = EthereumStrategyConfig::from_file(eth_path)
+            .map_err(|e| format!("invalid ethereum config: {:?}", e))?;
+        let gaia_cfg = GaiaStrategyConfig::from_file(gaia_path)
+            .map_err(|e| format!("invalid gaia config: {:?}", e))?;
+        let coprocessor_cfg = CoprocessorStrategyConfig::from_file(coprocessor_path)
+            .map_err(|e| format!("invalid coprocessor config: {:?}", e))?;
 
         let strategy_cfg = StrategyConfig {
             ethereum: eth_cfg,
             neutron: neutron_cfg,
             gaia: gaia_cfg,
+            coprocessor: coprocessor_cfg,
         };
 
         Self::new(strategy_cfg).await
