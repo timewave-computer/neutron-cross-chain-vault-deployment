@@ -1,13 +1,13 @@
 use std::{env, error::Error, fs};
 
-use cosmwasm_std::{to_json_binary, Binary, Uint128};
+use cosmwasm_std::Binary;
 use serde::Deserialize;
 use sp1_sdk::{HashableKey, SP1VerifyingKey};
 use types::{
     gaia_config::GaiaStrategyConfig,
     labels::{
-        ICA_TRANSFER_LABEL, MARS_LEND_LABEL, MARS_WITHDRAW_LABEL, PHASE_CHANGE_LABEL,
-        REGISTER_OBLIGATION_LABEL, SETTLE_OBLIGATION_LABEL, SUPERVAULT_LP_LABEL,
+        ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_LABEL, MARS_WITHDRAW_LABEL,
+        REGISTER_OBLIGATION_LABEL, SETTLE_OBLIGATION_LABEL,
     },
     neutron_config::NeutronStrategyConfig,
 };
@@ -171,7 +171,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     authorizations.push(authorization_ica_transfer);
 
-    // Subroutine for Mars lending which involves forward and lend
+    // Subroutine for Mars lending and Supervault LP providing which involves Split, Lend and Deposit
     let forward_function = AtomicFunction {
         domain: Domain::Main,
         message_details: MessageDetails {
@@ -180,12 +180,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 name: "process_function".to_string(),
                 params_restrictions: Some(vec![ParamRestriction::MustBeIncluded(vec![
                     "process_function".to_string(),
-                    "forward".to_string(),
+                    "split".to_string(),
                 ])]),
             },
         },
         contract_address: LibraryAccountType::Addr(
-            ntrn_strategy_config.libraries.deposit_forwarder.clone(),
+            ntrn_strategy_config.libraries.deposit_splitter.clone(),
         ),
     };
     let lend_function = AtomicFunction {
@@ -204,19 +204,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             ntrn_strategy_config.libraries.mars_lending.clone(),
         ),
     };
-    let subroutine_mars_lending = AtomicSubroutineBuilder::new()
-        .with_function(forward_function.clone())
-        .with_function(lend_function)
-        .build();
-    let authorization_mars_lending = AuthorizationBuilder::new()
-        .with_label(MARS_LEND_LABEL)
-        .with_mode(authorization_permissioned_mode.clone())
-        .with_subroutine(subroutine_mars_lending)
-        .build();
-    authorizations.push(authorization_mars_lending);
-
-    // Authorization for Supervault lp
-    let supervault_lp_function = AtomicFunction {
+    let provide_liquidity_function = AtomicFunction {
         domain: Domain::Main,
         message_details: MessageDetails {
             message_type: MessageType::CosmwasmExecuteMsg,
@@ -233,17 +221,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
         ),
     };
 
-    let subroutine_supervault_lp = AtomicSubroutineBuilder::new()
-        .with_function(forward_function)
-        .with_function(supervault_lp_function)
+    let subroutine_lending_and_providing_liquidity = AtomicSubroutineBuilder::new()
+        .with_function(forward_function.clone())
+        .with_function(lend_function)
+        .with_function(provide_liquidity_function)
         .build();
 
-    let authorization_supervault_lp = AuthorizationBuilder::new()
-        .with_label(SUPERVAULT_LP_LABEL)
+    let authorization_lending_and_providing_liquidity = AuthorizationBuilder::new()
+        .with_label(LEND_AND_PROVIDE_LIQUIDITY_LABEL)
         .with_mode(authorization_permissioned_mode.clone())
-        .with_subroutine(subroutine_supervault_lp)
+        .with_subroutine(subroutine_lending_and_providing_liquidity)
         .build();
-    authorizations.push(authorization_supervault_lp);
+    authorizations.push(authorization_lending_and_providing_liquidity);
 
     // Authorization for Mars withdrawing
     let withdraw_function = AtomicFunction {
@@ -300,156 +289,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .build();
     authorizations.push(authorization_settle_obligation);
 
-    // Phase change authorization
-    // This will include 3 operations:
-    // 1. Update the phase in the clearing queue, by updating the config and setting the boolean for supervaults phase to true
-    // 2. Update the deposit forwarder to now forward to supervaults deposit account
-    // 3. Update the Mars lending library to now have the deposit account as output account
-    let clearing_queue_update_function = AtomicFunction {
-        domain: Domain::Main,
-        message_details: MessageDetails {
-            message_type: MessageType::CosmwasmExecuteMsg,
-            message: Message {
-                name: "update_config".to_string(),
-                params_restrictions: Some(vec![
-                    ParamRestriction::MustBeValue(
-                        vec![
-                            "update_config".to_string(),
-                            "new_config".to_string(),
-                            "super_vaults_phase".to_string(),
-                        ],
-                        to_json_binary(&true).unwrap(),
-                    ),
-                    ParamRestriction::CannotBeIncluded(vec![
-                        "update_config".to_string(),
-                        "new_config".to_string(),
-                        "settlement_acc_addr".to_string(),
-                    ]),
-                    ParamRestriction::CannotBeIncluded(vec![
-                        "update_config".to_string(),
-                        "new_config".to_string(),
-                        "denom".to_string(),
-                    ]),
-                    ParamRestriction::CannotBeIncluded(vec![
-                        "update_config".to_string(),
-                        "new_config".to_string(),
-                        "receiver".to_string(),
-                    ]),
-                    ParamRestriction::CannotBeIncluded(vec![
-                        "update_config".to_string(),
-                        "new_config".to_string(),
-                        "latest_id".to_string(),
-                    ]),
-                    ParamRestriction::CannotBeIncluded(vec![
-                        "update_config".to_string(),
-                        "new_config".to_string(),
-                        "supervault_addr".to_string(),
-                    ]),
-                    ParamRestriction::CannotBeIncluded(vec![
-                        "update_config".to_string(),
-                        "new_config".to_string(),
-                        "supervault_sender".to_string(),
-                    ]),
-                ]),
-            },
-        },
-        contract_address: LibraryAccountType::Addr(
-            ntrn_strategy_config.libraries.clearing_queue.clone(),
-        ),
-    };
-
-    let deposit_forwarder_update_function = AtomicFunction {
-        domain: Domain::Main,
-        message_details: MessageDetails {
-            message_type: MessageType::CosmwasmExecuteMsg,
-            message: Message {
-                name: "update_config".to_string(),
-                params_restrictions: Some(vec![
-                    ParamRestriction::MustBeValue(
-                        vec![
-                            "update_config".to_string(),
-                            "new_config".to_string(),
-                            "output_addr".to_string(),
-                        ],
-                        to_json_binary(&ntrn_strategy_config.accounts.supervault_deposit).unwrap(),
-                    ),
-                    ParamRestriction::CannotBeIncluded(vec![
-                        "update_config".to_string(),
-                        "new_config".to_string(),
-                        "input_addr".to_string(),
-                    ]),
-                    ParamRestriction::CannotBeIncluded(vec![
-                        "update_config".to_string(),
-                        "new_config".to_string(),
-                        "forwarding_configs".to_string(),
-                    ]),
-                    ParamRestriction::CannotBeIncluded(vec![
-                        "update_config".to_string(),
-                        "new_config".to_string(),
-                        "forwarding_constraints".to_string(),
-                    ]),
-                ]),
-            },
-        },
-        contract_address: LibraryAccountType::Addr(
-            ntrn_strategy_config.libraries.deposit_forwarder.clone(),
-        ),
-    };
-
-    let mars_lending_update_function = AtomicFunction {
-        domain: Domain::Main,
-        message_details: MessageDetails {
-            message_type: MessageType::CosmwasmExecuteMsg,
-            message: Message {
-                name: "update_config".to_string(),
-                params_restrictions: Some(vec![
-                    ParamRestriction::MustBeValue(
-                        vec![
-                            "update_config".to_string(),
-                            "new_config".to_string(),
-                            "output_addr".to_string(),
-                        ],
-                        to_json_binary(&ntrn_strategy_config.accounts.deposit).unwrap(),
-                    ),
-                    ParamRestriction::CannotBeIncluded(vec![
-                        "update_config".to_string(),
-                        "new_config".to_string(),
-                        "input_addr".to_string(),
-                    ]),
-                    ParamRestriction::CannotBeIncluded(vec![
-                        "update_config".to_string(),
-                        "new_config".to_string(),
-                        "credit_manager_addr".to_string(),
-                    ]),
-                    ParamRestriction::CannotBeIncluded(vec![
-                        "update_config".to_string(),
-                        "new_config".to_string(),
-                        "denom".to_string(),
-                    ]),
-                ]),
-            },
-        },
-        contract_address: LibraryAccountType::Addr(
-            ntrn_strategy_config.libraries.mars_lending.clone(),
-        ),
-    };
-
-    let subroutine_phase_change = AtomicSubroutineBuilder::new()
-        .with_function(clearing_queue_update_function)
-        .with_function(deposit_forwarder_update_function)
-        .with_function(mars_lending_update_function)
-        .build();
-
-    // This one will only be called once by the strategist and can't be undone
-    let authorization_phase_change = AuthorizationBuilder::new()
-        .with_label(PHASE_CHANGE_LABEL)
-        .with_mode(AuthorizationModeInfo::Permissioned(
-            PermissionTypeInfo::WithCallLimit(vec![(strategist.clone(), Uint128::one())]),
-        ))
-        .with_subroutine(subroutine_phase_change)
-        .build();
-
-    authorizations.push(authorization_phase_change);
+    // TODO: need to prepare the phase change authorization
+    // And decide who can execute it
 
     // Add all authorizations to the authorization contract
     let create_authorizations =

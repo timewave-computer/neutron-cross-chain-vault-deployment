@@ -53,6 +53,7 @@ struct Vault {
     deposit_fee_bps: u32,
     withdraw_rate_bps: u32,
     starting_rate: U256,
+    max_rate_update_delay: u64,
 }
 
 #[derive(Deserialize, Debug)]
@@ -108,6 +109,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         strategist: parameters.vault.strategist,
         depositFeeBps: parameters.vault.deposit_fee_bps,
         withdrawRateBps: parameters.vault.withdraw_rate_bps,
+        maxRateUpdateDelay: parameters.vault.max_rate_update_delay,
         depositCap: parameters.vault.deposit_cap,
         feeDistribution: fee_distribution_config,
     };
