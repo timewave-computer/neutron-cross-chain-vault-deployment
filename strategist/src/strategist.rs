@@ -579,16 +579,27 @@ impl Strategy {
         trace!(target: SETTLEMENT_PHASE, "starting settlement phase");
 
         // 1. query the current settlement account balance
-        let settlement_acc_bal = self
+        let settlement_acc_bal_deposit_token_bal = self
             .neutron_client
             .query_balance(
                 &self.cfg.neutron.accounts.settlement,
                 &self.cfg.neutron.denoms.deposit_token,
             )
             .await?;
+        let settlement_acc_bal_supervaults = self
+            .neutron_client
+            .query_balance(
+                &self.cfg.neutron.accounts.settlement,
+                &self.cfg.neutron.denoms.supervault_lp,
+            )
+            .await?;
         info!(
             target: SETTLEMENT_PHASE,
-            "settlement account balance deposit_token = {settlement_acc_bal}"
+            "settlement account balance deposit_token = {settlement_acc_bal_deposit_token_bal}"
+        );
+        info!(
+            target: SETTLEMENT_PHASE,
+            "settlement account balance supervaults_lp = {settlement_acc_bal_supervaults}"
         );
 
         // 2. query the Clearing Queue and calculate the total active obligations
@@ -606,22 +617,35 @@ impl Strategy {
             target: SETTLEMENT_PHASE, "clearing queue length = {}", clearing_queue.obligations.len()
         );
 
-        // sum the total obligations amount
-        let total_queue_obligations: u128 = clearing_queue
-            .obligations
-            .iter()
-            .map(|o| o.payout_coin.amount.u128())
-            .sum();
+        let mut deposit_obligation_total = 0;
+        let mut lp_obligation_total = 0;
+
+        // iterate through all obligations and sum up the coin amounts
+        for withdraw_obligation in clearing_queue.obligations.iter() {
+            for payout_coin in withdraw_obligation.payout_coins.iter() {
+                if payout_coin.denom == self.cfg.neutron.denoms.deposit_token {
+                    deposit_obligation_total += payout_coin.amount.u128();
+                } else if payout_coin.denom == self.cfg.neutron.denoms.supervault_lp {
+                    lp_obligation_total += payout_coin.amount.u128();
+                } else {
+                    warn!(target: SETTLEMENT_PHASE, "obligation contains unrecognized denom: {}", payout_coin.denom);
+                }
+            }
+        }
+
         info!(
-            target: SETTLEMENT_PHASE, "total obligations deposit_token = {total_queue_obligations}"
+            target: SETTLEMENT_PHASE, "total obligations deposit_token = {deposit_obligation_total}"
+        );
+        info!(
+            target: SETTLEMENT_PHASE, "total obligations supervaults_lp = {lp_obligation_total}"
         );
 
         // 3. if settlement account balance is insufficient to cover the active
         // obligations, we perform the Mars protocol withdrawals
-        if settlement_acc_bal < total_queue_obligations {
+        if settlement_acc_bal_deposit_token_bal < deposit_obligation_total {
             // 3. simulate Mars protocol withdrawal to obtain the funds necessary
             // to fulfill all active withdrawal requests
-            let obligations_delta = total_queue_obligations - settlement_acc_bal;
+            let obligations_delta = deposit_obligation_total - settlement_acc_bal_deposit_token_bal;
             info!(
                 target: SETTLEMENT_PHASE, "settlement_account deposit_token balance deficit = {obligations_delta}"
             );

@@ -6,7 +6,7 @@ use std::{
     time::SystemTime,
 };
 
-use cosmwasm_std::{Binary, Uint128, Uint64};
+use cosmwasm_std::{Binary, Decimal, Uint128, Uint64};
 use serde::Deserialize;
 use sp1_sdk::{HashableKey, SP1VerifyingKey};
 use types::neutron_config::{
@@ -370,7 +370,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         latest_id: None,
         supervault_addr: params.program.supervault.clone(),
         supervaults_sender: predicted_base_accounts[2].clone(), // Input account of supervaults lper library
-        supervaults_phase: false,                               // Set to false for phase 1
+        settlement_ratio: Decimal::from_ratio(80u128, 100u128) // TODO: replace with cfg param
     };
     let instantiate_clearing_queue_msg = valence_library_utils::msg::InstantiateMsg::<
         valence_clearing_queue_supervaults::msg::LibraryConfig,

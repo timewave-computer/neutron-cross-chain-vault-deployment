@@ -1,6 +1,5 @@
 use dotenv::dotenv;
-use env_logger;
-use log::info;
+use log::{info, warn};
 use std::{env, error::Error};
 use valence_strategist_utils::worker::ValenceWorker;
 
@@ -46,7 +45,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let strategist_join_handle = strategy.start();
 
     // join here will wait for the strategist thread to finish which should never happen in practice since it runs an infinite stayalive loop
-    strategist_join_handle.join().unwrap();
+    match strategist_join_handle.join() {
+        Ok(t) => warn!(target: RUNNER, "strategist thread completed: {:?}", t),
+        Err(e) => warn!(target: RUNNER, "strategist thread completed with error: {:?}", e),
+    }
 
     Ok(())
 }
