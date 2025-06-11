@@ -6,7 +6,12 @@ use alloy::{
 };
 use async_trait::async_trait;
 use cosmwasm_std::{Addr, Decimal, Uint128, Uint256, to_json_binary};
-use log::info;
+use log::{
+    debug,
+    kv::{Key, Source},
+    warn,
+};
+use log::{info, trace};
 use serde_json::json;
 use types::{
     labels::{
@@ -34,6 +39,12 @@ use valence_strategist_utils::worker::ValenceWorker;
 use crate::strategy_config::Strategy;
 
 const SCALING_FACTOR: u128 = 1_000_000_000_000;
+
+// logging targets
+const DEPOSIT_PHASE: &str = "deposit";
+const UPDATE_PHASE: &str = "update";
+const SETTLEMENT_PHASE: &str = "settlement";
+const REGISTRATION_PHASE: &str = "registration";
 
 // implement the ValenceWorker trait for the Strategy struct.
 // This trait defines the main loop of the strategy and inherits
@@ -74,6 +85,8 @@ impl Strategy {
         &mut self,
         eth_rp: &CustomProvider,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        trace!(target: UPDATE_PHASE, "starting vault update phase");
+
         let eth_deposit_acc_contract =
             BaseAccount::new(self.cfg.ethereum.accounts.deposit, &eth_rp);
         let one_way_vault_contract =
@@ -317,6 +330,8 @@ impl Strategy {
         &mut self,
         eth_rp: &CustomProvider,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        trace!(target: DEPOSIT_PHASE, "starting deposit phase");
+
         let eth_wbtc_contract = ERC20::new(self.cfg.ethereum.denoms.deposit_token, &eth_rp);
         let eth_deposit_acc = BaseAccount::new(self.cfg.ethereum.accounts.deposit, &eth_rp);
         let eth_auth_contract = Authorization::new(self.cfg.ethereum.authorizations, &eth_rp);
@@ -327,10 +342,12 @@ impl Strategy {
             .query(eth_wbtc_contract.balanceOf(*eth_deposit_acc.address()))
             .await?
             ._0;
+        trace!(target: DEPOSIT_PHASE, "eth deposit acc balance = {eth_deposit_acc_bal}");
 
         // 2. validate that the deposit account balance exceeds the eureka routing
         // threshold amount
         if eth_deposit_acc_bal < self.cfg.ethereum.ibc_transfer_threshold_amt {
+            warn!(target: DEPOSIT_PHASE, "eth deposit account balance does not meet the eureka transfer threshold; returning");
             // early return if balance is too small for the eureka transfer
             // to be worth it
             return Ok(());
@@ -345,6 +362,7 @@ impl Strategy {
         // format the response in format expected by the coprocessor and post it
         // there for proof
         let coprocessor_input = json!({"skip_response": skip_api_response});
+        debug!(target: DEPOSIT_PHASE, "posting skip-api response to co-processor");
         let skip_response_zkp = self
             .coprocessor_client
             .prove(&self.cfg.coprocessor.eureka_circuit_id, &coprocessor_input)
@@ -363,6 +381,7 @@ impl Strategy {
         );
 
         // sign and execute the tx & await its tx receipt before proceeding
+        info!(target: DEPOSIT_PHASE, "posting skip-api zkp ethereum authorizations");
         let zk_auth_exec_response = self
             .eth_client
             .sign_and_send(auth_eureka_transfer_zk_msg.into_transaction_request())
@@ -375,6 +394,7 @@ impl Strategy {
         // by the Valence Interchain Account on Neutron
         // TODO: doublecheck the precision conversion here
         let gaia_ica_balance = Uint128::from_str(&eth_deposit_acc_bal.to_string())?;
+        info!(target: DEPOSIT_PHASE, "gaia ica expected deposit token bal = {gaia_ica_balance}; starting to poll");
 
         let gaia_ica_bal = self
             .gaia_client
@@ -402,6 +422,7 @@ impl Strategy {
         let ica_ibc_transfer_msg =
             to_json_binary(&valence_ica_ibc_transfer::msg::FunctionMsgs::Transfer {})?;
 
+        info!(target: DEPOSIT_PHASE, "performing ica_ibc_transfer library update & transfer");
         self.enqueue_neutron(
             ICA_TRANSFER_LABEL,
             vec![ica_ibc_transfer_update_msg, ica_ibc_transfer_msg],
@@ -409,6 +430,8 @@ impl Strategy {
         .await?;
 
         self.tick_neutron().await?;
+
+        info!(target: DEPOSIT_PHASE, "polling for neutron deposit account to receive the funds");
 
         // 6. block execution until funds arrive to the Neutron program deposit
         // account
@@ -426,6 +449,7 @@ impl Strategy {
         // deposit account to the Mars deposit account
         // 8. use Mars Lending library to deposit funds from Mars deposit account
         // into Mars protocol
+        info!(target: DEPOSIT_PHASE, "routing funds from neutron deposit account to mars for lending");
         let forward_msg =
             to_json_binary(&valence_forwarder_library::msg::FunctionMsgs::Forward {})?;
         let mars_lend_msg = to_json_binary(&valence_mars_lending::msg::FunctionMsgs::Lend {})?;
@@ -441,6 +465,8 @@ impl Strategy {
     /// present in the Clearing Queue, generates their zero-knowledge proofs,
     /// and posts them into the Clearing queue in order.
     async fn register_withdraw_obligations(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
+        trace!(target: REGISTRATION_PHASE, "starting withdraw obligation registration phase");
+
         // 1. query the Clearing Queue library for the latest posted withdraw request ID
         let clearing_queue_cfg: valence_clearing_queue_supervaults::msg::Config = self
             .neutron_client
@@ -452,6 +478,10 @@ impl Strategy {
 
         // 2. get id of the latest obligation request that was registered on neutron
         let latest_registered_obligation_id = clearing_queue_cfg.latest_id.u64();
+        info!(
+            target: REGISTRATION_PHASE,
+            "latest_registered_obligation_id={latest_registered_obligation_id}"
+        );
 
         // 3. query the OneWayVault indexer to fetch all obligations that were registered
         // on the vault but are not yet registered into the queue on Neutron
@@ -459,18 +489,29 @@ impl Strategy {
             .indexer_client
             .query_vault_withdraw_requests(Some(latest_registered_obligation_id + 1))
             .await?;
+        info!(
+            target: REGISTRATION_PHASE,
+            "new_obligations = {:#?}", new_obligations
+        );
 
         // 4. process the new OneWayVault Withdraw events in order from the oldest
         // to the newest, posting them to the coprocessor to obtain a ZKP
         for (obligation_id, ..) in new_obligations {
+            trace!(
+                target: REGISTRATION_PHASE,
+                "processing obligation_id={obligation_id}"
+            );
+
             // build the json input for coprocessor client
             let withdraw_id_json = json!({"withdrawal_request_id": obligation_id});
 
             // 5. post the proof request to the coprocessor client & await
+            info!(target: REGISTRATION_PHASE, "posting zkp");
             let vault_zkp_response = self
                 .coprocessor_client
                 .prove(&self.cfg.coprocessor.vault_circuit_id, &withdraw_id_json)
                 .await?;
+            info!(target: REGISTRATION_PHASE, "received zkp from co-processor");
 
             // extract the program and domain parameters by decoding the zkp
             let (proof_program, inputs_program) = vault_zkp_response.program.decode()?;
@@ -488,6 +529,7 @@ impl Strategy {
 
             // 6. execute the zk authorization. this will perform the verification
             // and, if successful, push the msg to the processor
+            info!(target: REGISTRATION_PHASE, "executing zk authorization");
             self.neutron_client
                 .execute_wasm(
                     &self.cfg.neutron.authorizations,
@@ -511,6 +553,8 @@ impl Strategy {
     /// account with funds necessary to carry out all withdrawal obligations
     /// in the queue.
     async fn settlement(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
+        trace!(target: SETTLEMENT_PHASE, "starting settlement phase");
+
         // 1. query the current settlement account balance
         let settlement_acc_bal = self
             .neutron_client
@@ -519,6 +563,10 @@ impl Strategy {
                 &self.cfg.neutron.denoms.deposit_token,
             )
             .await?;
+        info!(
+            target: SETTLEMENT_PHASE,
+            "settlement account balance deposit_token = {settlement_acc_bal}"
+        );
 
         // 2. query the Clearing Queue and calculate the total active obligations
         let clearing_queue: ObligationsResponse = self
@@ -531,6 +579,9 @@ impl Strategy {
                 },
             )
             .await?;
+        info!(
+            target: SETTLEMENT_PHASE, "clearing queue length = {}", clearing_queue.obligations.len()
+        );
 
         // sum the total obligations amount
         let total_queue_obligations: u128 = clearing_queue
@@ -538,6 +589,9 @@ impl Strategy {
             .iter()
             .map(|o| o.payout_coin.amount.u128())
             .sum();
+        info!(
+            target: SETTLEMENT_PHASE, "total obligations deposit_token = {total_queue_obligations}"
+        );
 
         // 3. if settlement account balance is insufficient to cover the active
         // obligations, we perform the Mars protocol withdrawals
@@ -545,9 +599,15 @@ impl Strategy {
             // 3. simulate Mars protocol withdrawal to obtain the funds necessary
             // to fulfill all active withdrawal requests
             let obligations_delta = total_queue_obligations - settlement_acc_bal;
+            info!(
+                target: SETTLEMENT_PHASE, "settlement_account deposit_token balance deficit = {obligations_delta}"
+            );
 
             // 4. call the Mars lending library to perform the withdrawal.
             // This will deposit the underlying assets directly to the settlement account.
+            info!(
+                target: SETTLEMENT_PHASE, "withdrawing {obligations_delta} from mars lending position"
+            );
             let mars_withdraw_msg =
                 to_json_binary(&valence_mars_lending::msg::FunctionMsgs::Withdraw {
                     amount: Some(obligations_delta.into()),
@@ -561,7 +621,10 @@ impl Strategy {
 
         // 5. process the Clearing Queue settlement requests by enqueuing the settlement
         // messages to the processor and ticking
-        for _ in clearing_queue.obligations {
+        for obligation in clearing_queue.obligations {
+            info!(
+                target: SETTLEMENT_PHASE, "settling obligation #{}", obligation.id
+            );
             let obligation_settlement_msg = to_json_binary(
                 &valence_clearing_queue_supervaults::msg::FunctionMsgs::SettleNextObligation {},
             )?;
