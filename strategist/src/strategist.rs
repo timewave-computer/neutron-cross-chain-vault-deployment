@@ -6,11 +6,7 @@ use alloy::{
 };
 use async_trait::async_trait;
 use cosmwasm_std::{Addr, Decimal, Uint128, Uint256, to_json_binary};
-use log::{
-    debug,
-    kv::{Key, Source},
-    warn,
-};
+use log::{debug, warn};
 use log::{info, trace};
 use serde_json::json;
 use types::{
@@ -99,25 +95,31 @@ impl Strategy {
             .query(eth_deposit_denom_contract.balanceOf(*eth_deposit_acc_contract.address()))
             .await?
             ._0;
+        info!(target: UPDATE_PHASE, "eth_deposit_acc_balance={eth_deposit_acc_balance}");
+
         let eth_deposit_token_total_uint256 =
             Uint256::from_be_bytes(eth_deposit_acc_balance.to_be_bytes());
         let eth_deposit_token_total_uint128 =
             Uint128::from_str(&eth_deposit_token_total_uint256.to_string())?;
+        debug!(target: UPDATE_PHASE, "eth_deposit_acc_balance_u128={eth_deposit_token_total_uint128}");
 
         let eth_vault_issued_shares = self
             .eth_client
             .query(one_way_vault_contract.totalSupply())
             .await?
             ._0;
+        info!(target: UPDATE_PHASE, "eth_vault_issued_shares={eth_vault_issued_shares}");
         let eth_vault_issued_shares_uint256 =
             Uint256::from_be_bytes(eth_vault_issued_shares.to_be_bytes());
         let eth_vault_issued_shares_uint128 =
             Uint128::from_str(&eth_vault_issued_shares_uint256.to_string())?;
+        debug!(target: UPDATE_PHASE, "eth_vault_issued_shares_uint128={eth_vault_issued_shares_uint128}");
 
         let gaia_ica_balance = self
             .gaia_client
             .query_balance(&self.cfg.gaia.ica_address, &self.cfg.gaia.deposit_denom)
             .await?;
+        info!(target: UPDATE_PHASE, "gaia_ica_balance={gaia_ica_balance}");
 
         let neutron_deposit_acc_balance = self
             .neutron_client
@@ -126,6 +128,7 @@ impl Strategy {
                 &self.cfg.neutron.denoms.deposit_token,
             )
             .await?;
+        info!(target: UPDATE_PHASE, "neutron_deposit_acc_balance={neutron_deposit_acc_balance}");
 
         let neutron_settlement_acc_deposit_token_balance = self
             .neutron_client
@@ -134,6 +137,8 @@ impl Strategy {
                 &self.cfg.neutron.denoms.deposit_token,
             )
             .await?;
+        info!(target: UPDATE_PHASE, "neutron_settlement_acc_deposit_token_balance={neutron_settlement_acc_deposit_token_balance}");
+
         let neutron_mars_deposit_acc_balance = self
             .neutron_client
             .query_balance(
@@ -141,6 +146,8 @@ impl Strategy {
                 &self.cfg.neutron.denoms.deposit_token,
             )
             .await?;
+        info!(target: UPDATE_PHASE, "neutron_mars_deposit_acc_balance={neutron_mars_deposit_acc_balance}");
+
         let neutron_supervault_acc_balance = self
             .neutron_client
             .query_balance(
@@ -148,12 +155,16 @@ impl Strategy {
                 &self.cfg.neutron.denoms.deposit_token,
             )
             .await?;
+        info!(target: UPDATE_PHASE, "neutron_supervault_acc_balance={neutron_supervault_acc_balance}");
 
         // both mars and supervaults positions are derivatives of the
         // underlying denom. we do the necessary accounting for both and
         // fetch the tvl expressed in the underlying deposit token.
         let mars_tvl = self.mars_accounting().await?;
+        info!(target: UPDATE_PHASE, "mars_tvl={mars_tvl}");
+
         let supervaults_tvl = self.supervaults_accounting().await?;
+        info!(target: UPDATE_PHASE, "supervaults_tvl={supervaults_tvl}");
 
         // sum all deposit assets
         let deposit_token_total: u128 = [
@@ -168,6 +179,7 @@ impl Strategy {
         ]
         .iter()
         .sum();
+        info!(target: UPDATE_PHASE, "deposit token total amount={deposit_token_total}");
 
         // rate =  effective_total_assets / (effective_vault_shares * scaling_factor)
         let redemption_rate_decimal = Decimal::from_ratio(
@@ -176,11 +188,14 @@ impl Strategy {
             // TODO: check if this scaling factor makes sense
             eth_vault_issued_shares_uint128.checked_mul(SCALING_FACTOR.into())?,
         );
+        info!(target: UPDATE_PHASE, "redemption rate decimal={redemption_rate_decimal}");
 
         let redemption_rate_sol_u256 = U256::from(redemption_rate_decimal.atomics().u128());
+        info!(target: UPDATE_PHASE, "redemption_rate_sol_u256={redemption_rate_sol_u256}");
 
         let update_tx = one_way_vault_contract.update(redemption_rate_sol_u256);
 
+        info!(target: UPDATE_PHASE, "updating ethereum vault redemption rate");
         let update_result = self
             .eth_client
             .execute_tx(update_tx.into_transaction_request())
