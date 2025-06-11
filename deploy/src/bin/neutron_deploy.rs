@@ -18,8 +18,10 @@ use valence_domain_clients::{
     coprocessor::base_client::CoprocessorBaseClient,
     cosmos::{grpc_client::GrpcSigningClient, wasm_client::WasmClient},
 };
-use valence_forwarder_library::msg::{ForwardingConstraints, UncheckedForwardingConfig};
+
+use valence_dynamic_ratio_query_provider::msg::DenomSplitMap;
 use valence_library_utils::{denoms::UncheckedDenom, LibraryAccountType};
+use valence_splitter_library::msg::UncheckedSplitAmount;
 
 #[derive(Deserialize, Debug)]
 struct UploadedContracts {
@@ -41,6 +43,7 @@ struct General {
     chain_id: String,
     owner: String,
     valence_owner: String,
+    strategist: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -60,6 +63,9 @@ struct Program {
     supervault_asset1: String,
     supervault_asset2: String,
     supervault_lp_denom: String,
+    initial_split_percentage_to_mars: u64,
+    initial_split_percentage_to_supervault: u64,
+    initial_settlement_ratio_percentage: u64,
 }
 
 #[derive(Deserialize, Debug)]
@@ -103,12 +109,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let code_id_processor = *uploaded_contracts.code_ids.get("processor").unwrap();
     let code_id_ica_ibc_transfer_library =
         *uploaded_contracts.code_ids.get("ica_ibc_transfer").unwrap();
-    let code_id_forwarder_library = *uploaded_contracts
+    let code_id_splitter_library = *uploaded_contracts.code_ids.get("splitter_library").unwrap();
+    let _code_id_forwarder_library = *uploaded_contracts
         .code_ids
         .get("forwarder_library")
         .unwrap();
     let code_id_mars_lending = *uploaded_contracts.code_ids.get("mars_lending").unwrap();
     let code_id_supervaults_lper = *uploaded_contracts.code_ids.get("supervaults_lper").unwrap();
+    let _code_id_supervaults_withdrawer = *uploaded_contracts
+        .code_ids
+        .get("supervaults_withdrawer")
+        .unwrap();
     let code_id_clearing_queue = *uploaded_contracts
         .code_ids
         .get("clearing_queue_supervaults")
@@ -121,6 +132,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let code_id_verification_gateway = *uploaded_contracts
         .code_ids
         .get("verification_gateway")
+        .unwrap();
+    let code_id_dynamic_ratio_query_provider = *uploaded_contracts
+        .code_ids
+        .get("dynamic_ratio_query_provider")
         .unwrap();
 
     let now = SystemTime::now();
@@ -267,37 +282,91 @@ async fn main() -> Result<(), Box<dyn Error>> {
         ica_ibc_transfer_library_address
     );
 
-    // Instantiate the deposit forwarder library
-    // This library will have Mars deposit account as output in phase 1 and supervault deposit account in phase 2
-    let deposit_forwarder_config = valence_forwarder_library::msg::LibraryConfig {
-        input_addr: LibraryAccountType::Addr(predicted_base_accounts[0].clone()),
-        output_addr: LibraryAccountType::Addr(predicted_base_accounts[1].clone()),
-        forwarding_configs: vec![UncheckedForwardingConfig {
-            denom: UncheckedDenom::Native(params.program.deposit_token_on_neutron_denom.clone()),
-            max_amount: Uint128::MAX,
-        }],
-        forwarding_constraints: ForwardingConstraints::default(),
-    };
+    // Instantiate the Dynamic ratio query provider library
+    let receiver_to_split_perc = HashMap::from([
+        (
+            predicted_base_accounts[1].clone(), // Mars deposit account
+            Decimal::percent(params.program.initial_split_percentage_to_mars),
+        ),
+        (
+            predicted_base_accounts[2].clone(), // Supervault deposit account
+            Decimal::percent(params.program.initial_split_percentage_to_supervault),
+        ),
+    ]);
 
-    let instantiate_deposit_forwarder_msg = valence_library_utils::msg::InstantiateMsg::<
-        valence_forwarder_library::msg::LibraryConfig,
-    > {
-        owner: params.general.owner.clone(),
-        processor: processor_address.clone(),
-        config: deposit_forwarder_config,
-    };
+    let denom_to_splits = HashMap::from([(
+        params.program.deposit_token_on_neutron_denom.clone(),
+        receiver_to_split_perc,
+    )]);
 
-    let deposit_forwarder_library_address = neutron_client
+    let dynamic_ratio_query_provider_instantiate_msg =
+        valence_dynamic_ratio_query_provider::msg::InstantiateMsg {
+            admin: params.general.strategist,
+            split_cfg: DenomSplitMap {
+                split_cfg: denom_to_splits,
+            },
+        };
+
+    let dynamic_ratio_query_provider_address = neutron_client
         .instantiate(
-            code_id_forwarder_library,
-            "deposit_forwarder".to_string(),
-            instantiate_deposit_forwarder_msg,
+            code_id_dynamic_ratio_query_provider,
+            "dynamic_ratio_query_provider".to_string(),
+            dynamic_ratio_query_provider_instantiate_msg,
             None,
         )
         .await?;
     println!(
-        "Deposit forwarder library instantiated: {}",
-        deposit_forwarder_library_address
+        "Dynamic ratio query provider library instantiated: {}",
+        dynamic_ratio_query_provider_address
+    );
+
+    // Instantiate the deposit splitter library
+    // This library will split to the Mars deposit account and the Supervault deposit account
+    let deposit_splitter_config = valence_splitter_library::msg::LibraryConfig {
+        input_addr: LibraryAccountType::Addr(predicted_base_accounts[0].clone()),
+        splits: vec![
+            valence_splitter_library::msg::UncheckedSplitConfig {
+                denom: UncheckedDenom::Native(
+                    params.program.deposit_token_on_neutron_denom.clone(),
+                ),
+                account: LibraryAccountType::Addr(predicted_base_accounts[1].clone()), // Mars deposit account
+                amount: UncheckedSplitAmount::DynamicRatio {
+                    contract_addr: dynamic_ratio_query_provider_address.clone(),
+                    params: predicted_base_accounts[1].clone(),
+                },
+            },
+            valence_splitter_library::msg::UncheckedSplitConfig {
+                denom: UncheckedDenom::Native(
+                    params.program.deposit_token_on_neutron_denom.clone(),
+                ),
+                account: LibraryAccountType::Addr(predicted_base_accounts[2].clone()), // Supervault deposit account
+                amount: UncheckedSplitAmount::DynamicRatio {
+                    contract_addr: dynamic_ratio_query_provider_address.clone(),
+                    params: predicted_base_accounts[2].clone(),
+                },
+            },
+        ],
+    };
+
+    let instantiate_deposit_splitter_msg = valence_library_utils::msg::InstantiateMsg::<
+        valence_splitter_library::msg::LibraryConfig,
+    > {
+        owner: params.general.owner.clone(),
+        processor: processor_address.clone(),
+        config: deposit_splitter_config,
+    };
+
+    let deposit_splitter_library_address = neutron_client
+        .instantiate(
+            code_id_splitter_library,
+            "deposit_splitter".to_string(),
+            instantiate_deposit_splitter_msg,
+            None,
+        )
+        .await?;
+    println!(
+        "Deposit splitter library instantiated: {}",
+        deposit_splitter_library_address
     );
 
     // Instantiate the Mars lending library
@@ -370,7 +439,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         latest_id: None,
         supervault_addr: params.program.supervault.clone(),
         supervaults_sender: predicted_base_accounts[2].clone(), // Input account of supervaults lper library
-        settlement_ratio: Decimal::from_ratio(80u128, 100u128) // TODO: replace with cfg param
+        settlement_ratio: Decimal::percent(params.program.initial_settlement_ratio_percentage),
     };
     let instantiate_clearing_queue_msg = valence_library_utils::msg::InstantiateMsg::<
         valence_clearing_queue_supervaults::msg::LibraryConfig,
@@ -392,6 +461,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         "Clearing queue library instantiated: {}",
         clearing_queue_library_address
     );
+
+    // TODO: need to instantiate all the phase shift contracts, potentially using dummy values for now that will be updated
+    // later by the owner.
 
     // Instantiate all acounts now
     // First the ICA
@@ -417,7 +489,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Now the rest
     let ica_deposit_account = valence_account_utils::msg::InstantiateMsg {
         admin: params.general.owner.clone(),
-        approved_libraries: vec![deposit_forwarder_library_address.clone()],
+        approved_libraries: vec![deposit_splitter_library_address.clone()],
     };
     let ica_deposit_account_address = neutron_client
         .instantiate2(
@@ -502,7 +574,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let libraries = NeutronLibraries {
-        deposit_forwarder: deposit_forwarder_library_address,
+        deposit_splitter: deposit_splitter_library_address,
         mars_lending: mars_lending_library_address,
         supervault_lper: supervaults_lper_library_address,
         clearing_queue: clearing_queue_library_address,

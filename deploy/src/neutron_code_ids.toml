@@ -1,11 +1,14 @@
 [code_ids]
-authorization              = 3728
-verification_gateway       = 3727
-supervaults_lper           = 3704
-interchain_account         = 3702
-mars_lending               = 3707
-ica_ibc_transfer           = 3709
-processor                  = 3708
-forwarder_library          = 3701
-base_account               = 3703
-clearing_queue_supervaults = 3714
+supervaults_withdrawer       = 3780
+verification_gateway         = 3772
+clearing_queue_supervaults   = 3777
+dynamic_ratio_query_provider = 3769
+supervaults_lper             = 3774
+forwarder_library            = 3701
+splitter_library             = 3771
+authorization                = 3779
+interchain_account           = 3770
+ica_ibc_transfer             = 3778
+mars_lending                 = 3775
+base_account                 = 3773
+processor                    = 3776

@@ -12,8 +12,7 @@ use serde_json::json;
 use tokio::time::sleep;
 use types::{
     labels::{
-        ICA_TRANSFER_LABEL, MARS_LEND_LABEL, MARS_WITHDRAW_LABEL, REGISTER_OBLIGATION_LABEL,
-        SETTLE_OBLIGATION_LABEL,
+        ICA_TRANSFER_LABEL, MARS_WITHDRAW_LABEL, REGISTER_OBLIGATION_LABEL, SETTLE_OBLIGATION_LABEL,
     },
     sol_types::{
         Authorization, BaseAccount, ERC20,
@@ -476,8 +475,8 @@ impl Strategy {
         let forward_msg =
             to_json_binary(&valence_forwarder_library::msg::FunctionMsgs::Forward {})?;
         let mars_lend_msg = to_json_binary(&valence_mars_lending::msg::FunctionMsgs::Lend {})?;
-        self.enqueue_neutron(MARS_LEND_LABEL, vec![forward_msg, mars_lend_msg])
-            .await?;
+        // self.enqueue_neutron(MARS_LEND_LABEL, vec![forward_msg, mars_lend_msg])
+        //     .await?;
 
         self.tick_neutron().await?;
 

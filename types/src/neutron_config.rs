@@ -61,8 +61,8 @@ pub struct NeutronAccounts {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NeutronLibraries {
-    /// Deposit forwarder where funds will be moved from deposit account to either Mars deposit or Supervault deposit
-    pub deposit_forwarder: String,
+    /// Deposit splitter where funds will be moved from deposit account to both Mars deposit or Supervault deposit according to the split ratio
+    pub deposit_splitter: String,
     /// Mars lending library
     pub mars_lending: String,
     /// Supervault lper

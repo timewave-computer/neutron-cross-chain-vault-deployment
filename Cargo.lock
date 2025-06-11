@@ -2353,12 +2353,15 @@ dependencies = [
  "valence-authorization-utils",
  "valence-clearing-queue-supervaults",
  "valence-domain-clients",
+ "valence-dynamic-ratio-query-provider",
  "valence-forwarder-library",
  "valence-ica-ibc-transfer",
  "valence-library-utils",
  "valence-mars-lending",
  "valence-processor-utils",
+ "valence-splitter-library",
  "valence-supervaults-lper",
+ "valence-supervaults-withdrawer",
  "valence-verification-gateway",
 ]
 
@@ -8535,6 +8538,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "valence-dynamic-ratio-query-provider"
+version = "0.2.0"
+source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#c39b181b743d29c8a980a0e2634c142cc0e858fc"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-ownable",
+ "cw-storage-plus",
+ "cw-utils",
+ "cw2",
+ "getset",
+ "schemars",
+ "serde",
+ "thiserror 1.0.69",
+ "valence-library-base",
+ "valence-library-utils",
+ "valence-macros",
+]
+
+[[package]]
 name = "valence-forwarder-library"
 version = "0.2.0"
 source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#c39b181b743d29c8a980a0e2634c142cc0e858fc"
@@ -8687,6 +8710,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "valence-splitter-library"
+version = "0.2.0"
+source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#c39b181b743d29c8a980a0e2634c142cc0e858fc"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-ownable",
+ "cw-storage-plus",
+ "cw-utils",
+ "getset",
+ "itertools 0.13.0",
+ "schemars",
+ "serde",
+ "thiserror 1.0.69",
+ "valence-library-base",
+ "valence-library-utils",
+ "valence-macros",
+]
+
+[[package]]
 name = "valence-strategist-utils"
 version = "0.2.0"
 source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#c39b181b743d29c8a980a0e2634c142cc0e858fc"
@@ -8726,6 +8769,21 @@ dependencies = [
  "neutron-std 5.1.2",
  "valence-account-utils",
  "valence-library-utils",
+]
+
+[[package]]
+name = "valence-supervaults-withdrawer"
+version = "0.2.0"
+source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#c39b181b743d29c8a980a0e2634c142cc0e858fc"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cw-ownable",
+ "valence-account-utils",
+ "valence-library-base",
+ "valence-library-utils",
+ "valence-macros",
+ "valence-supervaults-utils",
 ]
 
 [[package]]
