@@ -1,4 +1,4 @@
-use std::{error::Error, str::FromStr};
+use std::{error::Error, str::FromStr, time::Duration};
 
 use alloy::{
     primitives::{Bytes, U256},
@@ -9,6 +9,7 @@ use cosmwasm_std::{Addr, Decimal, Uint128, Uint256, to_json_binary};
 use log::{debug, warn};
 use log::{info, trace};
 use serde_json::json;
+use tokio::time::sleep;
 use types::{
     labels::{
         ICA_TRANSFER_LABEL, MARS_LEND_LABEL, MARS_WITHDRAW_LABEL, REGISTER_OBLIGATION_LABEL,
@@ -36,11 +37,14 @@ use crate::strategy_config::Strategy;
 
 const SCALING_FACTOR: u128 = 1_000_000_000_000;
 
+const CYCLE_DELAY_SEC: u64 = 30;
+
 // logging targets
 const DEPOSIT_PHASE: &str = "deposit";
 const UPDATE_PHASE: &str = "update";
 const SETTLEMENT_PHASE: &str = "settlement";
 const REGISTRATION_PHASE: &str = "registration";
+const VALENCE_WORKER: &str = "valence_worker";
 
 // implement the ValenceWorker trait for the Strategy struct.
 // This trait defines the main loop of the strategy and inherits
@@ -52,7 +56,11 @@ impl ValenceWorker for Strategy {
     }
 
     async fn cycle(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
-        info!("{}: Starting cycle...", self.get_name());
+        info!(target: VALENCE_WORKER, "sleeping for {CYCLE_DELAY_SEC}sec");
+
+        sleep(Duration::from_secs(CYCLE_DELAY_SEC)).await;
+
+        info!(target: VALENCE_WORKER, "{}: Starting cycle...", self.get_name());
 
         let eth_rp: CustomProvider = self.eth_client.get_request_provider().await?;
 

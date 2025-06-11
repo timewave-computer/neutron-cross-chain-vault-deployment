@@ -1,4 +1,5 @@
 use dotenv::dotenv;
+use env_logger;
 use log::info;
 use std::{env, error::Error};
 use valence_strategist_utils::worker::ValenceWorker;
@@ -11,6 +12,9 @@ const RUNNER: &str = "runner";
 async fn main() -> Result<(), Box<dyn Error>> {
     // load environment variables
     dotenv().ok();
+
+    // initialize the logger
+    env_logger::init();
 
     info!(target: RUNNER, "starting the strategist runner");
 
@@ -39,7 +43,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     info!(target: RUNNER, "starting the strategist");
 
     // start the strategy and get the thread join handle
-    let _strategist_join_handle = strategy.start();
+    let strategist_join_handle = strategy.start();
+
+    // join here will wait for the strategist thread to finish which should never happen in practice since it runs an infinite stayalive loop
+    strategist_join_handle.join().unwrap();
 
     Ok(())
 }
