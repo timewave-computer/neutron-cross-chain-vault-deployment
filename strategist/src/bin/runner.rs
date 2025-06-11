@@ -1,13 +1,18 @@
 use dotenv::dotenv;
+use log::info;
 use std::{env, error::Error};
 use valence_strategist_utils::worker::ValenceWorker;
 
 use strategist::strategy_config::Strategy;
 
+const RUNNER: &str = "runner";
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     // load environment variables
     dotenv().ok();
+
+    info!(target: RUNNER, "starting the strategist runner");
 
     // get configuration paths from environment variables
     let neutron_cfg_path = env::var("NEUTRON_CFG_PATH")?;
@@ -15,11 +20,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let gaia_cfg_path = env::var("GAIA_CFG_PATH")?;
     let coprocessor_cfg_path = env::var("COPROCESSOR_CFG_PATH")?;
 
-    println!("Using configuration files:");
-    println!("  Neutron: {}", neutron_cfg_path);
-    println!("  Ethereum: {}", ethereum_cfg_path);
-    println!("  Gaia: {}", gaia_cfg_path);
-    println!("  Co-processor: {}", coprocessor_cfg_path);
+    info!(target: RUNNER, "Using configuration files:");
+    info!(target: RUNNER, "  Neutron: {}", neutron_cfg_path);
+    info!(target: RUNNER, "  Ethereum: {}", ethereum_cfg_path);
+    info!(target: RUNNER, "  Gaia: {}", gaia_cfg_path);
+    info!(target: RUNNER, "  Co-processor: {}", coprocessor_cfg_path);
 
     // initialize the strategy from configuration files
     let strategy = Strategy::from_files(
@@ -29,6 +34,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         &coprocessor_cfg_path,
     )
     .await?;
+
+    info!(target: RUNNER, "strategy initialized");
+    info!(target: RUNNER, "starting the strategist");
 
     // start the strategy and get the thread join handle
     let _strategist_join_handle = strategy.start();
