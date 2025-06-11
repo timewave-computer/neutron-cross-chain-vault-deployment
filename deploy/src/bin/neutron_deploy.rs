@@ -315,6 +315,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
             None,
         )
         .await?;
+    println!(
+        "Dynamic ratio query provider library instantiated: {}",
+        dynamic_ratio_query_provider_address
+    );
 
     // Instantiate the deposit splitter library
     // This library will split to the Mars deposit account and the Supervault deposit account
@@ -435,7 +439,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         latest_id: None,
         supervault_addr: params.program.supervault.clone(),
         supervaults_sender: predicted_base_accounts[2].clone(), // Input account of supervaults lper library
-        settlement_ratio: Decimal::percent(params.program.initial_settlement_ratio_percentage), // Set to false for phase 1
+        settlement_ratio: Decimal::percent(params.program.initial_settlement_ratio_percentage),
     };
     let instantiate_clearing_queue_msg = valence_library_utils::msg::InstantiateMsg::<
         valence_clearing_queue_supervaults::msg::LibraryConfig,

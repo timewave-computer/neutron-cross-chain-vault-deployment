@@ -22,7 +22,10 @@ supervault_asset2 = "ibc/4B8F0A1D3C6E5F7B8A9D3E4F5B6C7D8E9F0A1B2C3D4E5F6A7B8C9D0
 supervault_lp_denom = "factory/..." # TBD after supervaults are deployed
 initial_split_percentage_to_mars = 80
 initial_split_percentage_to_supervault = 20
-initial_settlement_ratio_percentage = 50 # How much will be settled from Mars vs Supervaults from the clearing queue
+# How much will be settled from Mars vs Supervaults from the clearing queue. Important to point out that this value is for
+# Mars, so we if we put 75 here, it means 75% of the clearing queue will be settled to Mars and 25% to Supervaults.
+initial_settlement_ratio_percentage = 50
+
 
 [coprocessor_app]
 clearing_queue_coprocessor_app_id = "..." # TBD after we have the app deployed
