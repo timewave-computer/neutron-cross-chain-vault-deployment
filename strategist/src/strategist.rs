@@ -6,13 +6,14 @@ use alloy::{
 };
 use async_trait::async_trait;
 use cosmwasm_std::{Addr, Decimal, Uint128, Uint256, to_json_binary};
-use log::{debug, warn};
+use log::warn;
 use log::{info, trace};
 use serde_json::json;
 use tokio::time::sleep;
 use types::{
     labels::{
-        ICA_TRANSFER_LABEL, MARS_WITHDRAW_LABEL, REGISTER_OBLIGATION_LABEL, SETTLE_OBLIGATION_LABEL,
+        ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_LABEL, MARS_WITHDRAW_LABEL,
+        REGISTER_OBLIGATION_LABEL, SETTLE_OBLIGATION_LABEL,
     },
     sol_types::{
         Authorization, BaseAccount, ERC20,
@@ -108,7 +109,7 @@ impl Strategy {
             Uint256::from_be_bytes(eth_deposit_acc_balance.to_be_bytes());
         let eth_deposit_token_total_uint128 =
             Uint128::from_str(&eth_deposit_token_total_uint256.to_string())?;
-        debug!(target: UPDATE_PHASE, "eth_deposit_acc_balance_u128={eth_deposit_token_total_uint128}");
+        info!(target: UPDATE_PHASE, "eth_deposit_acc_balance_u128={eth_deposit_token_total_uint128}");
 
         let eth_vault_issued_shares = self
             .eth_client
@@ -120,7 +121,7 @@ impl Strategy {
             Uint256::from_be_bytes(eth_vault_issued_shares.to_be_bytes());
         let eth_vault_issued_shares_uint128 =
             Uint128::from_str(&eth_vault_issued_shares_uint256.to_string())?;
-        debug!(target: UPDATE_PHASE, "eth_vault_issued_shares_uint128={eth_vault_issued_shares_uint128}");
+        info!(target: UPDATE_PHASE, "eth_vault_issued_shares_uint128={eth_vault_issued_shares_uint128}");
 
         let gaia_ica_balance = self
             .gaia_client
@@ -384,7 +385,7 @@ impl Strategy {
         // format the response in format expected by the coprocessor and post it
         // there for proof
         let coprocessor_input = json!({"skip_response": skip_api_response});
-        debug!(target: DEPOSIT_PHASE, "posting skip-api response to co-processor");
+        info!(target: DEPOSIT_PHASE, "posting skip-api response to co-processor");
         let skip_response_zkp = self
             .coprocessor_client
             .prove(&self.cfg.coprocessor.eureka_circuit_id, &coprocessor_input)
@@ -467,16 +468,29 @@ impl Strategy {
             )
             .await?;
 
-        // 7. use Valence Forwarder to route funds from the Neutron program
-        // deposit account to the Mars deposit account
+        info!(target: DEPOSIT_PHASE, "routing funds from neutron deposit account to mars and supervaults for lending");
+
+        // 7. use Splitter to route funds from the Neutron program
+        // deposit account to the Mars and Supervaults deposit accounts
+        let split_msg = to_json_binary(&valence_splitter_library::msg::FunctionMsgs::Split {})?;
+
         // 8. use Mars Lending library to deposit funds from Mars deposit account
         // into Mars protocol
-        info!(target: DEPOSIT_PHASE, "routing funds from neutron deposit account to mars for lending");
-        let forward_msg =
-            to_json_binary(&valence_forwarder_library::msg::FunctionMsgs::Forward {})?;
         let mars_lend_msg = to_json_binary(&valence_mars_lending::msg::FunctionMsgs::Lend {})?;
-        // self.enqueue_neutron(MARS_LEND_LABEL, vec![forward_msg, mars_lend_msg])
-        //     .await?;
+
+        // 9. use Supervaults lper library to deposit funds from Supervaults deposit account
+        // into the configured supervault
+        let supervaults_lp_msg = to_json_binary(
+            &valence_supervaults_lper::msg::FunctionMsgs::ProvideLiquidity {
+                expected_vault_ratio_range: None,
+            },
+        )?;
+
+        self.enqueue_neutron(
+            LEND_AND_PROVIDE_LIQUIDITY_LABEL,
+            vec![split_msg, mars_lend_msg, supervaults_lp_msg],
+        )
+        .await?;
 
         self.tick_neutron().await?;
 

@@ -7338,6 +7338,7 @@ dependencies = [
  "valence-library-utils",
  "valence-mars-lending",
  "valence-processor-utils",
+ "valence-splitter-library",
  "valence-strategist-utils",
  "valence-supervaults-lper",
  "valence-verification-gateway",
