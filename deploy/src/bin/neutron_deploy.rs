@@ -686,7 +686,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         supervault_lper: supervaults_lper_library_address,
         clearing_queue: clearing_queue_library_address,
         ica_transfer: ica_ibc_transfer_library_address,
-        phase_shift_maxbtc_issuer: "TODO".to_string(),
+        phase_shift_maxbtc_issuer: maxbtc_issuer_library_address,
         phase_shift_forwarder: phase_shift_forwarder_library_address,
         phase_shift_supervault_withdrawer: supervaults_withdrawer_library_address,
     };
