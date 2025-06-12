@@ -20,6 +20,7 @@ use valence_domain_clients::{
 };
 
 use valence_dynamic_ratio_query_provider::msg::DenomSplitMap;
+use valence_forwarder_library::msg::{ForwardingConstraints, UncheckedForwardingConfig};
 use valence_library_utils::{denoms::UncheckedDenom, LibraryAccountType};
 use valence_splitter_library::msg::UncheckedSplitAmount;
 
@@ -62,6 +63,7 @@ struct Program {
     supervault: String,
     supervault_asset1: String,
     supervault_asset2: String,
+    supervault_other_asset: String,
     supervault_lp_denom: String,
     initial_split_percentage_to_mars: u64,
     initial_split_percentage_to_supervault: u64,
@@ -110,13 +112,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let code_id_ica_ibc_transfer_library =
         *uploaded_contracts.code_ids.get("ica_ibc_transfer").unwrap();
     let code_id_splitter_library = *uploaded_contracts.code_ids.get("splitter_library").unwrap();
-    let _code_id_forwarder_library = *uploaded_contracts
+    let code_id_forwarder_library = *uploaded_contracts
         .code_ids
         .get("forwarder_library")
         .unwrap();
     let code_id_mars_lending = *uploaded_contracts.code_ids.get("mars_lending").unwrap();
     let code_id_supervaults_lper = *uploaded_contracts.code_ids.get("supervaults_lper").unwrap();
-    let _code_id_supervaults_withdrawer = *uploaded_contracts
+    let code_id_supervaults_withdrawer = *uploaded_contracts
         .code_ids
         .get("supervaults_withdrawer")
         .unwrap();
@@ -137,6 +139,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .code_ids
         .get("dynamic_ratio_query_provider")
         .unwrap();
+    let code_id_maxbtc_issuer = *uploaded_contracts.code_ids.get("maxbtc_issuer").unwrap();
 
     let now = SystemTime::now();
     let salt_raw = now
@@ -263,7 +266,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let instantiate_ica_ibc_transfer_msg = valence_library_utils::msg::InstantiateMsg::<
         valence_ica_ibc_transfer::msg::LibraryConfig,
     > {
-        owner: params.general.owner.clone(),
+        owner: processor_address.clone(),
         processor: processor_address.clone(),
         config,
     };
@@ -351,7 +354,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let instantiate_deposit_splitter_msg = valence_library_utils::msg::InstantiateMsg::<
         valence_splitter_library::msg::LibraryConfig,
     > {
-        owner: params.general.owner.clone(),
+        owner: processor_address.clone(),
         processor: processor_address.clone(),
         config: deposit_splitter_config,
     };
@@ -380,7 +383,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let instantiate_mars_lending_msg =
         valence_library_utils::msg::InstantiateMsg::<valence_mars_lending::msg::LibraryConfig> {
-            owner: params.general.owner.clone(),
+            owner: processor_address.clone(),
             processor: processor_address.clone(),
             config: mars_lending_config,
         };
@@ -415,7 +418,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let instantiate_supervaults_lper_msg = valence_library_utils::msg::InstantiateMsg::<
         valence_supervaults_lper::msg::LibraryConfig,
     > {
-        owner: params.general.owner.clone(),
+        owner: processor_address.clone(),
         processor: processor_address.clone(),
         config: supervaults_lper_config,
     };
@@ -444,7 +447,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let instantiate_clearing_queue_msg = valence_library_utils::msg::InstantiateMsg::<
         valence_clearing_queue_supervaults::msg::LibraryConfig,
     > {
-        owner: params.general.owner.clone(),
+        owner: processor_address.clone(),
         processor: processor_address.clone(),
         config: clearing_config,
     };
@@ -462,8 +465,83 @@ async fn main() -> Result<(), Box<dyn Error>> {
         clearing_queue_library_address
     );
 
-    // TODO: need to instantiate all the phase shift contracts, potentially using dummy values for now that will be updated
-    // later by the owner.
+    ////////// Instantiate and set up everything we need for the phase shift. The authorization that will eventually //////////
+    ////////// update the config and execute these libraries will be for the program owner, in this case the Neutron //////////
+    ////////// program DAO set up for this.                                                                          //////////
+
+    // 1. Instantiate the supervaults withdrawer that will withdraw the LP tokens from the supervault and deposit the deposit token + the other pair
+    // in the settlement account.
+    let supervaults_withdrawer_config = valence_supervaults_withdrawer::msg::LibraryConfig {
+        input_addr: LibraryAccountType::Addr(predicted_base_accounts[3].clone()), // Both input and output are settlement account
+        output_addr: LibraryAccountType::Addr(predicted_base_accounts[3].clone()),
+        vault_addr: params.program.supervault.clone(),
+        lw_config: valence_supervaults_withdrawer::msg::LiquidityWithdrawerConfig {
+            asset_data: valence_library_utils::liquidity_utils::AssetData {
+                asset1: params.program.supervault_asset1.clone(),
+                asset2: params.program.supervault_asset2.clone(),
+            },
+            lp_denom: params.program.supervault_lp_denom.clone(),
+        },
+    };
+
+    let instantiate_supervaults_withdrawer_msg = valence_library_utils::msg::InstantiateMsg::<
+        valence_supervaults_withdrawer::msg::LibraryConfig,
+    > {
+        owner: processor_address.clone(),
+        processor: processor_address.clone(),
+        config: supervaults_withdrawer_config,
+    };
+    let supervaults_withdrawer_library_address = neutron_client
+        .instantiate(
+            code_id_supervaults_withdrawer,
+            "supervaults_withdrawer".to_string(),
+            instantiate_supervaults_withdrawer_msg,
+            None,
+        )
+        .await?;
+    println!(
+        "Supervaults withdrawer library instantiated: {}",
+        supervaults_withdrawer_library_address
+    );
+
+    // 2. Instantiate the maxbtc issuer that will issue the maxbtc token depositing the counterparty of the deposit token in the vault.
+
+    // TODO
+
+    // 3. Instantiate the forwarder library that will forward the deposit token from the settlement account to the supervaults
+    // deposit account
+    let forwarder_config = valence_forwarder_library::msg::LibraryConfig {
+        input_addr: LibraryAccountType::Addr(predicted_base_accounts[3].clone()),
+        output_addr: LibraryAccountType::Addr(predicted_base_accounts[2].clone()),
+        forwarding_configs: vec![UncheckedForwardingConfig {
+            denom: UncheckedDenom::Native(params.program.deposit_token_on_neutron_denom.clone()),
+            max_amount: Uint128::MAX,
+        }],
+        forwarding_constraints: ForwardingConstraints::default(),
+    };
+    let instantiate_forwarder_msg = valence_library_utils::msg::InstantiateMsg::<
+        valence_forwarder_library::msg::LibraryConfig,
+    > {
+        owner: processor_address.clone(),
+        processor: processor_address.clone(),
+        config: forwarder_config,
+    };
+    let phase_shift_forwarder_library_address = neutron_client
+        .instantiate(
+            code_id_forwarder_library,
+            "forwarder".to_string(),
+            instantiate_forwarder_msg,
+            None,
+        )
+        .await?;
+    println!(
+        "Phase Shift Forwarder library instantiated: {}",
+        phase_shift_forwarder_library_address
+    );
+
+    //////////                           //////////
+    //////////  End of phase shift setup //////////
+    //////////                           //////////
 
     // Instantiate all acounts now
     // First the ICA
@@ -543,7 +621,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let settlement_account = valence_account_utils::msg::InstantiateMsg {
         admin: params.general.owner.clone(),
-        approved_libraries: vec![clearing_queue_library_address.clone()],
+        approved_libraries: vec![
+            clearing_queue_library_address.clone(),
+            supervaults_withdrawer_library_address.clone(),
+            phase_shift_forwarder_library_address.clone(),
+        ],
     };
     let settlement_account_address = neutron_client
         .instantiate2(
@@ -579,6 +661,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         supervault_lper: supervaults_lper_library_address,
         clearing_queue: clearing_queue_library_address,
         ica_transfer: ica_ibc_transfer_library_address,
+        phase_shift_maxbtc_issuer: "TODO".to_string(),
+        phase_shift_forwarder: phase_shift_forwarder_library_address,
+        phase_shift_supervault_withdrawer: supervaults_withdrawer_library_address,
     };
 
     let coprocessor_app_ids = NeutronCoprocessorAppIds {

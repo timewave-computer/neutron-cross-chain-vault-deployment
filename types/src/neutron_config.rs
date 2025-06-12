@@ -71,6 +71,12 @@ pub struct NeutronLibraries {
     pub clearing_queue: String,
     /// ICA transfer library
     pub ica_transfer: String,
+    /// phase shift maxBTC issuer library
+    pub phase_shift_maxbtc_issuer: String,
+    /// phase shift forwarder
+    pub phase_shift_forwarder: String,
+    /// phase shift supervault withdrawer
+    pub phase_shift_supervault_withdrawer: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
