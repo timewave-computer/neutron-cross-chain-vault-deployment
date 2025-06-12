@@ -35,8 +35,6 @@ use valence_strategist_utils::worker::ValenceWorker;
 
 use crate::strategy_config::Strategy;
 
-const SCALING_FACTOR: u128 = 1_000_000_000_000;
-
 // logging targets
 const DEPOSIT_PHASE: &str = "deposit";
 const UPDATE_PHASE: &str = "update";
@@ -192,7 +190,8 @@ impl Strategy {
             deposit_token_total,
             // multiplying the denominator by the scaling factor
             // TODO: check if this scaling factor makes sense
-            eth_vault_issued_shares_uint128.checked_mul(SCALING_FACTOR.into())?,
+            eth_vault_issued_shares_uint128
+                .checked_mul(self.cfg.ethereum.rate_scaling_factor.into())?,
         );
         info!(target: UPDATE_PHASE, "redemption rate decimal={redemption_rate_decimal}");
 
