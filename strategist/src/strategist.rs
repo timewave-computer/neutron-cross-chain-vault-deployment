@@ -1,4 +1,4 @@
-use std::{error::Error, str::FromStr};
+use std::{error::Error, str::FromStr, time::Duration};
 
 use alloy::{
     primitives::{Bytes, U256},
@@ -6,13 +6,14 @@ use alloy::{
 };
 use async_trait::async_trait;
 use cosmwasm_std::{Addr, Decimal, Uint128, Uint256, to_json_binary};
-use log::{debug, warn};
+use log::warn;
 use log::{info, trace};
 use serde_json::json;
+use tokio::time::sleep;
 use types::{
     labels::{
-        ICA_TRANSFER_LABEL, MARS_LEND_LABEL, MARS_WITHDRAW_LABEL, REGISTER_OBLIGATION_LABEL,
-        SETTLE_OBLIGATION_LABEL,
+        ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_LABEL, MARS_WITHDRAW_LABEL,
+        REGISTER_OBLIGATION_LABEL, SETTLE_OBLIGATION_LABEL,
     },
     sol_types::{
         Authorization, BaseAccount, ERC20,
@@ -34,13 +35,12 @@ use valence_strategist_utils::worker::ValenceWorker;
 
 use crate::strategy_config::Strategy;
 
-const SCALING_FACTOR: u128 = 1_000_000_000_000;
-
 // logging targets
 const DEPOSIT_PHASE: &str = "deposit";
 const UPDATE_PHASE: &str = "update";
 const SETTLEMENT_PHASE: &str = "settlement";
 const REGISTRATION_PHASE: &str = "registration";
+const VALENCE_WORKER: &str = "valence_worker";
 
 // implement the ValenceWorker trait for the Strategy struct.
 // This trait defines the main loop of the strategy and inherits
@@ -52,7 +52,11 @@ impl ValenceWorker for Strategy {
     }
 
     async fn cycle(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
-        info!("{}: Starting cycle...", self.get_name());
+        info!(target: VALENCE_WORKER, "sleeping for {}sec", self.timeout);
+
+        sleep(Duration::from_secs(self.timeout)).await;
+
+        info!(target: VALENCE_WORKER, "{}: Starting cycle...", self.get_name());
 
         let eth_rp: CustomProvider = self.eth_client.get_request_provider().await?;
 
@@ -101,7 +105,7 @@ impl Strategy {
             Uint256::from_be_bytes(eth_deposit_acc_balance.to_be_bytes());
         let eth_deposit_token_total_uint128 =
             Uint128::from_str(&eth_deposit_token_total_uint256.to_string())?;
-        debug!(target: UPDATE_PHASE, "eth_deposit_acc_balance_u128={eth_deposit_token_total_uint128}");
+        info!(target: UPDATE_PHASE, "eth_deposit_acc_balance_u128={eth_deposit_token_total_uint128}");
 
         let eth_vault_issued_shares = self
             .eth_client
@@ -113,7 +117,7 @@ impl Strategy {
             Uint256::from_be_bytes(eth_vault_issued_shares.to_be_bytes());
         let eth_vault_issued_shares_uint128 =
             Uint128::from_str(&eth_vault_issued_shares_uint256.to_string())?;
-        debug!(target: UPDATE_PHASE, "eth_vault_issued_shares_uint128={eth_vault_issued_shares_uint128}");
+        info!(target: UPDATE_PHASE, "eth_vault_issued_shares_uint128={eth_vault_issued_shares_uint128}");
 
         let gaia_ica_balance = self
             .gaia_client
@@ -185,8 +189,8 @@ impl Strategy {
         let redemption_rate_decimal = Decimal::from_ratio(
             deposit_token_total,
             // multiplying the denominator by the scaling factor
-            // TODO: check if this scaling factor makes sense
-            eth_vault_issued_shares_uint128.checked_mul(SCALING_FACTOR.into())?,
+            eth_vault_issued_shares_uint128
+                .checked_mul(self.cfg.ethereum.rate_scaling_factor.into())?,
         );
         info!(target: UPDATE_PHASE, "redemption rate decimal={redemption_rate_decimal}");
 
@@ -377,7 +381,7 @@ impl Strategy {
         // format the response in format expected by the coprocessor and post it
         // there for proof
         let coprocessor_input = json!({"skip_response": skip_api_response});
-        debug!(target: DEPOSIT_PHASE, "posting skip-api response to co-processor");
+        info!(target: DEPOSIT_PHASE, "posting skip-api response to co-processor");
         let skip_response_zkp = self
             .coprocessor_client
             .prove(&self.cfg.coprocessor.eureka_circuit_id, &coprocessor_input)
@@ -460,16 +464,29 @@ impl Strategy {
             )
             .await?;
 
-        // 7. use Valence Forwarder to route funds from the Neutron program
-        // deposit account to the Mars deposit account
+        info!(target: DEPOSIT_PHASE, "routing funds from neutron deposit account to mars and supervaults for lending");
+
+        // 7. use Splitter to route funds from the Neutron program
+        // deposit account to the Mars and Supervaults deposit accounts
+        let split_msg = to_json_binary(&valence_splitter_library::msg::FunctionMsgs::Split {})?;
+
         // 8. use Mars Lending library to deposit funds from Mars deposit account
         // into Mars protocol
-        info!(target: DEPOSIT_PHASE, "routing funds from neutron deposit account to mars for lending");
-        let forward_msg =
-            to_json_binary(&valence_forwarder_library::msg::FunctionMsgs::Forward {})?;
         let mars_lend_msg = to_json_binary(&valence_mars_lending::msg::FunctionMsgs::Lend {})?;
-        self.enqueue_neutron(MARS_LEND_LABEL, vec![forward_msg, mars_lend_msg])
-            .await?;
+
+        // 9. use Supervaults lper library to deposit funds from Supervaults deposit account
+        // into the configured supervault
+        let supervaults_lp_msg = to_json_binary(
+            &valence_supervaults_lper::msg::FunctionMsgs::ProvideLiquidity {
+                expected_vault_ratio_range: None,
+            },
+        )?;
+
+        self.enqueue_neutron(
+            LEND_AND_PROVIDE_LIQUIDITY_LABEL,
+            vec![split_msg, mars_lend_msg, supervaults_lp_msg],
+        )
+        .await?;
 
         self.tick_neutron().await?;
 
@@ -571,16 +588,27 @@ impl Strategy {
         trace!(target: SETTLEMENT_PHASE, "starting settlement phase");
 
         // 1. query the current settlement account balance
-        let settlement_acc_bal = self
+        let settlement_acc_bal_deposit_token_bal = self
             .neutron_client
             .query_balance(
                 &self.cfg.neutron.accounts.settlement,
                 &self.cfg.neutron.denoms.deposit_token,
             )
             .await?;
+        let settlement_acc_bal_supervaults = self
+            .neutron_client
+            .query_balance(
+                &self.cfg.neutron.accounts.settlement,
+                &self.cfg.neutron.denoms.supervault_lp,
+            )
+            .await?;
         info!(
             target: SETTLEMENT_PHASE,
-            "settlement account balance deposit_token = {settlement_acc_bal}"
+            "settlement account balance deposit_token = {settlement_acc_bal_deposit_token_bal}"
+        );
+        info!(
+            target: SETTLEMENT_PHASE,
+            "settlement account balance supervaults_lp = {settlement_acc_bal_supervaults}"
         );
 
         // 2. query the Clearing Queue and calculate the total active obligations
@@ -598,22 +626,35 @@ impl Strategy {
             target: SETTLEMENT_PHASE, "clearing queue length = {}", clearing_queue.obligations.len()
         );
 
-        // sum the total obligations amount
-        let total_queue_obligations: u128 = clearing_queue
-            .obligations
-            .iter()
-            .map(|o| o.payout_coin.amount.u128())
-            .sum();
+        let mut deposit_obligation_total = 0;
+        let mut lp_obligation_total = 0;
+
+        // iterate through all obligations and sum up the coin amounts
+        for withdraw_obligation in clearing_queue.obligations.iter() {
+            for payout_coin in withdraw_obligation.payout_coins.iter() {
+                if payout_coin.denom == self.cfg.neutron.denoms.deposit_token {
+                    deposit_obligation_total += payout_coin.amount.u128();
+                } else if payout_coin.denom == self.cfg.neutron.denoms.supervault_lp {
+                    lp_obligation_total += payout_coin.amount.u128();
+                } else {
+                    warn!(target: SETTLEMENT_PHASE, "obligation contains unrecognized denom: {}", payout_coin.denom);
+                }
+            }
+        }
+
         info!(
-            target: SETTLEMENT_PHASE, "total obligations deposit_token = {total_queue_obligations}"
+            target: SETTLEMENT_PHASE, "total obligations deposit_token = {deposit_obligation_total}"
+        );
+        info!(
+            target: SETTLEMENT_PHASE, "total obligations supervaults_lp = {lp_obligation_total}"
         );
 
         // 3. if settlement account balance is insufficient to cover the active
         // obligations, we perform the Mars protocol withdrawals
-        if settlement_acc_bal < total_queue_obligations {
+        if settlement_acc_bal_deposit_token_bal < deposit_obligation_total {
             // 3. simulate Mars protocol withdrawal to obtain the funds necessary
             // to fulfill all active withdrawal requests
-            let obligations_delta = total_queue_obligations - settlement_acc_bal;
+            let obligations_delta = deposit_obligation_total - settlement_acc_bal_deposit_token_bal;
             info!(
                 target: SETTLEMENT_PHASE, "settlement_account deposit_token balance deficit = {obligations_delta}"
             );

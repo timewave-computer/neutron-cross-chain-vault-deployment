@@ -11,6 +11,9 @@ pub struct EthereumStrategyConfig {
     /// to perform IBC transfer (taking fees into account)
     pub ibc_transfer_threshold_amt: U256,
 
+    /// update rate scaling factor
+    pub rate_scaling_factor: u128,
+
     /// authorizations module
     pub authorizations: Address,
     /// lite-processor coupled with the authorizations

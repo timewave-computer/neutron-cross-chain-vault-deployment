@@ -28,6 +28,9 @@ pub struct Strategy {
     /// strategy name
     pub label: String,
 
+    /// strategy timeout (in seconds)
+    pub timeout: u64,
+
     /// top level strategy configuration
     pub cfg: StrategyConfig,
 
@@ -65,6 +68,9 @@ impl Strategy {
             env::var("EUREKA_SRC_CHAIN_ID").expect("IBC Eureka src chain id must be provided");
         let eureka_dest_chain_id =
             env::var("EUREKA_DEST_CHAIN_ID").expect("IBC Eureka dest chain id must be provided");
+        let strategy_timeout: u64 = env::var("STRATEGY_TIMEOUT")
+            .expect("Strategy timeout must be provided")
+            .parse()?;
 
         let gaia_client = CosmosHubClient::new(
             &cfg.gaia.grpc_url,
@@ -103,6 +109,7 @@ impl Strategy {
 
         Ok(Self {
             cfg,
+            timeout: strategy_timeout,
             eth_client,
             gaia_client,
             neutron_client,

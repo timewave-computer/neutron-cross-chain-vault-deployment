@@ -49,6 +49,7 @@ struct Vault {
     platform_fee_account: Address,
     strategist_fee_account: Address,
     strategist_fee_ratio_bps: u32,
+    scaling_factor: u128,
     deposit_cap: U256,
     deposit_fee_bps: u32,
     withdraw_rate_bps: u32,
@@ -310,6 +311,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let eth_cfg = EthereumStrategyConfig {
         ibc_transfer_threshold_amt: U256::from(1_000_000),
+        rate_scaling_factor: parameters.vault.scaling_factor,
         rpc_url: parameters.general.rpc_url,
         authorizations: authorization,
         processor: processor_address,
