@@ -505,8 +505,31 @@ async fn main() -> Result<(), Box<dyn Error>> {
     );
 
     // 2. Instantiate the maxbtc issuer that will issue the maxbtc token depositing the counterparty of the deposit token in the vault.
-
-    // TODO
+    // The output address will be the deposit account for the supervault
+    let maxbtc_issuer_config = valence_maxbtc_issuer::msg::LibraryConfig {
+        input_addr: LibraryAccountType::Addr(predicted_base_accounts[3].clone()),
+        output_addr: LibraryAccountType::Addr(predicted_base_accounts[2].clone()),
+        maxbtc_issuer_addr: params.general.owner.clone(), // We are going to put a dummy address here (the owner for example) because this will be eventually updated
+        btc_denom: params.program.supervault_other_asset.clone(), // The counterparty asset of the vault (e.g. WBTC)
+    };
+    let instantiate_maxbtc_issuer_msg =
+        valence_library_utils::msg::InstantiateMsg::<valence_maxbtc_issuer::msg::LibraryConfig> {
+            owner: processor_address.clone(),
+            processor: processor_address.clone(),
+            config: maxbtc_issuer_config,
+        };
+    let maxbtc_issuer_library_address = neutron_client
+        .instantiate(
+            code_id_maxbtc_issuer,
+            "maxbtc_issuer".to_string(),
+            instantiate_maxbtc_issuer_msg,
+            None,
+        )
+        .await?;
+    println!(
+        "MaxBTC issuer library instantiated: {}",
+        maxbtc_issuer_library_address
+    );
 
     // 3. Instantiate the forwarder library that will forward the deposit token from the settlement account to the supervaults
     // deposit account
@@ -622,9 +645,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let settlement_account = valence_account_utils::msg::InstantiateMsg {
         admin: params.general.owner.clone(),
         approved_libraries: vec![
+            // This will contain all libraries that will execute actions on the settlement account
             clearing_queue_library_address.clone(),
             supervaults_withdrawer_library_address.clone(),
             phase_shift_forwarder_library_address.clone(),
+            maxbtc_issuer_library_address.clone(),
         ],
     };
     let settlement_account_address = neutron_client
