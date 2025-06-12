@@ -14,14 +14,15 @@ deposit_cap              = "10000000000000"                             # e.g. 1
 deposit_fee_bps          = 100                                          # 1% deposit fee
 withdraw_rate_bps        = 100                                          # 1% withdrawal rate
 starting_rate            = "10000000"                                   # 1e8 - WBTC Precision
-max_rate_update_delay    = 172800 # 48 hours in seconds - Maximum delay for rate updates before vault gets paused
+max_rate_update_delay    = 172800                                       # 48 hours in seconds - Maximum delay for rate updates before vault gets paused
 rate_scaling_factor      = 1000000000000                                # scaling factor for rate updates
 
 [eureka_transfer]
-handler       = "0xfc2d0487a0ae42ae7329a80dc269916a9184cf7c"
-recipient     = "cosmos1...."
-source_client = "cosmoshub-0"
-timeout       = 43200                                        # 12 hours in seconds
+handler                    = "0xfc2d0487a0ae42ae7329a80dc269916a9184cf7c"
+recipient                  = "cosmos1...."
+source_client              = "cosmoshub-0"
+timeout                    = 43200                                        # 12 hours in seconds
+ibc_transfer_threshold_amt = 1000000
 
 [coprocessor_app]
 eureka_transfer_coprocessor_app_id = "..." # TBD after we have the app deployed
