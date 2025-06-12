@@ -189,7 +189,6 @@ impl Strategy {
         let redemption_rate_decimal = Decimal::from_ratio(
             deposit_token_total,
             // multiplying the denominator by the scaling factor
-            // TODO: check if this scaling factor makes sense
             eth_vault_issued_shares_uint128
                 .checked_mul(self.cfg.ethereum.rate_scaling_factor.into())?,
         );
