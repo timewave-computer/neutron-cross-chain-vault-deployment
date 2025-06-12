@@ -37,8 +37,6 @@ use crate::strategy_config::Strategy;
 
 const SCALING_FACTOR: u128 = 1_000_000_000_000;
 
-const CYCLE_DELAY_SEC: u64 = 30;
-
 // logging targets
 const DEPOSIT_PHASE: &str = "deposit";
 const UPDATE_PHASE: &str = "update";
@@ -56,9 +54,9 @@ impl ValenceWorker for Strategy {
     }
 
     async fn cycle(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
-        info!(target: VALENCE_WORKER, "sleeping for {CYCLE_DELAY_SEC}sec");
+        info!(target: VALENCE_WORKER, "sleeping for {}sec", self.timeout);
 
-        sleep(Duration::from_secs(CYCLE_DELAY_SEC)).await;
+        sleep(Duration::from_secs(self.timeout)).await;
 
         info!(target: VALENCE_WORKER, "{}: Starting cycle...", self.get_name());
 
