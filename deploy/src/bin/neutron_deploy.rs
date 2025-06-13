@@ -63,7 +63,6 @@ struct Program {
     supervault: String,
     supervault_asset1: String,
     supervault_asset2: String,
-    supervault_other_asset: String,
     supervault_lp_denom: String,
     initial_split_percentage_to_mars: u64,
     initial_split_percentage_to_supervault: u64,
@@ -506,11 +505,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // 2. Instantiate the maxbtc issuer that will issue the maxbtc token depositing the counterparty of the deposit token in the vault.
     // The output address will be the deposit account for the supervault
+    let supervault_other_asset =
+        if params.program.supervault_asset1 == params.program.deposit_token_on_neutron_denom {
+            params.program.supervault_asset2.clone()
+        } else {
+            params.program.supervault_asset1.clone()
+        };
+
     let maxbtc_issuer_config = valence_maxbtc_issuer::msg::LibraryConfig {
         input_addr: LibraryAccountType::Addr(predicted_base_accounts[3].clone()),
         output_addr: LibraryAccountType::Addr(predicted_base_accounts[2].clone()),
         maxbtc_issuer_addr: params.general.owner.clone(), // We are going to put a dummy address here (the owner for example) because this will be eventually updated
-        btc_denom: params.program.supervault_other_asset.clone(), // The counterparty asset of the vault (e.g. WBTC)
+        btc_denom: supervault_other_asset, // The counterparty asset of the vault (e.g. WBTC)
     };
     let instantiate_maxbtc_issuer_msg =
         valence_library_utils::msg::InstantiateMsg::<valence_maxbtc_issuer::msg::LibraryConfig> {
