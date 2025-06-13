@@ -1,6 +1,8 @@
 use dotenv::dotenv;
 use log::{info, warn};
-use std::{env, error::Error};
+use serde_json::json;
+use std::{env, error::Error, thread};
+use tiny_http::{Response, Server};
 use valence_strategist_utils::worker::ValenceWorker;
 
 use strategist::strategy_config::Strategy;
@@ -28,6 +30,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
     info!(target: RUNNER, "  Ethereum: {}", ethereum_cfg_path);
     info!(target: RUNNER, "  Gaia: {}", gaia_cfg_path);
     info!(target: RUNNER, "  Co-processor: {}", coprocessor_cfg_path);
+
+    info!(target: RUNNER, "starting http server meant for container liveness probes");
+    thread::spawn(|| {
+        let server = Server::http("0.0.0.0:8080").expect("bind status port");
+        let payload = json!({"alive": true});
+        for req in server.incoming_requests() {
+            let _ = req.respond(Response::from_string(payload.to_string()));
+        }
+    });
 
     // initialize the strategy from configuration files
     let strategy = Strategy::from_files(

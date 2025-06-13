@@ -53,7 +53,6 @@ impl ValenceWorker for Strategy {
 
     async fn cycle(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
         info!(target: VALENCE_WORKER, "sleeping for {}sec", self.timeout);
-
         sleep(Duration::from_secs(self.timeout)).await;
 
         info!(target: VALENCE_WORKER, "{}: Starting cycle...", self.get_name());
@@ -189,8 +188,7 @@ impl Strategy {
         let redemption_rate_decimal = Decimal::from_ratio(
             deposit_token_total,
             // multiplying the denominator by the scaling factor
-            eth_vault_issued_shares_uint128
-                .checked_mul(self.cfg.ethereum.rate_scaling_factor.into())?,
+            eth_vault_issued_shares_uint128.checked_mul(self.cfg.ethereum.rate_scaling_factor)?,
         );
         info!(target: UPDATE_PHASE, "redemption rate decimal={redemption_rate_decimal}");
 
