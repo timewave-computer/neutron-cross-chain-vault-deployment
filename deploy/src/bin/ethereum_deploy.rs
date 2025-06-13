@@ -6,6 +6,7 @@ use alloy::{
     sol,
     sol_types::SolValue,
 };
+use cosmwasm_std::Uint128;
 use serde::Deserialize;
 use sp1_sdk::{HashableKey, SP1VerifyingKey};
 use types::{
@@ -49,7 +50,7 @@ struct Vault {
     platform_fee_account: Address,
     strategist_fee_account: Address,
     strategist_fee_ratio_bps: u32,
-    scaling_factor: u128,
+    scaling_factor: Uint128,
     deposit_cap: U256,
     deposit_fee_bps: u32,
     withdraw_rate_bps: u32,
