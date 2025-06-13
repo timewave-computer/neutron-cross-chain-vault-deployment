@@ -9,9 +9,12 @@ use std::{
 use cosmwasm_std::{Binary, Decimal, Uint128, Uint64};
 use serde::Deserialize;
 use sp1_sdk::{HashableKey, SP1VerifyingKey};
-use types::neutron_config::{
-    NeutronAccounts, NeutronCoprocessorAppIds, NeutronDenoms, NeutronLibraries,
-    NeutronStrategyConfig,
+use types::{
+    gaia_config::GaiaStrategyConfig,
+    neutron_config::{
+        NeutronAccounts, NeutronCoprocessorAppIds, NeutronDenoms, NeutronLibraries,
+        NeutronStrategyConfig,
+    },
 };
 use valence_domain_clients::{
     clients::{coprocessor::CoprocessorClient, neutron::NeutronClient},
@@ -679,7 +682,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let accounts = NeutronAccounts {
-        ica: valence_ica_address,
+        ica: valence_ica_address.clone(),
         deposit: ica_deposit_account_address,
         mars_deposit: mars_deposit_account_address,
         supervault_deposit: supervault_deposit_account_address,
@@ -726,6 +729,52 @@ async fn main() -> Result<(), Box<dyn Error>> {
         neutron_cfg_toml,
     )
     .expect("Failed to write Neutron Strategy Config to file");
+
+    // Last thing we will do is register the ICA on the valence ICA
+    let register_ica_msg = valence_account_utils::ica::ExecuteMsg::RegisterIca {};
+    neutron_client
+        .execute_wasm(
+            &valence_ica_address,
+            register_ica_msg,
+            vec![cosmrs::Coin::new(1_000_000u128, "untrn").unwrap()],
+            None,
+        )
+        .await?;
+
+    println!("Registering ICA");
+
+    // Let's wait enough time for the transaction to succeed and the ICA to be registered
+    tokio::time::sleep(std::time::Duration::from_secs(30)).await;
+
+    // Let's query now to get the ICA address
+    let query_ica = valence_account_utils::ica::QueryMsg::IcaState {};
+    let ica_state: valence_account_utils::ica::IcaState = neutron_client
+        .query_contract_state(&valence_ica_address, query_ica)
+        .await?;
+
+    let ica_address = match ica_state {
+        valence_account_utils::ica::IcaState::Created(ica_information) => ica_information.address,
+        _ => {
+            panic!("ICA creation failed!");
+        }
+    };
+
+    let gaia_cfg = GaiaStrategyConfig {
+        grpc_url: "grpc_url".to_string(),
+        grpc_port: "grpc_port".to_string(),
+        chain_id: "chain_id".to_string(),
+        chain_denom: "uatom".to_string(),
+        deposit_denom: params.ica.deposit_token_on_hub_denom.clone(),
+        ica_address,
+    };
+
+    // Write the Gaia strategy config to a file
+    let gaia_cfg_path = current_dir.join("deploy/src/gaia_strategy_config.toml");
+    fs::write(
+        gaia_cfg_path,
+        toml::to_string(&gaia_cfg).expect("Failed to serialize Gaia strategy config"),
+    )
+    .expect("Failed to write Gaia strategy config to file");
 
     Ok(())
 }
