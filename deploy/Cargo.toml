@@ -28,5 +28,6 @@ valence-forwarder-library            = { workspace = true }
 valence-clearing-queue-supervaults   = { workspace = true }
 valence-dynamic-ratio-query-provider = { workspace = true }
 valence-verification-gateway         = { workspace = true }
+valence-maxbtc-issuer                = { workspace = true }
 sp1-sdk                              = { version = "4.2.0", default-features = false }
 bincode                              = "1.3.3"

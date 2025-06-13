@@ -25,6 +25,7 @@ valence-splitter-library             = { git = "https://github.com/timewave-comp
 valence-forwarder-library            = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
 valence-verification-gateway         = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
 valence-strategist-utils             = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
+valence-maxbtc-issuer                = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
 log                                  = { version = "0.4.22" }
 valence-lending-utils                = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
 serde_json                           = { version = "1.0.140", default-features = false, features = ["alloc"] }

@@ -4,10 +4,9 @@ use cosmwasm_std::Binary;
 use serde::Deserialize;
 use sp1_sdk::{HashableKey, SP1VerifyingKey};
 use types::{
-    gaia_config::GaiaStrategyConfig,
     labels::{
         ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_LABEL, MARS_WITHDRAW_LABEL,
-        REGISTER_OBLIGATION_LABEL, SETTLE_OBLIGATION_LABEL,
+        PHASE_SHIFT_LABEL, REGISTER_OBLIGATION_LABEL, SETTLE_OBLIGATION_LABEL,
     },
     neutron_config::NeutronStrategyConfig,
 };
@@ -29,18 +28,13 @@ use valence_library_utils::LibraryAccountType;
 #[derive(Deserialize, Debug)]
 struct Parameters {
     general: General,
-    ica: Ica,
     coprocessor_app: CoprocessorApp,
 }
 
 #[derive(Deserialize, Debug)]
 struct General {
+    owner: String,
     strategist: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct Ica {
-    deposit_token_on_hub_denom: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -81,7 +75,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut authorizations = vec![];
 
-    // All authorizations except the phase shift will be called by strategist
+    // All authorizations except the phase shift one will be called by strategist
     let authorization_permissioned_mode =
         AuthorizationModeInfo::Permissioned(PermissionTypeInfo::WithoutCallLimit(vec![
             strategist.clone()
@@ -289,12 +283,234 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .build();
     authorizations.push(authorization_settle_obligation);
 
-    // TODO: need to prepare the phase change authorization
-    // And decide who can execute it
+    //////// PHASE SHIFT AUTHORIZATION ////////
+    // This authorization is special, it will be executed from the Neutron DAO via DAODAO
+    // and involves multiple steps including updating configs with values we don't know during deployment
+
+    // 1. Withdraw liquidity from the Supervault
+    let withdraw_liquidity_function = AtomicFunction {
+        domain: Domain::Main,
+        message_details: MessageDetails {
+            message_type: MessageType::CosmwasmExecuteMsg,
+            message: Message {
+                name: "process_function".to_string(),
+                params_restrictions: Some(vec![ParamRestriction::MustBeIncluded(vec![
+                    "process_function".to_string(),
+                    "withdraw_liquidity".to_string(),
+                ])]),
+            },
+        },
+        contract_address: LibraryAccountType::Addr(
+            ntrn_strategy_config
+                .libraries
+                .phase_shift_supervault_withdrawer
+                .clone(),
+        ),
+    };
+    // 2. Update the maxBTC issuer config with the maxBTC issuer address
+    let update_maxbtc_issuer_function = AtomicFunction {
+        domain: Domain::Main,
+        message_details: MessageDetails {
+            message_type: MessageType::CosmwasmExecuteMsg,
+            message: Message {
+                name: "update_config".to_string(),
+                params_restrictions: Some(vec![
+                    ParamRestriction::MustBeIncluded(vec![
+                        "update_config".to_string(),
+                        "new_config".to_string(),
+                        "maxbtc_issuer".to_string(),
+                    ]),
+                    ParamRestriction::CannotBeIncluded(vec![
+                        "update_config".to_string(),
+                        "new_config".to_string(),
+                        "input_addr".to_string(),
+                    ]),
+                    ParamRestriction::CannotBeIncluded(vec![
+                        "update_config".to_string(),
+                        "new_config".to_string(),
+                        "output_addr".to_string(),
+                    ]),
+                    ParamRestriction::CannotBeIncluded(vec![
+                        "update_config".to_string(),
+                        "new_config".to_string(),
+                        "btc_denom".to_string(),
+                    ]),
+                ]),
+            },
+        },
+        contract_address: LibraryAccountType::Addr(
+            ntrn_strategy_config
+                .libraries
+                .phase_shift_maxbtc_issuer
+                .clone(),
+        ),
+    };
+    // 3. Issue the maxBTC tokens by depositing the withdrawn liquidity counterpart and getting maxBTC
+    let issue_maxbtc_function = AtomicFunction {
+        domain: Domain::Main,
+        message_details: MessageDetails {
+            message_type: MessageType::CosmwasmExecuteMsg,
+            message: Message {
+                name: "process_function".to_string(),
+                params_restrictions: Some(vec![ParamRestriction::MustBeIncluded(vec![
+                    "process_function".to_string(),
+                    "issue".to_string(),
+                ])]),
+            },
+        },
+        contract_address: LibraryAccountType::Addr(
+            ntrn_strategy_config
+                .libraries
+                .phase_shift_maxbtc_issuer
+                .clone(),
+        ),
+    };
+
+    // 4. Trigger the forward from the settlement account to the supervault deposit account
+    // This will forward the other half of the withdrawn liquidity that needs to be migrated
+    let forward_to_supervault_deposit_account_function = AtomicFunction {
+        domain: Domain::Main,
+        message_details: MessageDetails {
+            message_type: MessageType::CosmwasmExecuteMsg,
+            message: Message {
+                name: "process_function".to_string(),
+                params_restrictions: Some(vec![ParamRestriction::MustBeIncluded(vec![
+                    "process_function".to_string(),
+                    "forward".to_string(),
+                ])]),
+            },
+        },
+        contract_address: LibraryAccountType::Addr(
+            ntrn_strategy_config.libraries.phase_shift_forwarder.clone(),
+        ),
+    };
+
+    // 5. Update the supervault lper library config with the new supervault address and new assets
+    let update_supervault_lper_config_function = AtomicFunction {
+        domain: Domain::Main,
+        message_details: MessageDetails {
+            message_type: MessageType::CosmwasmExecuteMsg,
+            message: Message {
+                name: "update_config".to_string(),
+                params_restrictions: Some(vec![
+                    ParamRestriction::MustBeIncluded(vec![
+                        "update_config".to_string(),
+                        "new_config".to_string(),
+                        "vault_addr".to_string(),
+                    ]),
+                    ParamRestriction::MustBeIncluded(vec![
+                        "update_config".to_string(),
+                        "new_config".to_string(),
+                        "lp_config".to_string(),
+                    ]),
+                    ParamRestriction::CannotBeIncluded(vec![
+                        "update_config".to_string(),
+                        "new_config".to_string(),
+                        "input_addr".to_string(),
+                    ]),
+                    ParamRestriction::CannotBeIncluded(vec![
+                        "update_config".to_string(),
+                        "new_config".to_string(),
+                        "output_addr".to_string(),
+                    ]),
+                ]),
+            },
+        },
+        contract_address: LibraryAccountType::Addr(
+            ntrn_strategy_config.libraries.supervault_lper.clone(),
+        ),
+    };
+
+    // 6. Update the clearing queue config with the new supervault address
+    let update_clearing_queue_config_function = AtomicFunction {
+        domain: Domain::Main,
+        message_details: MessageDetails {
+            message_type: MessageType::CosmwasmExecuteMsg,
+            message: Message {
+                name: "update_config".to_string(),
+                params_restrictions: Some(vec![
+                    ParamRestriction::MustBeIncluded(vec![
+                        "update_config".to_string(),
+                        "new_config".to_string(),
+                        "supervault_addr".to_string(),
+                    ]),
+                    ParamRestriction::CannotBeIncluded(vec![
+                        "update_config".to_string(),
+                        "new_config".to_string(),
+                        "settlement_acc_addr".to_string(),
+                    ]),
+                    ParamRestriction::CannotBeIncluded(vec![
+                        "update_config".to_string(),
+                        "new_config".to_string(),
+                        "denom".to_string(),
+                    ]),
+                    ParamRestriction::CannotBeIncluded(vec![
+                        "update_config".to_string(),
+                        "new_config".to_string(),
+                        "latest_id".to_string(),
+                    ]),
+                    ParamRestriction::CannotBeIncluded(vec![
+                        "update_config".to_string(),
+                        "new_config".to_string(),
+                        "supervaults_sender".to_string(),
+                    ]),
+                    ParamRestriction::CannotBeIncluded(vec![
+                        "update_config".to_string(),
+                        "new_config".to_string(),
+                        "settlement_ratio".to_string(),
+                    ]),
+                ]),
+            },
+        },
+        contract_address: LibraryAccountType::Addr(
+            ntrn_strategy_config.libraries.clearing_queue.clone(),
+        ),
+    };
+
+    // 7. Trigger the provide liquidity on the supervault lper
+    let provide_liquidity_function = AtomicFunction {
+        domain: Domain::Main,
+        message_details: MessageDetails {
+            message_type: MessageType::CosmwasmExecuteMsg,
+            message: Message {
+                name: "process_function".to_string(),
+                params_restrictions: Some(vec![ParamRestriction::MustBeIncluded(vec![
+                    "process_function".to_string(),
+                    "provide_liquidity".to_string(),
+                ])]),
+            },
+        },
+        contract_address: LibraryAccountType::Addr(
+            ntrn_strategy_config.libraries.supervault_lper.clone(),
+        ),
+    };
+
+    // Create the subroutine for the phase shift authorization
+    let subroutine_phase_shift = AtomicSubroutineBuilder::new()
+        .with_function(withdraw_liquidity_function)
+        .with_function(update_maxbtc_issuer_function)
+        .with_function(issue_maxbtc_function)
+        .with_function(forward_to_supervault_deposit_account_function)
+        .with_function(update_supervault_lper_config_function)
+        .with_function(update_clearing_queue_config_function)
+        .with_function(provide_liquidity_function)
+        .build();
+
+    // Create the authorization for the phase shift
+    let authorization_phase_shift = AuthorizationBuilder::new()
+        .with_label(PHASE_SHIFT_LABEL)
+        .with_mode(AuthorizationModeInfo::Permissioned(
+            PermissionTypeInfo::WithoutCallLimit(vec![ntrn_params.general.owner.clone()]),
+        ))
+        .with_subroutine(subroutine_phase_shift)
+        .build();
+
+    authorizations.push(authorization_phase_shift);
 
     // Add all authorizations to the authorization contract
-    let create_authorizations =
-        valence_authorization_utils::msg::PermissionedMsg::CreateAuthorizations { authorizations };
+    let create_authorizations = valence_authorization_utils::msg::ExecuteMsg::PermissionedAction(
+        valence_authorization_utils::msg::PermissionedMsg::CreateAuthorizations { authorizations },
+    );
 
     neutron_client
         .execute_wasm(&authorization_contract, create_authorizations, vec![], None)
@@ -322,10 +538,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
         validate_last_block_execution: false,
     };
 
-    let create_zk_authorization =
+    let create_zk_authorization = valence_authorization_utils::msg::ExecuteMsg::PermissionedAction(
         valence_authorization_utils::msg::PermissionedMsg::CreateZkAuthorizations {
             zk_authorizations: vec![zk_authorization],
-        };
+        },
+    );
+
     neutron_client
         .execute_wasm(
             &authorization_contract,
@@ -337,52 +555,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("ZK Authorization created successfully");
 
     // TODO: Transfer ownership of authorization contract to owner
-
-    // Last thing we will do is register the ICA on the valence ICA
-    let register_ica_msg = valence_account_utils::ica::ExecuteMsg::RegisterIca {};
-    neutron_client
-        .execute_wasm(
-            &ntrn_strategy_config.accounts.ica,
-            register_ica_msg,
-            vec![cosmrs::Coin::new(1_000_000u128, "untrn").unwrap()],
-            None,
-        )
-        .await?;
-
-    println!("Registering ICA");
-
-    // Let's wait enough time for the transaction to succeed and the ICA to be registered
-    tokio::time::sleep(std::time::Duration::from_secs(30)).await;
-
-    // Let's query now to get the ICA address
-    let query_ica = valence_account_utils::ica::QueryMsg::IcaState {};
-    let ica_state: valence_account_utils::ica::IcaState = neutron_client
-        .query_contract_state(&ntrn_strategy_config.accounts.ica, query_ica)
-        .await?;
-
-    let ica_address = match ica_state {
-        valence_account_utils::ica::IcaState::Created(ica_information) => ica_information.address,
-        _ => {
-            panic!("ICA creation failed!");
-        }
-    };
-
-    let gaia_cfg = GaiaStrategyConfig {
-        grpc_url: "grpc_url".to_string(),
-        grpc_port: "grpc_port".to_string(),
-        chain_id: "chain_id".to_string(),
-        chain_denom: "uatom".to_string(),
-        deposit_denom: ntrn_params.ica.deposit_token_on_hub_denom,
-        ica_address,
-    };
-
-    // Write the Gaia strategy config to a file
-    let gaia_cfg_path = current_dir.join("deploy/src/gaia_strategy_config.toml");
-    fs::write(
-        gaia_cfg_path,
-        toml::to_string(&gaia_cfg).expect("Failed to serialize Gaia strategy config"),
-    )
-    .expect("Failed to write Gaia strategy config to file");
 
     Ok(())
 }

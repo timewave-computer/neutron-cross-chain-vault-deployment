@@ -64,6 +64,7 @@ struct EurekaTransfer {
     recipient: String,
     source_client: String,
     timeout: u64,
+    ibc_transfer_threshold_amt: u64,
 }
 
 #[derive(Deserialize, Debug)]
@@ -311,7 +312,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let eth_cfg = EthereumStrategyConfig {
-        ibc_transfer_threshold_amt: U256::from(1_000_000),
+        ibc_transfer_threshold_amt: U256::from(
+            parameters.eureka_transfer.ibc_transfer_threshold_amt,
+        ),
         rate_scaling_factor: parameters.vault.scaling_factor,
         rpc_url: parameters.general.rpc_url,
         authorizations: authorization,
