@@ -28,4 +28,4 @@ initial_settlement_ratio_percentage = 80
 
 
 [coprocessor_app]
-clearing_queue_coprocessor_app_id = "..." # TBD after we have the app deployed
+clearing_queue_coprocessor_app_id = "f8923f9f3da06b726fbaf1a41a6a375c86ff2180f8c11a60d1f7ad90ac9b4281" # TBD after we have the app deployed

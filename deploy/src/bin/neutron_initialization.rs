@@ -508,8 +508,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     authorizations.push(authorization_phase_shift);
 
     // Add all authorizations to the authorization contract
-    let create_authorizations =
-        valence_authorization_utils::msg::PermissionedMsg::CreateAuthorizations { authorizations };
+    let create_authorizations = valence_authorization_utils::msg::ExecuteMsg::PermissionedAction(
+        valence_authorization_utils::msg::PermissionedMsg::CreateAuthorizations { authorizations },
+    );
 
     neutron_client
         .execute_wasm(&authorization_contract, create_authorizations, vec![], None)
@@ -537,10 +538,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
         validate_last_block_execution: false,
     };
 
-    let create_zk_authorization =
+    let create_zk_authorization = valence_authorization_utils::msg::ExecuteMsg::PermissionedAction(
         valence_authorization_utils::msg::PermissionedMsg::CreateZkAuthorizations {
             zk_authorizations: vec![zk_authorization],
-        };
+        },
+    );
+
     neutron_client
         .execute_wasm(
             &authorization_contract,

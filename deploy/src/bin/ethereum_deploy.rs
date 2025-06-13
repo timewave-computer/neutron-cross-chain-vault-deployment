@@ -6,6 +6,7 @@ use alloy::{
     sol,
     sol_types::SolValue,
 };
+use cosmwasm_std::Uint128;
 use serde::Deserialize;
 use sp1_sdk::{HashableKey, SP1VerifyingKey};
 use types::{
@@ -49,7 +50,7 @@ struct Vault {
     platform_fee_account: Address,
     strategist_fee_account: Address,
     strategist_fee_ratio_bps: u32,
-    scaling_factor: u128,
+    scaling_factor: Uint128,
     deposit_cap: U256,
     deposit_fee_bps: u32,
     withdraw_rate_bps: u32,
@@ -314,7 +315,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         ibc_transfer_threshold_amt: U256::from(
             parameters.eureka_transfer.ibc_transfer_threshold_amt,
         ),
-        rate_scaling_factor: parameters.vault.scaling_factor.into(),
+        rate_scaling_factor: parameters.vault.scaling_factor,
         rpc_url: parameters.general.rpc_url,
         authorizations: authorization,
         processor: processor_address,

@@ -741,10 +741,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         )
         .await?;
 
-    println!("Registering ICA");
+    println!("Registering ICA...");
 
     // Let's wait enough time for the transaction to succeed and the ICA to be registered
-    tokio::time::sleep(std::time::Duration::from_secs(30)).await;
+    tokio::time::sleep(std::time::Duration::from_secs(60)).await;
 
     // Let's query now to get the ICA address
     let query_ica = valence_account_utils::ica::QueryMsg::IcaState {};
@@ -755,9 +755,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let ica_address = match ica_state {
         valence_account_utils::ica::IcaState::Created(ica_information) => ica_information.address,
         _ => {
-            panic!("ICA creation failed!");
+            panic!("ICA creation failed!, state: {:?}", ica_state);
         }
     };
+    println!("ICA address: {}", ica_address);
 
     let gaia_cfg = GaiaStrategyConfig {
         grpc_url: "grpc_url".to_string(),
