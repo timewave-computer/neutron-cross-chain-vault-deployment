@@ -226,10 +226,19 @@ impl Strategy {
             )
             .await?;
 
+        info!(target: UPDATE_PHASE, "mars input credit accounts = {:?}", mars_input_acc_credit_accounts);
+
         // extract the credit account id. while credit accounts are returned as a vec,
         // mars lending library should only ever create one credit account and re-use it
         // for all LP actions, so we get the [0]
-        let mars_input_credit_account_id = mars_input_acc_credit_accounts[0].id.to_string();
+        let mars_input_credit_account_id = match mars_input_acc_credit_accounts.len() {
+            // if this is the first cycle and no credit accounts exist,
+            // we early return mars tvl 0
+            0 => return Ok(0),
+            _ => mars_input_acc_credit_accounts[0].id.to_string(),
+        };
+
+        info!(target: UPDATE_PHASE, "mars input credit account id = #{mars_input_credit_account_id}");
 
         // query mars positions owned by the credit account id
         let mars_positions_response: valence_lending_utils::mars::Positions = self
@@ -241,6 +250,8 @@ impl Strategy {
                 },
             )
             .await?;
+
+        info!(target: UPDATE_PHASE, "mars credit account positions = {:?}", mars_positions_response);
 
         // find the relevant denom among the active lends
         let mut mars_lending_deposit_token_amount = Uint128::zero();
@@ -264,6 +275,11 @@ impl Strategy {
             )
             .await?
             .into();
+
+        // if no shares are available, we early return supervaults tvl of 0
+        if lp_shares_balance.is_zero() {
+            return Ok(0)
+        }
 
         // query the supervault config to get the pair denom ordering
         let supervault_cfg: mmvault::state::Config = self
@@ -515,10 +531,11 @@ impl Strategy {
 
         // 3. query the OneWayVault indexer to fetch all obligations that were registered
         // on the vault but are not yet registered into the queue on Neutron
-        let new_obligations = self
+        let new_obligations: Vec<(u64, alloy::primitives::Address, String, U256)> = self
             .indexer_client
             .query_vault_withdraw_requests(Some(latest_registered_obligation_id + 1))
-            .await?;
+            .await
+            .unwrap_or_default();
         info!(
             target: REGISTRATION_PHASE,
             "new_obligations = {:#?}", new_obligations
