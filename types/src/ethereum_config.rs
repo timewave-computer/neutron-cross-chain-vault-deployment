@@ -1,4 +1,5 @@
 use alloy::primitives::{Address, U256};
+use cosmwasm_std::Uint128;
 use serde::{Deserialize, Serialize};
 use valence_strategist_utils::worker::ValenceWorkerTomlSerde;
 
@@ -12,7 +13,7 @@ pub struct EthereumStrategyConfig {
     pub ibc_transfer_threshold_amt: U256,
 
     /// update rate scaling factor
-    pub rate_scaling_factor: u128,
+    pub rate_scaling_factor: Uint128,
 
     /// authorizations module
     pub authorizations: Address,
