@@ -1,7 +1,7 @@
 use std::{error::Error, str::FromStr, time::Duration};
 
 use alloy::{
-    primitives::{Bytes, U256},
+    primitives::{Bytes, U256, ruint::algorithms::gcd},
     providers::Provider,
 };
 use async_trait::async_trait;
@@ -93,6 +93,13 @@ impl Strategy {
         let eth_deposit_denom_contract =
             ERC20::new(self.cfg.ethereum.denoms.deposit_token, &eth_rp);
 
+        let current_vault_rate = self
+            .eth_client
+            .query(one_way_vault_contract.redemptionRate())
+            .await?
+            ._0;
+        info!(target: UPDATE_PHASE, "pre_update_rate = {current_vault_rate}");
+
         let eth_deposit_acc_balance = self
             .eth_client
             .query(eth_deposit_denom_contract.balanceOf(*eth_deposit_acc_contract.address()))
@@ -183,6 +190,7 @@ impl Strategy {
         .iter()
         .sum();
         info!(target: UPDATE_PHASE, "deposit token total amount={deposit_token_total}");
+        info!(target: UPDATE_PHASE, "rate_scaling_factor = {}", self.cfg.ethereum.rate_scaling_factor);
 
         // rate =  effective_total_assets / (effective_vault_shares * scaling_factor)
         let redemption_rate_decimal = Decimal::from_ratio(
@@ -194,6 +202,24 @@ impl Strategy {
 
         let redemption_rate_sol_u256 = U256::from(redemption_rate_decimal.atomics().u128());
         info!(target: UPDATE_PHASE, "redemption_rate_sol_u256={redemption_rate_sol_u256}");
+
+        if redemption_rate_sol_u256 > current_vault_rate {
+            let change_decimal = Decimal::from_ratio(
+                Uint128::from_str(&redemption_rate_sol_u256.to_string()).unwrap(),
+                Uint128::from_str(&current_vault_rate.to_string()).unwrap(),
+            );
+
+            let rate_delta = change_decimal - Decimal::one();
+            info!(target: UPDATE_PHASE, "redemption rate epoch delta = +{rate_delta}");
+        } else {
+            let change_decimal = Decimal::from_ratio(
+                Uint128::from_str(&redemption_rate_sol_u256.to_string()).unwrap(),
+                Uint128::from_str(&current_vault_rate.to_string()).unwrap(),
+            );
+            let rate_delta = Decimal::one() - change_decimal;
+
+            info!(target: UPDATE_PHASE, "redemption rate epoch delta = -{rate_delta}");
+        };
 
         let update_tx = one_way_vault_contract.update(redemption_rate_sol_u256);
 
@@ -278,7 +304,7 @@ impl Strategy {
 
         // if no shares are available, we early return supervaults tvl of 0
         if lp_shares_balance.is_zero() {
-            return Ok(0)
+            return Ok(0);
         }
 
         // query the supervault config to get the pair denom ordering
@@ -375,7 +401,7 @@ impl Strategy {
             .query(eth_wbtc_contract.balanceOf(*eth_deposit_acc.address()))
             .await?
             ._0;
-        trace!(target: DEPOSIT_PHASE, "eth deposit acc balance = {eth_deposit_acc_bal}");
+        info!(target: DEPOSIT_PHASE, "eth deposit acc balance = {eth_deposit_acc_bal}");
 
         // 2. validate that the deposit account balance exceeds the eureka routing
         // threshold amount
@@ -387,10 +413,17 @@ impl Strategy {
         }
 
         // 3. fetch the IBC-Eureka route from eureka client
-        let skip_api_response = self
+        let skip_api_response = match self
             .ibc_eureka_client
             .query_skip_eureka_route(eth_deposit_acc_bal.to_string())
-            .await?;
+            .await
+        {
+            Ok(r) => r,
+            Err(e) => {
+                warn!(target: DEPOSIT_PHASE, "skip route error: {e}");
+                return Ok(());
+            }
+        };
 
         // format the response in format expected by the coprocessor and post it
         // there for proof
