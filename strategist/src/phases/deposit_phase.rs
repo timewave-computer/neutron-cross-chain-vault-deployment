@@ -1,6 +1,9 @@
 use std::{error::Error, str::FromStr};
 
-use alloy::{primitives::Bytes, providers::Provider};
+use alloy::{
+    primitives::{Bytes, U256},
+    providers::Provider,
+};
 use cosmwasm_std::{Uint128, to_json_binary};
 use log::{info, trace, warn};
 use serde_json::json;
@@ -20,37 +23,12 @@ use crate::strategy_config::Strategy;
 const DEPOSIT_PHASE: &str = "deposit";
 
 impl Strategy {
-    /// carries out the steps needed to bring the new deposits from Ethereum to
-    /// Neutron (via Cosmos Hub) before depositing them into Mars protocol.
-    pub async fn deposit(
+    async fn eth_to_gaia_routing(
         &mut self,
         eth_rp: &CustomProvider,
+        eth_deposit_acc_bal: U256,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        trace!(target: DEPOSIT_PHASE, "starting deposit phase");
-
-        let eth_wbtc_contract = ERC20::new(self.cfg.ethereum.denoms.deposit_token, &eth_rp);
-        let eth_deposit_acc = BaseAccount::new(self.cfg.ethereum.accounts.deposit, &eth_rp);
         let eth_auth_contract = Authorization::new(self.cfg.ethereum.authorizations, &eth_rp);
-
-        // 1. query the ethereum deposit account balance
-        let eth_deposit_acc_bal = self
-            .eth_client
-            .query(eth_wbtc_contract.balanceOf(*eth_deposit_acc.address()))
-            .await?
-            ._0;
-        info!(target: DEPOSIT_PHASE, "eth deposit acc balance = {eth_deposit_acc_bal}");
-
-        // 2. validate that the deposit account balance exceeds the eureka routing
-        // threshold amount
-        // TODO: this is too naive; only need to skip the Eureka routing eth->gaia
-        // in case this threshold is not exceeded so that any funds that landed in the ICA
-        // later than expected would still get pulled into the positions
-        if eth_deposit_acc_bal < self.cfg.ethereum.ibc_transfer_threshold_amt {
-            warn!(target: DEPOSIT_PHASE, "eth deposit account balance does not meet the eureka transfer threshold; returning");
-            // early return if balance is too small for the eureka transfer
-            // to be worth it
-            return Ok(());
-        }
 
         // 3. fetch the IBC-Eureka route from eureka client
         let skip_api_response = match self
@@ -104,8 +82,7 @@ impl Strategy {
         let gaia_ica_balance = Uint128::from_str(&eth_deposit_acc_bal.to_string())?;
         info!(target: DEPOSIT_PHASE, "gaia ica expected deposit token bal = {gaia_ica_balance}; starting to poll");
 
-        let gaia_ica_bal = self
-            .gaia_client
+        self.gaia_client
             .poll_until_expected_balance(
                 &self.cfg.gaia.ica_address,
                 &self.cfg.gaia.deposit_denom,
@@ -114,10 +91,18 @@ impl Strategy {
                 30,
             )
             .await?;
+        Ok(())
+    }
 
-        // 5. enqueue: gaia ICA transfer amount update & gaia ica transfer messages
-        let ica_ibc_transfer_update_msg =
-            to_json_binary(&valence_ica_ibc_transfer::msg::LibraryConfigUpdate {
+    async fn gaia_to_neutron_routing(
+        &mut self,
+        gaia_ica_bal: u128,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let ica_ibc_transfer_execute_msg: valence_library_utils::msg::ExecuteMsg<
+            valence_ica_ibc_transfer::msg::FunctionMsgs,
+            valence_ica_ibc_transfer::msg::LibraryConfigUpdate,
+        > = valence_library_utils::msg::ExecuteMsg::UpdateConfig {
+            new_config: valence_ica_ibc_transfer::msg::LibraryConfigUpdate {
                 input_addr: None,
                 amount: Some(gaia_ica_bal.into()),
                 denom: None,
@@ -126,7 +111,11 @@ impl Strategy {
                 remote_chain_info: None,
                 denom_to_pfm_map: None,
                 eureka_config: OptionUpdate::None,
-            })?;
+            },
+        };
+
+        let ica_ibc_transfer_update_msg = to_json_binary(&ica_ibc_transfer_execute_msg)?;
+
         let ica_ibc_transfer_msg =
             to_json_binary(&valence_ica_ibc_transfer::msg::FunctionMsgs::Transfer {})?;
 
@@ -147,11 +136,66 @@ impl Strategy {
             .poll_until_expected_balance(
                 &self.cfg.neutron.accounts.deposit,
                 &self.cfg.neutron.denoms.deposit_token,
-                gaia_ica_balance.u128(),
+                gaia_ica_bal,
                 5,
                 10,
             )
             .await?;
+        Ok(())
+    }
+
+    /// carries out the steps needed to bring the new deposits from Ethereum to
+    /// Neutron (via Cosmos Hub) before depositing them into Mars protocol.
+    pub async fn deposit(
+        &mut self,
+        eth_rp: &CustomProvider,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        trace!(target: DEPOSIT_PHASE, "starting deposit phase");
+
+        let eth_wbtc_contract = ERC20::new(self.cfg.ethereum.denoms.deposit_token, &eth_rp);
+        let eth_deposit_acc = BaseAccount::new(self.cfg.ethereum.accounts.deposit, &eth_rp);
+
+        // 1. query the ethereum deposit account balance
+        let eth_deposit_acc_bal = self
+            .eth_client
+            .query(eth_wbtc_contract.balanceOf(*eth_deposit_acc.address()))
+            .await?
+            ._0;
+        info!(target: DEPOSIT_PHASE, "eth deposit acc balance = {eth_deposit_acc_bal}");
+
+        // 2. validate that the deposit account balance exceeds the eureka routing
+        // threshold amount
+        match eth_deposit_acc_bal < self.cfg.ethereum.ibc_transfer_threshold_amt {
+            // if balance does not exceed the transfer threshold, we skip the eureka transfer steps
+            // and proceed to gaia ica -> neutron routing
+            true => {
+                info!(target: DEPOSIT_PHASE, "IBC-Eureka transfer threshold not met! Proceeding to ICA routing.");
+            }
+            // if balance meets the transfer threshold, we carry out the eureka transfer steps
+            // prior to proceeding to gaia ica -> neutron routing
+            false => {
+                info!(target: DEPOSIT_PHASE, "IBC-Eureka transfer threshold met!");
+                self.eth_to_gaia_routing(eth_rp, eth_deposit_acc_bal)
+                    .await?;
+            }
+        }
+
+        let gaia_ica_bal = self
+            .gaia_client
+            .query_balance(&self.cfg.gaia.ica_address, &self.cfg.gaia.deposit_denom)
+            .await?;
+
+        match gaia_ica_bal == 0 {
+            true => {
+                info!(target: DEPOSIT_PHASE, "Cosmos Hub ICA balance is zero! proceeding to position entry");
+            }
+            false => {
+                info!(target: DEPOSIT_PHASE, "Cosmos Hub ICA deposit token balance is {gaia_ica_bal}; pulling funds to Neutron");
+                self.gaia_to_neutron_routing(gaia_ica_bal).await?;
+            }
+        }
+
+        // 5. enqueue: gaia ICA transfer amount update & gaia ica transfer messages
 
         info!(target: DEPOSIT_PHASE, "routing funds from neutron deposit account to mars and supervaults for lending");
 
