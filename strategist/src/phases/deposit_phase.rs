@@ -98,26 +98,41 @@ impl Strategy {
         &mut self,
         gaia_ica_bal: u128,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let ica_ibc_transfer_execute_msg: valence_library_utils::msg::ExecuteMsg<
+        // TODO: this should look like this but there's some serde issue so using manual
+        // json below for now
+
+        // let ica_ibc_transfer_update_msg: valence_library_utils::msg::ExecuteMsg<
+        //     valence_ica_ibc_transfer::msg::FunctionMsgs,
+        //     valence_ica_ibc_transfer::msg::LibraryConfigUpdate,
+        // > = valence_library_utils::msg::ExecuteMsg::UpdateConfig {
+        //     new_config: valence_ica_ibc_transfer::msg::LibraryConfigUpdate {
+        //         input_addr: None,
+        //         amount: Some(gaia_ica_bal.into()),
+        //         denom: None,
+        //         receiver: None,
+        //         memo: None,
+        //         remote_chain_info: None,
+        //         denom_to_pfm_map: None,
+        //         eureka_config: OptionUpdate::None,
+        //     },
+        // };
+        let ica_ibc_transfer_update_msg = json!({
+            "update_config": {
+                "new_config": {
+                    "amount": "11099"
+                }
+            }
+        });
+        let ica_ibc_transfer_update_msg = to_json_binary(&ica_ibc_transfer_update_msg)?;
+
+        let ica_ibc_transfer_exec_msg: valence_library_utils::msg::ExecuteMsg<
             valence_ica_ibc_transfer::msg::FunctionMsgs,
             valence_ica_ibc_transfer::msg::LibraryConfigUpdate,
-        > = valence_library_utils::msg::ExecuteMsg::UpdateConfig {
-            new_config: valence_ica_ibc_transfer::msg::LibraryConfigUpdate {
-                input_addr: None,
-                amount: Some(gaia_ica_bal.into()),
-                denom: None,
-                receiver: None,
-                memo: None,
-                remote_chain_info: None,
-                denom_to_pfm_map: None,
-                eureka_config: OptionUpdate::None,
-            },
-        };
+        > = valence_library_utils::msg::ExecuteMsg::ProcessFunction(
+            valence_ica_ibc_transfer::msg::FunctionMsgs::Transfer {},
+        );
 
-        let ica_ibc_transfer_update_msg = to_json_binary(&ica_ibc_transfer_execute_msg)?;
-
-        let ica_ibc_transfer_msg =
-            to_json_binary(&valence_ica_ibc_transfer::msg::FunctionMsgs::Transfer {})?;
+        let ica_ibc_transfer_msg = to_json_binary(&ica_ibc_transfer_exec_msg)?;
 
         info!(target: DEPOSIT_PHASE, "performing ica_ibc_transfer library update & transfer");
         self.enqueue_neutron(
