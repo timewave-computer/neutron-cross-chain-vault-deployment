@@ -16,7 +16,6 @@ use valence_domain_clients::{
     cosmos::base_client::BaseClient,
     evm::base_client::{CustomProvider, EvmBaseClient},
 };
-use valence_library_utils::OptionUpdate;
 
 use crate::strategy_config::Strategy;
 
@@ -113,17 +112,19 @@ impl Strategy {
         //         memo: None,
         //         remote_chain_info: None,
         //         denom_to_pfm_map: None,
-        //         eureka_config: OptionUpdate::None,
+        //         eureka_config: OptionUpdate::Set(None),
         //     },
         // };
         let ica_ibc_transfer_update_msg = json!({
             "update_config": {
                 "new_config": {
-                    "amount": "11099"
+                    "amount": gaia_ica_bal.to_string(),
+                    "eureka_config": "none"
                 }
             }
         });
         let ica_ibc_transfer_update_msg = to_json_binary(&ica_ibc_transfer_update_msg)?;
+        info!("update b64: {}", ica_ibc_transfer_update_msg);
 
         let ica_ibc_transfer_exec_msg: valence_library_utils::msg::ExecuteMsg<
             valence_ica_ibc_transfer::msg::FunctionMsgs,
@@ -141,6 +142,7 @@ impl Strategy {
         )
         .await?;
 
+        info!(target: DEPOSIT_PHASE, "tick: update & transfer");
         self.tick_neutron().await?;
 
         info!(target: DEPOSIT_PHASE, "polling for neutron deposit account to receive the funds");
@@ -156,6 +158,7 @@ impl Strategy {
                 10,
             )
             .await?;
+
         Ok(())
     }
 
