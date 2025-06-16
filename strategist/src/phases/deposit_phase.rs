@@ -213,25 +213,41 @@ impl Strategy {
             }
         }
 
-        // 5. enqueue: gaia ICA transfer amount update & gaia ica transfer messages
-
         info!(target: DEPOSIT_PHASE, "routing funds from neutron deposit account to mars and supervaults for lending");
 
         // 7. use Splitter to route funds from the Neutron program
         // deposit account to the Mars and Supervaults deposit accounts
-        let split_msg = to_json_binary(&valence_splitter_library::msg::FunctionMsgs::Split {})?;
+        let splitter_exec_msg: valence_library_utils::msg::ExecuteMsg<
+            valence_splitter_library::msg::FunctionMsgs,
+            valence_splitter_library::msg::LibraryConfigUpdate,
+        > = valence_library_utils::msg::ExecuteMsg::ProcessFunction(
+            valence_splitter_library::msg::FunctionMsgs::Split {},
+        );
+
+        let split_msg = to_json_binary(&splitter_exec_msg)?;
 
         // 8. use Mars Lending library to deposit funds from Mars deposit account
         // into Mars protocol
-        let mars_lend_msg = to_json_binary(&valence_mars_lending::msg::FunctionMsgs::Lend {})?;
+        let mars_lending_exec_msg: valence_library_utils::msg::ExecuteMsg<
+            valence_mars_lending::msg::FunctionMsgs,
+            valence_mars_lending::msg::LibraryConfigUpdate,
+        > = valence_library_utils::msg::ExecuteMsg::ProcessFunction(
+            valence_mars_lending::msg::FunctionMsgs::Lend {},
+        );
+
+        let mars_lend_msg = to_json_binary(&mars_lending_exec_msg)?;
 
         // 9. use Supervaults lper library to deposit funds from Supervaults deposit account
         // into the configured supervault
-        let supervaults_lp_msg = to_json_binary(
-            &valence_supervaults_lper::msg::FunctionMsgs::ProvideLiquidity {
+        let supervaults_lper_execute_msg: valence_library_utils::msg::ExecuteMsg<
+            valence_supervaults_lper::msg::FunctionMsgs,
+            valence_supervaults_lper::msg::LibraryConfigUpdate,
+        > = valence_library_utils::msg::ExecuteMsg::ProcessFunction(
+            valence_supervaults_lper::msg::FunctionMsgs::ProvideLiquidity {
                 expected_vault_ratio_range: None,
             },
-        )?;
+        );
+        let supervaults_lp_msg = to_json_binary(&supervaults_lper_execute_msg)?;
 
         self.enqueue_neutron(
             LEND_AND_PROVIDE_LIQUIDITY_LABEL,
