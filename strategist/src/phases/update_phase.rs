@@ -9,7 +9,9 @@ use valence_domain_clients::{
     evm::base_client::{CustomProvider, EvmBaseClient},
 };
 
-use crate::{strategist::UPDATE_PHASE, strategy_config::Strategy};
+use crate::strategy_config::Strategy;
+
+const UPDATE_PHASE: &str = "update";
 
 impl Strategy {
     /// performs the vault rate update

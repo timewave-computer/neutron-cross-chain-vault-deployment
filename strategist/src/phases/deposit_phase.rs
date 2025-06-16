@@ -15,7 +15,9 @@ use valence_domain_clients::{
 };
 use valence_library_utils::OptionUpdate;
 
-use crate::{strategist::DEPOSIT_PHASE, strategy_config::Strategy};
+use crate::strategy_config::Strategy;
+
+const DEPOSIT_PHASE: &str = "deposit";
 
 impl Strategy {
     /// carries out the steps needed to bring the new deposits from Ethereum to

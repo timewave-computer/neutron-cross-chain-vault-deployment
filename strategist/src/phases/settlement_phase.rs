@@ -6,7 +6,9 @@ use types::labels::{MARS_WITHDRAW_LABEL, SETTLE_OBLIGATION_LABEL};
 use valence_clearing_queue_supervaults::msg::ObligationsResponse;
 use valence_domain_clients::cosmos::{base_client::BaseClient, wasm_client::WasmClient};
 
-use crate::{strategist::SETTLEMENT_PHASE, strategy_config::Strategy};
+use crate::strategy_config::Strategy;
+
+const SETTLEMENT_PHASE: &str = "settlement";
 
 impl Strategy {
     /// performs the final settlement of registered withdrawal obligations in

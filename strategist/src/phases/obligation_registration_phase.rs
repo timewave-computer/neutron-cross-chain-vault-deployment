@@ -9,7 +9,9 @@ use valence_domain_clients::{
     indexer::one_way_vault::OneWayVaultIndexer,
 };
 
-use crate::{strategist::REGISTRATION_PHASE, strategy_config::Strategy};
+use crate::strategy_config::Strategy;
+
+const REGISTRATION_PHASE: &str = "registration";
 
 impl Strategy {
     /// reads the newly submitted withdrawal obligations that are not yet
