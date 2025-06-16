@@ -126,11 +126,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         "new_config".to_string(),
                         "denom_to_pfm_map".to_string(),
                     ]),
-                    ParamRestriction::CannotBeIncluded(vec![
-                        "update_config".to_string(),
-                        "new_config".to_string(),
-                        "eureka_config".to_string(),
-                    ]),
                 ]),
             },
         },
@@ -145,8 +140,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
             message_type: MessageType::CosmwasmExecuteMsg,
             message: Message {
                 name: "process_function".to_string(),
-                // Only Transfer can be called because Eureka will fail as there is no config, no need for restrictions
-                params_restrictions: None,
+                // Only allow calling transfer
+                params_restrictions: Some(vec![ParamRestriction::MustBeIncluded(vec![
+                    "process_function".to_string(),
+                    "transfer".to_string(),
+                ])]),
             },
         },
         contract_address: LibraryAccountType::Addr(ntrn_strategy_config.libraries.ica_transfer),
