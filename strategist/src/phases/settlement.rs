@@ -19,14 +19,14 @@ impl Strategy {
         info!(target: SETTLEMENT_PHASE, "starting settlement phase");
 
         // 1. query the current settlement account balance
-        let settlement_acc_bal_deposit_token_bal = self
+        let settlement_acc_bal_deposit = self
             .neutron_client
             .query_balance(
                 &self.cfg.neutron.accounts.settlement,
                 &self.cfg.neutron.denoms.deposit_token,
             )
             .await?;
-        let settlement_acc_bal_supervaults = self
+        let settlement_acc_bal_lp = self
             .neutron_client
             .query_balance(
                 &self.cfg.neutron.accounts.settlement,
@@ -35,12 +35,9 @@ impl Strategy {
             .await?;
         info!(
             target: SETTLEMENT_PHASE,
-            "settlement account balance deposit_token = {settlement_acc_bal_deposit_token_bal}"
+            "settlement account deposit balance = {settlement_acc_bal_deposit}"
         );
-        info!(
-            target: SETTLEMENT_PHASE,
-            "settlement account balance supervaults_lp = {settlement_acc_bal_supervaults}"
-        );
+        info!(target: SETTLEMENT_PHASE, "settlement account LP balance = {settlement_acc_bal_lp}");
 
         // 2. query the Clearing Queue and calculate the total active obligations
         let clearing_queue: ObligationsResponse = self
@@ -82,10 +79,10 @@ impl Strategy {
 
         // 3. if settlement account balance is insufficient to cover the active
         // obligations, we perform the Mars protocol withdrawals
-        if settlement_acc_bal_deposit_token_bal < deposit_obligation_total {
+        if settlement_acc_bal_deposit < deposit_obligation_total {
             // 3. simulate Mars protocol withdrawal to obtain the funds necessary
             // to fulfill all active withdrawal requests
-            let obligations_delta = deposit_obligation_total - settlement_acc_bal_deposit_token_bal;
+            let obligations_delta = deposit_obligation_total - settlement_acc_bal_deposit;
             info!(
                 target: SETTLEMENT_PHASE, "settlement_account deposit_token balance deficit = {obligations_delta}"
             );
@@ -96,14 +93,23 @@ impl Strategy {
                 target: SETTLEMENT_PHASE, "withdrawing {obligations_delta} from mars lending position"
             );
             let mars_withdraw_msg =
-                to_json_binary(&valence_mars_lending::msg::FunctionMsgs::Withdraw {
-                    amount: Some(obligations_delta.into()),
-                })?;
+                valence_library_utils::msg::ExecuteMsg::<_, ()>::ProcessFunction(
+                    valence_mars_lending::msg::FunctionMsgs::Withdraw {
+                        amount: Some(obligations_delta.into()),
+                    },
+                );
 
-            self.enqueue_neutron(MARS_WITHDRAW_LABEL, vec![mars_withdraw_msg])
-                .await?;
+            self.enqueue_neutron(
+                MARS_WITHDRAW_LABEL,
+                vec![to_json_binary(&mars_withdraw_msg)?],
+            )
+            .await?;
 
             self.tick_neutron().await?;
+        }
+
+        if settlement_acc_bal_lp < lp_obligation_total {
+            warn!(target: SETTLEMENT_PHASE, "insufficient supervault LP share balance! available: {settlement_acc_bal_lp}, obligations: {lp_obligation_total}");
         }
 
         // 5. process the Clearing Queue settlement requests by enqueuing the settlement
@@ -112,12 +118,19 @@ impl Strategy {
             info!(
                 target: SETTLEMENT_PHASE, "settling obligation #{}", obligation.id
             );
-            let obligation_settlement_msg = to_json_binary(
-                &valence_clearing_queue_supervaults::msg::FunctionMsgs::SettleNextObligation {},
-            )?;
 
-            self.enqueue_neutron(SETTLE_OBLIGATION_LABEL, vec![obligation_settlement_msg])
-                .await?;
+            // build the settlement function message
+            let settlement_exec_msg =
+                valence_library_utils::msg::ExecuteMsg::<_, ()>::ProcessFunction(
+                    valence_clearing_queue_supervaults::msg::FunctionMsgs::SettleNextObligation {},
+                );
+
+            // enqueue the settlement message and tick the processor
+            self.enqueue_neutron(
+                SETTLE_OBLIGATION_LABEL,
+                vec![to_json_binary(&settlement_exec_msg)?],
+            )
+            .await?;
 
             self.tick_neutron().await?;
         }
