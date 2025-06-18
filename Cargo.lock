@@ -7331,7 +7331,6 @@ dependencies = [
  "alloy",
  "async-trait",
  "cosmwasm-std",
- "deploy",
  "dotenv",
  "env_logger",
  "hex",

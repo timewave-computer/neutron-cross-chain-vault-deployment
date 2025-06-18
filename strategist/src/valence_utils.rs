@@ -3,8 +3,9 @@ pub(crate) mod neutron {
 
     use cosmwasm_std::Binary;
 
+    use log::debug;
     use valence_authorization_utils::msg::ProcessorMessage;
-    use valence_domain_clients::cosmos::wasm_client::WasmClient;
+    use valence_domain_clients::cosmos::{base_client::BaseClient, wasm_client::WasmClient};
 
     use crate::strategy_config::Strategy;
 
@@ -23,7 +24,8 @@ pub(crate) mod neutron {
                 encoded_messages.push(processor_msg);
             }
 
-            self.neutron_client
+            let tx_resp = self
+                .neutron_client
                 .execute_wasm(
                     &self.cfg.neutron.authorizations,
                     valence_authorization_utils::msg::ExecuteMsg::PermissionlessAction(
@@ -38,12 +40,17 @@ pub(crate) mod neutron {
                 )
                 .await?;
 
+            debug!("tx hash: {}", tx_resp.hash);
+
+            self.neutron_client.poll_for_tx(&tx_resp.hash).await?;
+
             Ok(())
         }
 
         /// ticks the processor on neutron
         pub async fn tick_neutron(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
-            self.neutron_client
+            let tx_resp = self
+                .neutron_client
                 .execute_wasm(
                     &self.cfg.neutron.processor,
                     valence_processor_utils::msg::ExecuteMsg::PermissionlessAction(
@@ -53,6 +60,10 @@ pub(crate) mod neutron {
                     None,
                 )
                 .await?;
+
+            debug!("tx hash: {}", tx_resp.hash);
+
+            self.neutron_client.poll_for_tx(&tx_resp.hash).await?;
 
             Ok(())
         }
