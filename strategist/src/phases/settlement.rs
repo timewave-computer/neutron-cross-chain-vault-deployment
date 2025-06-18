@@ -3,7 +3,7 @@ use std::error::Error;
 use cosmwasm_std::to_json_binary;
 use log::{info, warn};
 use types::labels::{MARS_WITHDRAW_LABEL, SETTLE_OBLIGATION_LABEL};
-use valence_clearing_queue_supervaults::msg::ObligationsResponse;
+use valence_clearing_queue_supervaults::{msg::ObligationsResponse, state::WithdrawalObligation};
 use valence_domain_clients::cosmos::{base_client::BaseClient, wasm_client::WasmClient};
 
 use crate::strategy_config::Strategy;
@@ -15,10 +15,19 @@ impl Strategy {
     /// the Clearing Queue library. this involves topping up the settlement
     /// account with funds necessary to carry out all withdrawal obligations
     /// in the queue.
+    /// consists of the following stages:
+    /// 1. query the pending obligations clearing queue and batch them up
+    /// 2. ensure the queue is ready to be cleared:
+    ///   1. if settlement account deposit token balance is insufficient
+    ///      to clear the entire queue, withdraw the necessary amount from Mars
+    ///   2. if settlement account LP token balance is insufficient to clear
+    ///      the entire queue, log a warning message (this should not happen
+    ///      with correct configuration)
+    /// 3. clear the queue in a FIFO manner
     pub async fn settlement(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
         info!(target: SETTLEMENT_PHASE, "starting settlement phase");
 
-        // 1. query the current settlement account balance
+        // query the current settlement account balances
         let settlement_acc_bal_deposit = self
             .neutron_client
             .query_balance(
@@ -39,7 +48,7 @@ impl Strategy {
         );
         info!(target: SETTLEMENT_PHASE, "settlement account LP balance = {settlement_acc_bal_lp}");
 
-        // 2. query the Clearing Queue and calculate the total active obligations
+        // query the Clearing Queue pending obligations
         let clearing_queue: ObligationsResponse = self
             .neutron_client
             .query_contract_state(
@@ -54,21 +63,14 @@ impl Strategy {
             target: SETTLEMENT_PHASE, "clearing queue length = {}", clearing_queue.obligations.len()
         );
 
-        let mut deposit_obligation_total = 0;
-        let mut lp_obligation_total = 0;
-
-        // iterate through all obligations and sum up the coin amounts
-        for withdraw_obligation in clearing_queue.obligations.iter() {
-            for payout_coin in withdraw_obligation.payout_coins.iter() {
-                if payout_coin.denom == self.cfg.neutron.denoms.deposit_token {
-                    deposit_obligation_total += payout_coin.amount.u128();
-                } else if payout_coin.denom == self.cfg.neutron.denoms.supervault_lp {
-                    lp_obligation_total += payout_coin.amount.u128();
-                } else {
-                    warn!(target: SETTLEMENT_PHASE, "obligation contains unrecognized denom: {}", payout_coin.denom);
-                }
-            }
-        }
+        // flatten the obligation response into amounts of relevant denoms
+        let (deposit_obligation_total, lp_obligation_total) = flatten_obligation_queue_amounts(
+            &clearing_queue.obligations,
+            (
+                self.cfg.neutron.denoms.deposit_token.to_string(),
+                self.cfg.neutron.denoms.supervault_lp.to_string(),
+            ),
+        );
 
         info!(
             target: SETTLEMENT_PHASE, "total obligations deposit_token = {deposit_obligation_total}"
@@ -137,4 +139,31 @@ impl Strategy {
 
         Ok(())
     }
+}
+
+/// helper function that flattens a vec of withdraw obligations
+/// into a single batch.
+/// returns a tuple: (amount_1, amount_2), respecting the order
+/// of the (denom_1, denom_2) input
+fn flatten_obligation_queue_amounts(
+    obligations: &[WithdrawalObligation],
+    (denom_1, denom_2): (String, String),
+) -> (u128, u128) {
+    let mut amount_1 = 0;
+    let mut amount_2 = 0;
+
+    // iterate through all obligations and sum up the coin amounts
+    for withdraw_obligation in obligations.iter() {
+        for payout_coin in withdraw_obligation.payout_coins.iter() {
+            if payout_coin.denom == denom_1 {
+                amount_1 += payout_coin.amount.u128();
+            } else if payout_coin.denom == denom_2 {
+                amount_2 += payout_coin.amount.u128();
+            } else {
+                warn!(target: SETTLEMENT_PHASE, "obligation contains unrecognized denom: {}", payout_coin.denom);
+            }
+        }
+    }
+
+    (amount_1, amount_2)
 }
