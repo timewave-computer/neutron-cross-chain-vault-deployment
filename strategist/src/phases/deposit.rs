@@ -216,7 +216,12 @@ impl Strategy {
             .poll_until_expected_balance(
                 &self.cfg.gaia.ica_address,
                 &self.cfg.gaia.deposit_denom,
-                gaia_ica_balance.u128(),
+                // divide by 2 because eureka will take part of the funds for transfer fees.
+                // this parameter can be tuned more precisely based on `ibc_transfer_threshold_amt`
+                // from the ethereum strategy config.
+                // one thing to note on this is that eureka fees are dynamic, so tbd on what
+                // is the most efficient way of doing this.
+                gaia_ica_balance.u128() / 2,
                 15,  // every 15 sec
                 100, // for 100 times
             )
