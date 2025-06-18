@@ -1,6 +1,6 @@
 use std::{error::Error, str::FromStr};
 
-use alloy::primitives::U256;
+use alloy::{primitives::U256, providers::Provider};
 use cosmwasm_std::{Addr, Decimal, Uint128, Uint256};
 use log::{info, trace};
 use types::sol_types::{BaseAccount, ERC20, OneWayVault};
@@ -160,12 +160,12 @@ impl Strategy {
         let update_request = one_way_vault_contract
             .update(redemption_rate_sol_u256)
             .into_transaction_request();
-        // UNCOMMENT FOR UPDATES
-        // let update_vault_exec_response = self.eth_client.sign_and_send(update_request).await?;
 
-        // eth_rp
-        //     .get_transaction_receipt(update_vault_exec_response.transaction_hash)
-        //     .await?;
+        let update_vault_exec_response = self.eth_client.sign_and_send(update_request).await?;
+
+        eth_rp
+            .get_transaction_receipt(update_vault_exec_response.transaction_hash)
+            .await?;
 
         Ok(())
     }
