@@ -36,13 +36,14 @@ impl Strategy {
 
         // Stage 1: deposit token routing from Ethereum to Cosmos Hub
         {
-            let eth_wbtc_contract = ERC20::new(self.cfg.ethereum.denoms.deposit_token, &eth_rp);
+            let eth_deposit_token_contract =
+                ERC20::new(self.cfg.ethereum.denoms.deposit_token, &eth_rp);
             let eth_deposit_acc = BaseAccount::new(self.cfg.ethereum.accounts.deposit, &eth_rp);
 
             // query the ethereum deposit account balance
             let eth_deposit_acc_bal = self
                 .eth_client
-                .query(eth_wbtc_contract.balanceOf(*eth_deposit_acc.address()))
+                .query(eth_deposit_token_contract.balanceOf(*eth_deposit_acc.address()))
                 .await?
                 ._0;
             info!(target: DEPOSIT_PHASE, "eth deposit acc balance = {eth_deposit_acc_bal}");
@@ -105,32 +106,26 @@ impl Strategy {
                     info!(target: DEPOSIT_PHASE, "Neutron deposit account balance = {neutron_deposit_bal}; lending & LPing...");
                     // use Splitter to route funds from the Neutron program deposit
                     // account to the Mars and Supervaults deposit accounts
-                    let splitter_exec_msg: valence_library_utils::msg::ExecuteMsg<
-                        valence_splitter_library::msg::FunctionMsgs,
-                        valence_splitter_library::msg::LibraryConfigUpdate,
-                    > = valence_library_utils::msg::ExecuteMsg::ProcessFunction(
-                        valence_splitter_library::msg::FunctionMsgs::Split {},
-                    );
+                    let splitter_exec_msg =
+                        valence_library_utils::msg::ExecuteMsg::<_, ()>::ProcessFunction(
+                            valence_splitter_library::msg::FunctionMsgs::Split {},
+                        );
 
                     // use Mars Lending library to lend funds from Mars deposit account
                     // into Mars protocol
-                    let mars_lending_exec_msg: valence_library_utils::msg::ExecuteMsg<
-                        valence_mars_lending::msg::FunctionMsgs,
-                        valence_mars_lending::msg::LibraryConfigUpdate,
-                    > = valence_library_utils::msg::ExecuteMsg::ProcessFunction(
-                        valence_mars_lending::msg::FunctionMsgs::Lend {},
-                    );
+                    let mars_lending_exec_msg =
+                        valence_library_utils::msg::ExecuteMsg::<_, ()>::ProcessFunction(
+                            valence_mars_lending::msg::FunctionMsgs::Lend {},
+                        );
 
                     // use Supervaults lper library to deposit funds from Supervaults deposit account
                     // into the configured supervault
-                    let supervaults_lper_execute_msg: valence_library_utils::msg::ExecuteMsg<
-                        valence_supervaults_lper::msg::FunctionMsgs,
-                        valence_supervaults_lper::msg::LibraryConfigUpdate,
-                    > = valence_library_utils::msg::ExecuteMsg::ProcessFunction(
-                        valence_supervaults_lper::msg::FunctionMsgs::ProvideLiquidity {
-                            expected_vault_ratio_range: None,
-                        },
-                    );
+                    let supervaults_lper_execute_msg =
+                        valence_library_utils::msg::ExecuteMsg::<_, ()>::ProcessFunction(
+                            valence_supervaults_lper::msg::FunctionMsgs::ProvideLiquidity {
+                                expected_vault_ratio_range: None,
+                            },
+                        );
 
                     // enqueue all three actions under a single label as its an atomic subroutine
                     self.enqueue_neutron(
@@ -233,9 +228,6 @@ impl Strategy {
         &mut self,
         gaia_ica_bal: u128,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        // TODO: this should look like this but there's some serde issue so using manual
-        // json below for now
-
         // let ica_ibc_transfer_update_msg: valence_library_utils::msg::ExecuteMsg<
         //     valence_ica_ibc_transfer::msg::FunctionMsgs,
         //     valence_ica_ibc_transfer::msg::LibraryConfigUpdate,
@@ -259,13 +251,10 @@ impl Strategy {
                 }
             }
         });
-
-        let ica_ibc_transfer_exec_msg: valence_library_utils::msg::ExecuteMsg<
-            valence_ica_ibc_transfer::msg::FunctionMsgs,
-            valence_ica_ibc_transfer::msg::LibraryConfigUpdate,
-        > = valence_library_utils::msg::ExecuteMsg::ProcessFunction(
-            valence_ica_ibc_transfer::msg::FunctionMsgs::Transfer {},
-        );
+        let ica_ibc_transfer_exec_msg =
+            valence_library_utils::msg::ExecuteMsg::<_, ()>::ProcessFunction(
+                valence_ica_ibc_transfer::msg::FunctionMsgs::Transfer {},
+            );
 
         info!(target: DEPOSIT_PHASE, "enqueuing ica_ibc_transfer library update & transfer");
         self.enqueue_neutron(

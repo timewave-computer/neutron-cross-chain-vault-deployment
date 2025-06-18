@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use cosmwasm_std::to_json_binary;
-use log::{info, trace, warn};
+use log::{info, warn};
 use types::labels::{MARS_WITHDRAW_LABEL, SETTLE_OBLIGATION_LABEL};
 use valence_clearing_queue_supervaults::msg::ObligationsResponse;
 use valence_domain_clients::cosmos::{base_client::BaseClient, wasm_client::WasmClient};
@@ -16,7 +16,7 @@ impl Strategy {
     /// account with funds necessary to carry out all withdrawal obligations
     /// in the queue.
     pub async fn settlement(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
-        trace!(target: SETTLEMENT_PHASE, "starting settlement phase");
+        info!(target: SETTLEMENT_PHASE, "starting settlement phase");
 
         // 1. query the current settlement account balance
         let settlement_acc_bal_deposit_token_bal = self
