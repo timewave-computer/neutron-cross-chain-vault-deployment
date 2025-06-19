@@ -98,9 +98,9 @@ impl Strategy {
 
             // depending on the neutron deposit account balance, we either conclude the deposit phase
             // or perform the configured split before entering into Mars and Supervault positions.
-            match neutron_deposit_bal == 0 {
+            match neutron_deposit_bal < 2 {
                 true => {
-                    info!(target: DEPOSIT_PHASE, "Neutron deposit account balance is zero! concluding the deposit phase...");
+                    info!(target: DEPOSIT_PHASE, "Neutron deposit account balance is insufficient for entry! concluding the deposit phase...");
                 }
                 false => {
                     info!(target: DEPOSIT_PHASE, "Neutron deposit account balance = {neutron_deposit_bal}; lending & LPing...");
@@ -127,32 +127,14 @@ impl Strategy {
                             },
                         );
 
-                    // // enqueue all three actions under a single label as its an atomic subroutine
-                    // self.enqueue_neutron(
-                    //     LEND_AND_PROVIDE_LIQUIDITY_LABEL,
-                    //     vec![
-                    //         to_json_binary(&splitter_exec_msg)?,
-                    //         to_json_binary(&mars_lending_exec_msg)?,
-                    //         to_json_binary(&supervaults_lper_execute_msg)?,
-                    //     ],
-                    // )
-                    // .await?;
-
-                    // self.tick_neutron().await?;
-
-                    self.enqueue_neutron("SPLIT", vec![to_json_binary(&splitter_exec_msg)?])
-                        .await?;
-
-                    self.tick_neutron().await?;
-
-                    self.enqueue_neutron("LEND", vec![to_json_binary(&mars_lending_exec_msg)?])
-                        .await?;
-
-                    self.tick_neutron().await?;
-
+                    // enqueue all three actions under a single label as its an atomic subroutine
                     self.enqueue_neutron(
-                        "PROVIDE_LIQUIDITY",
-                        vec![to_json_binary(&supervaults_lper_execute_msg)?],
+                        LEND_AND_PROVIDE_LIQUIDITY_LABEL,
+                        vec![
+                            to_json_binary(&splitter_exec_msg)?,
+                            to_json_binary(&mars_lending_exec_msg)?,
+                            to_json_binary(&supervaults_lper_execute_msg)?,
+                        ],
                     )
                     .await?;
 

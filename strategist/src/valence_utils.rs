@@ -3,7 +3,7 @@ pub(crate) mod neutron {
 
     use cosmwasm_std::Binary;
 
-    use log::{debug, info};
+    use log::debug;
     use valence_authorization_utils::msg::ProcessorMessage;
     use valence_domain_clients::cosmos::{base_client::BaseClient, wasm_client::WasmClient};
 
