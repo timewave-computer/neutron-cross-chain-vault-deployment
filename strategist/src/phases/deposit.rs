@@ -127,14 +127,32 @@ impl Strategy {
                             },
                         );
 
-                    // enqueue all three actions under a single label as its an atomic subroutine
+                    // // enqueue all three actions under a single label as its an atomic subroutine
+                    // self.enqueue_neutron(
+                    //     LEND_AND_PROVIDE_LIQUIDITY_LABEL,
+                    //     vec![
+                    //         to_json_binary(&splitter_exec_msg)?,
+                    //         to_json_binary(&mars_lending_exec_msg)?,
+                    //         to_json_binary(&supervaults_lper_execute_msg)?,
+                    //     ],
+                    // )
+                    // .await?;
+
+                    // self.tick_neutron().await?;
+
+                    self.enqueue_neutron("SPLIT", vec![to_json_binary(&splitter_exec_msg)?])
+                        .await?;
+
+                    self.tick_neutron().await?;
+
+                    self.enqueue_neutron("LEND", vec![to_json_binary(&mars_lending_exec_msg)?])
+                        .await?;
+
+                    self.tick_neutron().await?;
+
                     self.enqueue_neutron(
-                        LEND_AND_PROVIDE_LIQUIDITY_LABEL,
-                        vec![
-                            to_json_binary(&splitter_exec_msg)?,
-                            to_json_binary(&mars_lending_exec_msg)?,
-                            to_json_binary(&supervaults_lper_execute_msg)?,
-                        ],
+                        "PROVIDE_LIQUIDITY",
+                        vec![to_json_binary(&supervaults_lper_execute_msg)?],
                     )
                     .await?;
 
