@@ -262,7 +262,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 name: "process_function".to_string(),
                 params_restrictions: Some(vec![ParamRestriction::MustBeIncluded(vec![
                     "process_function".to_string(),
-                    "settle_obligation".to_string(),
+                    "settle_next_obligation".to_string(),
                 ])]),
             },
         },
