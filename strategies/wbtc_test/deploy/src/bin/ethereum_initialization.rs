@@ -12,6 +12,7 @@ use valence_domain_clients::{
     coprocessor::base_client::CoprocessorBaseClient,
     evm::{base_client::EvmBaseClient, request_provider_client::RequestProviderClient},
 };
+use wbtc_test_deploy::DIR;
 use wbtc_test_types::ethereum_config::EthereumStrategyConfig;
 
 #[derive(Deserialize, Debug)]
@@ -43,12 +44,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Read ethereum.toml from the deploy directory
     let current_dir = env::current_dir()?;
-    let parameters = fs::read_to_string(current_dir.join("deploy/src/ethereum.toml"))
+    let parameters = fs::read_to_string(current_dir.join(format!("{DIR}/ethereum.toml")))
         .expect("Failed to read file");
     let parameters: Parameters = toml::from_str(&parameters).expect("Failed to parse TOML");
 
     let eth_stg_cfg =
-        fs::read_to_string(current_dir.join("deploy/src/ethereum_strategy_config.toml"))
+        fs::read_to_string(current_dir.join(format!("{DIR}/ethereum_strategy_config.toml")))
             .expect("Failed to read file");
 
     let eth_stg_cfg: EthereumStrategyConfig =

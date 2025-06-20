@@ -17,6 +17,7 @@ use valence_domain_clients::{
     cosmos::wasm_client::WasmClient,
 };
 use valence_library_utils::LibraryAccountType;
+use wbtc_test_deploy::DIR;
 use wbtc_test_types::{
     labels::{
         ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_LABEL, MARS_WITHDRAW_LABEL,
@@ -49,7 +50,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let current_dir = env::current_dir()?;
 
-    let ntrn_params = fs::read_to_string(current_dir.join("deploy/src/neutron.toml"))
+    let ntrn_params = fs::read_to_string(current_dir.join(format!("{DIR}/neutron.toml")))
         .expect("Failed to read file");
 
     let ntrn_params: Parameters =
@@ -57,8 +58,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let strategist = ntrn_params.general.strategist;
 
-    let ntrn_cfg = fs::read_to_string(current_dir.join("deploy/src/neutron_strategy_config.toml"))
-        .expect("Failed to read file");
+    let ntrn_cfg =
+        fs::read_to_string(current_dir.join(format!("{DIR}/neutron_strategy_config.toml")))
+            .expect("Failed to read file");
 
     let ntrn_strategy_config: NeutronStrategyConfig =
         toml::from_str(&ntrn_cfg).expect("Failed to parse Neutron strategy config");

@@ -20,6 +20,7 @@ use valence_domain_clients::{
     coprocessor::base_client::CoprocessorBaseClient,
     evm::{base_client::EvmBaseClient, request_provider_client::RequestProviderClient},
 };
+use wbtc_test_deploy::{DIR, SP1_VERIFIER};
 use wbtc_test_types::ethereum_config::{
     EthereumAccounts, EthereumCoprocessorAppIds, EthereumDenoms, EthereumLibraries,
     EthereumStrategyConfig,
@@ -70,8 +71,6 @@ struct CoprocessorApp {
     eureka_transfer_coprocessor_app_id: String,
 }
 
-const SP1_VERIFIER: &str = "0x397A5f7f3dBd538f23DE225B51f532c34448dA9B";
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     dotenv::dotenv().ok();
@@ -79,7 +78,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Read ethereum.toml from the deploy directory
     let current_dir = env::current_dir()?;
-    let parameters = fs::read_to_string(current_dir.join("deploy/src/ethereum.toml"))
+    let parameters = fs::read_to_string(current_dir.join(format!("{DIR}/ethereum.toml")))
         .expect("Failed to read file");
 
     // Parse the TOML into your struct
@@ -329,7 +328,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let eth_cfg_toml =
         toml::to_string(&eth_cfg).expect("Failed to serialize Ethereum Strategy Config");
     fs::write(
-        current_dir.join("deploy/src/ethereum_strategy_config.toml"),
+        current_dir.join(format!("{DIR}/ethereum_strategy_config.toml")),
         eth_cfg_toml,
     )
     .expect("Failed to write Ethereum Strategy Config to file");
