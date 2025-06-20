@@ -8,12 +8,12 @@ use cosmwasm_std::{Uint128, to_json_binary};
 use log::{info, trace, warn};
 use packages::types::sol_types::{Authorization, BaseAccount, ERC20};
 use serde_json::json;
-use types::labels::{ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_LABEL};
 use valence_domain_clients::{
     coprocessor::base_client::CoprocessorBaseClient,
     cosmos::base_client::BaseClient,
     evm::base_client::{CustomProvider, EvmBaseClient},
 };
+use wbtc_test_types::labels::{ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_LABEL};
 
 use crate::strategy_config::Strategy;
 

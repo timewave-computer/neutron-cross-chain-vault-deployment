@@ -1,13 +1,13 @@
 use std::{env, error::Error, path::Path};
 
-use types::{
-    coprocessor_config::CoprocessorStrategyConfig, ethereum_config::EthereumStrategyConfig,
-    gaia_config::GaiaStrategyConfig, neutron_config::NeutronStrategyConfig,
-};
 use valence_domain_clients::clients::{
     coprocessor::CoprocessorClient, ethereum::EthereumClient, gaia::CosmosHubClient,
     ibc_eureka_route_client::IBCEurekaRouteClient, neutron::NeutronClient,
     valence_indexer::OneWayVaultIndexerClient,
+};
+use wbtc_test_types::{
+    coprocessor_config::CoprocessorStrategyConfig, ethereum_config::EthereumStrategyConfig,
+    gaia_config::GaiaStrategyConfig, neutron_config::NeutronStrategyConfig,
 };
 
 use serde::{Deserialize, Serialize};

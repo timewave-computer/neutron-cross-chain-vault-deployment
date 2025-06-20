@@ -1,5 +1,10 @@
 [workspace]
-members  = ["types", "deploy", "strategist", "packages"]
+members = [
+    "packages",
+    "strategies/wbtc_test/deploy",
+    "strategies/wbtc_test/strategist",
+    "strategies/wbtc_test/types"
+]
 resolver = "2"
 
 [workspace.dependencies]

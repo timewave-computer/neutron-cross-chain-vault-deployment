@@ -6,25 +6,25 @@ use std::{
     time::SystemTime,
 };
 
-use cosmwasm_std::{Binary, Decimal, Uint128, Uint64};
+use cosmwasm_std::{Binary, Decimal, Uint64, Uint128};
 use serde::Deserialize;
 use sp1_sdk::{HashableKey, SP1VerifyingKey};
-use types::{
+use valence_domain_clients::{
+    clients::{coprocessor::CoprocessorClient, neutron::NeutronClient},
+    coprocessor::base_client::CoprocessorBaseClient,
+    cosmos::{grpc_client::GrpcSigningClient, wasm_client::WasmClient},
+};
+use wbtc_test_types::{
     gaia_config::GaiaStrategyConfig,
     neutron_config::{
         NeutronAccounts, NeutronCoprocessorAppIds, NeutronDenoms, NeutronLibraries,
         NeutronStrategyConfig,
     },
 };
-use valence_domain_clients::{
-    clients::{coprocessor::CoprocessorClient, neutron::NeutronClient},
-    coprocessor::base_client::CoprocessorBaseClient,
-    cosmos::{grpc_client::GrpcSigningClient, wasm_client::WasmClient},
-};
 
 use valence_dynamic_ratio_query_provider::msg::DenomSplitMap;
 use valence_forwarder_library::msg::{ForwardingConstraints, UncheckedForwardingConfig};
-use valence_library_utils::{denoms::UncheckedDenom, LibraryAccountType};
+use valence_library_utils::{LibraryAccountType, denoms::UncheckedDenom};
 use valence_splitter_library::msg::UncheckedSplitAmount;
 
 #[derive(Deserialize, Debug)]

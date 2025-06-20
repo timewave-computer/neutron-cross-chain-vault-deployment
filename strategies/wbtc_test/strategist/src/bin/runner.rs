@@ -4,8 +4,7 @@ use serde_json::json;
 use std::{env, error::Error, thread};
 use tiny_http::{Response, Server};
 use valence_strategist_utils::worker::ValenceWorker;
-
-use strategist::strategy_config::Strategy;
+use wbtc_test_strategist::strategy_config::Strategy;
 
 const RUNNER: &str = "runner";
 

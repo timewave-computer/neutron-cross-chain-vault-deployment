@@ -3,13 +3,6 @@ use std::{env, error::Error, fs};
 use cosmwasm_std::Binary;
 use serde::Deserialize;
 use sp1_sdk::{HashableKey, SP1VerifyingKey};
-use types::{
-    labels::{
-        ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_LABEL, MARS_WITHDRAW_LABEL,
-        PHASE_SHIFT_LABEL, REGISTER_OBLIGATION_LABEL, SETTLE_OBLIGATION_LABEL,
-    },
-    neutron_config::NeutronStrategyConfig,
-};
 use valence_authorization_utils::{
     authorization::{AuthorizationModeInfo, PermissionTypeInfo},
     authorization_message::{Message, MessageDetails, MessageType, ParamRestriction},
@@ -24,6 +17,13 @@ use valence_domain_clients::{
     cosmos::wasm_client::WasmClient,
 };
 use valence_library_utils::LibraryAccountType;
+use wbtc_test_types::{
+    labels::{
+        ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_LABEL, MARS_WITHDRAW_LABEL,
+        PHASE_SHIFT_LABEL, REGISTER_OBLIGATION_LABEL, SETTLE_OBLIGATION_LABEL,
+    },
+    neutron_config::NeutronStrategyConfig,
+};
 
 #[derive(Deserialize, Debug)]
 struct Parameters {
@@ -78,7 +78,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // All authorizations except the phase shift one will be called by strategist
     let authorization_permissioned_mode =
         AuthorizationModeInfo::Permissioned(PermissionTypeInfo::WithoutCallLimit(vec![
-            strategist.clone()
+            strategist.clone(),
         ]));
 
     // Subroutine for ICA Transfer

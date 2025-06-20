@@ -2346,40 +2346,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2a2330da5de22e8a3cb63252ce2abb30116bf5265e89c0e01bc17015ce30a476"
 
 [[package]]
-name = "deploy"
-version = "0.1.0"
-dependencies = [
- "alloy",
- "anyhow",
- "bincode",
- "cosmrs",
- "cosmwasm-std",
- "dotenv",
- "hex",
- "packages",
- "serde",
- "sp1-sdk",
- "tokio",
- "toml",
- "types",
- "valence-account-utils",
- "valence-authorization-utils",
- "valence-clearing-queue-supervaults",
- "valence-domain-clients",
- "valence-dynamic-ratio-query-provider",
- "valence-forwarder-library",
- "valence-ica-ibc-transfer",
- "valence-library-utils",
- "valence-mars-lending",
- "valence-maxbtc-issuer",
- "valence-processor-utils",
- "valence-splitter-library",
- "valence-supervaults-lper",
- "valence-supervaults-withdrawer",
- "valence-verification-gateway",
-]
-
-[[package]]
 name = "der"
 version = "0.7.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7334,40 +7300,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
-name = "strategist"
-version = "0.1.0"
-dependencies = [
- "alloy",
- "async-trait",
- "cosmwasm-std",
- "dotenv",
- "env_logger",
- "hex",
- "log",
- "mmvault",
- "packages",
- "serde",
- "serde_json",
- "tiny_http",
- "tokio",
- "types",
- "valence-account-utils",
- "valence-authorization-utils",
- "valence-clearing-queue-supervaults",
- "valence-domain-clients",
- "valence-forwarder-library",
- "valence-ica-ibc-transfer",
- "valence-lending-utils",
- "valence-library-utils",
- "valence-mars-lending",
- "valence-processor-utils",
- "valence-splitter-library",
- "valence-strategist-utils",
- "valence-supervaults-lper",
- "valence-verification-gateway",
-]
-
-[[package]]
 name = "strsim"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8332,16 +8264,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1dccffe3ce07af9386bfd29e80c0ab1a8205a2fc34e4bcd40364df902cfa8f3f"
 
 [[package]]
-name = "types"
-version = "0.1.0"
-dependencies = [
- "alloy",
- "cosmwasm-std",
- "serde",
- "valence-strategist-utils",
-]
-
-[[package]]
 name = "ucd-trie"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9006,6 +8928,84 @@ dependencies = [
  "pin-utils",
  "slab",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "wbtc_test_deploy"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "anyhow",
+ "bincode",
+ "cosmrs",
+ "cosmwasm-std",
+ "dotenv",
+ "hex",
+ "packages",
+ "serde",
+ "sp1-sdk",
+ "tokio",
+ "toml",
+ "valence-account-utils",
+ "valence-authorization-utils",
+ "valence-clearing-queue-supervaults",
+ "valence-domain-clients",
+ "valence-dynamic-ratio-query-provider",
+ "valence-forwarder-library",
+ "valence-ica-ibc-transfer",
+ "valence-library-utils",
+ "valence-mars-lending",
+ "valence-maxbtc-issuer",
+ "valence-processor-utils",
+ "valence-splitter-library",
+ "valence-supervaults-lper",
+ "valence-supervaults-withdrawer",
+ "valence-verification-gateway",
+ "wbtc_test_types",
+]
+
+[[package]]
+name = "wbtc_test_strategist"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "async-trait",
+ "cosmwasm-std",
+ "dotenv",
+ "env_logger",
+ "hex",
+ "log",
+ "mmvault",
+ "packages",
+ "serde",
+ "serde_json",
+ "tiny_http",
+ "tokio",
+ "valence-account-utils",
+ "valence-authorization-utils",
+ "valence-clearing-queue-supervaults",
+ "valence-domain-clients",
+ "valence-forwarder-library",
+ "valence-ica-ibc-transfer",
+ "valence-lending-utils",
+ "valence-library-utils",
+ "valence-mars-lending",
+ "valence-processor-utils",
+ "valence-splitter-library",
+ "valence-strategist-utils",
+ "valence-supervaults-lper",
+ "valence-verification-gateway",
+ "wbtc_test_types",
+]
+
+[[package]]
+name = "wbtc_test_types"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "cosmwasm-std",
+ "serde",
+ "valence-strategist-utils",
 ]
 
 [[package]]

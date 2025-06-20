@@ -1,11 +1,11 @@
 [package]
-name    = "deploy"
+name    = "wbtc_test_deploy"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
-types                                = { path = "../types" }
-packages                             = { path = "../packages" }
+wbtc_test_types                      = { path = "../types" }
+packages                             = { path = "../../../packages" }
 anyhow                               = "1"
 toml                                 = "0.8"
 serde                                = { workspace = true }
