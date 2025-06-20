@@ -98,9 +98,9 @@ impl Strategy {
 
             // depending on the neutron deposit account balance, we either conclude the deposit phase
             // or perform the configured split before entering into Mars and Supervault positions.
-            match neutron_deposit_bal == 0 {
+            match neutron_deposit_bal < 2 {
                 true => {
-                    info!(target: DEPOSIT_PHASE, "Neutron deposit account balance is zero! concluding the deposit phase...");
+                    info!(target: DEPOSIT_PHASE, "Neutron deposit account balance is insufficient for entry! concluding the deposit phase...");
                 }
                 false => {
                     info!(target: DEPOSIT_PHASE, "Neutron deposit account balance = {neutron_deposit_bal}; lending & LPing...");
