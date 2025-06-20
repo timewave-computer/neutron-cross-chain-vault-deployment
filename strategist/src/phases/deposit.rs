@@ -6,7 +6,7 @@ use alloy::{
 };
 use cosmwasm_std::{Uint128, to_json_binary};
 use log::{info, trace, warn};
-use packages::{Authorization, BaseAccount, ERC20};
+use packages::types::sol_types::{Authorization, BaseAccount, ERC20};
 use serde_json::json;
 use types::labels::{ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_LABEL};
 use valence_domain_clients::{

@@ -4,7 +4,7 @@ use alloy::{
     hex::FromHex,
     primitives::{Address, FixedBytes},
 };
-use packages::Authorization;
+use packages::types::sol_types::Authorization;
 use serde::Deserialize;
 use sp1_sdk::{HashableKey, SP1VerifyingKey};
 use types::ethereum_config::EthereumStrategyConfig;

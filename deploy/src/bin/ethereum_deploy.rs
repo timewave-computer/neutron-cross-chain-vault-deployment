@@ -7,7 +7,7 @@ use alloy::{
     sol_types::SolValue,
 };
 use cosmwasm_std::Uint128;
-use packages::{
+use packages::types::sol_types::{
     processor_contract::LiteProcessor,
     Authorization, BaseAccount, ERC1967Proxy, IBCEurekaTransfer,
     OneWayVault::{self, FeeDistributionConfig, OneWayVaultConfig},
