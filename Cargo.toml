@@ -1,5 +1,5 @@
 [workspace]
-members  = ["types", "deploy", "strategist"]
+members  = ["types", "deploy", "strategist", "packages"]
 resolver = "2"
 
 [workspace.dependencies]

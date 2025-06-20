@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 types                                = { path = "../types" }
+packages                             = { path = "../packages" }
 anyhow                               = "1"
 toml                                 = "0.8"
 serde                                = { workspace = true }

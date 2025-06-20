@@ -4,9 +4,10 @@ use alloy::{
     hex::FromHex,
     primitives::{Address, FixedBytes},
 };
+use packages::Authorization;
 use serde::Deserialize;
 use sp1_sdk::{HashableKey, SP1VerifyingKey};
-use types::{ethereum_config::EthereumStrategyConfig, sol_types::Authorization};
+use types::ethereum_config::EthereumStrategyConfig;
 use valence_domain_clients::{
     clients::{coprocessor::CoprocessorClient, ethereum::EthereumClient},
     coprocessor::base_client::CoprocessorBaseClient,

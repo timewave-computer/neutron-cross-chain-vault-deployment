@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 types                              = { path = "../types" }
+packages                           = { path = "../packages" }
 dotenv                             = { workspace = true }
 cosmwasm-std                       = { workspace = true }
 serde                              = { workspace = true }

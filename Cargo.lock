@@ -2356,6 +2356,7 @@ dependencies = [
  "cosmwasm-std",
  "dotenv",
  "hex",
+ "packages",
  "serde",
  "sp1-sdk",
  "tokio",
@@ -5231,6 +5232,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "packages"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "serde",
+]
+
+[[package]]
 name = "pairing"
 version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7336,6 +7345,7 @@ dependencies = [
  "hex",
  "log",
  "mmvault",
+ "packages",
  "serde",
  "serde_json",
  "tiny_http",
