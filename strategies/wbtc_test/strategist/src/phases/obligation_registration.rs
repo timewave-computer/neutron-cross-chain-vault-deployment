@@ -39,7 +39,8 @@ impl Strategy {
             .await?;
 
         // get id of the latest obligation request that was registered on neutron
-        let latest_registered_obligation_id = clearing_queue_cfg.latest_id.u64();
+        let latest_registered_obligation_id =
+            clearing_queue_cfg.latest_id.unwrap_or_default().u64();
         info!(
             target: REGISTRATION_PHASE,
             "latest_registered_obligation_id={latest_registered_obligation_id}"
