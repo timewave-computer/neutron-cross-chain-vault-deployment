@@ -23,8 +23,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         code_ids: HashMap::new(),
     };
 
-    // Upload all contracts that are in /deploy/contracts/cw
-    for entry in std::fs::read_dir("./deploy/contracts/cw")? {
+    // Upload all contracts that are in /packages/src/contracts/cw
+    for entry in std::fs::read_dir("./packages/src/contracts/cw")? {
         let entry = entry?;
         if entry.path().is_file() {
             let contract_name = entry.file_name().to_string_lossy().to_string();

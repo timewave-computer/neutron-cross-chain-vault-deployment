@@ -4,12 +4,12 @@ use alloy::primitives::U256;
 use cosmwasm_std::Binary;
 use log::info;
 use serde_json::json;
-use types::labels::REGISTER_OBLIGATION_LABEL;
 use valence_domain_clients::{
     coprocessor::base_client::CoprocessorBaseClient,
     cosmos::{base_client::BaseClient, wasm_client::WasmClient},
     indexer::one_way_vault::OneWayVaultIndexer,
 };
+use wbtc_test_types::labels::REGISTER_OBLIGATION_LABEL;
 
 use crate::strategy_config::Strategy;
 

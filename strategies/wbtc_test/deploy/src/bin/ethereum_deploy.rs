@@ -7,24 +7,22 @@ use alloy::{
     sol_types::SolValue,
 };
 use cosmwasm_std::Uint128;
+use packages::types::sol_types::{
+    Authorization, BaseAccount, ERC1967Proxy, IBCEurekaTransfer,
+    OneWayVault::{self, FeeDistributionConfig, OneWayVaultConfig},
+    SP1VerificationGateway,
+    processor_contract::LiteProcessor,
+};
 use serde::Deserialize;
 use sp1_sdk::{HashableKey, SP1VerifyingKey};
-use types::{
-    ethereum_config::{
-        EthereumAccounts, EthereumCoprocessorAppIds, EthereumDenoms, EthereumLibraries,
-        EthereumStrategyConfig,
-    },
-    sol_types::{
-        processor_contract::LiteProcessor,
-        Authorization, BaseAccount, ERC1967Proxy, IBCEurekaTransfer,
-        OneWayVault::{self, FeeDistributionConfig, OneWayVaultConfig},
-        SP1VerificationGateway,
-    },
-};
 use valence_domain_clients::{
     clients::{coprocessor::CoprocessorClient, ethereum::EthereumClient},
     coprocessor::base_client::CoprocessorBaseClient,
     evm::{base_client::EvmBaseClient, request_provider_client::RequestProviderClient},
+};
+use wbtc_test_types::ethereum_config::{
+    EthereumAccounts, EthereumCoprocessorAppIds, EthereumDenoms, EthereumLibraries,
+    EthereumStrategyConfig,
 };
 
 #[derive(Deserialize, Debug)]
