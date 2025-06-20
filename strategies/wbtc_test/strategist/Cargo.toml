@@ -25,10 +25,9 @@ valence-verification-gateway       = { workspace = true }
 valence-strategist-utils           = { workspace = true }
 valence-splitter-library           = { workspace = true }
 log                                = { workspace = true }
-env_logger                         = "0.10.0"
-async-trait                        = "0.1.77"
+env_logger                         = { workspace = true }
+async-trait                        = { workspace = true }
 valence-lending-utils              = { workspace = true }
-mmvault                            = { git = "https://github.com/neutron-org/slinky-vault", package = "mmvault" }
+mmvault                            = { workspace = true }
 serde_json                         = { workspace = true }
 tokio                              = { workspace = true }
-tiny_http                          = "0.12"

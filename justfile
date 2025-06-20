@@ -1,2 +1,2 @@
 start:
-    RUST_LOG=info cargo run -p strategist --bin runner
+    RUST_LOG=info cargo run -p wbtc_test_strategist --bin runner
