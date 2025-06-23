@@ -209,7 +209,6 @@ impl Strategy {
         // block execution until the funds arrive to the Cosmos Hub ICA owned
         // by the Valence Interchain Account on Neutron.
         // we poll
-        // TODO: doublecheck the precision conversion here
         let gaia_ica_balance = Uint128::from_str(&eth_deposit_acc_bal.to_string())?;
         info!(target: DEPOSIT_PHASE, "gaia ica expected deposit token bal = {gaia_ica_balance}; starting to poll");
 

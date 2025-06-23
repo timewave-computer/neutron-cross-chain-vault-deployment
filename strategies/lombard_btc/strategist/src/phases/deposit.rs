@@ -34,7 +34,7 @@ impl Strategy {
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         trace!(target: DEPOSIT_PHASE, "starting deposit phase");
 
-        // Stage 1: deposit token routing from Ethereum to Lombard
+        // Stage 1: deposit token routing from Ethereum to Cosmos hub
         {
             let eth_deposit_token_contract =
                 ERC20::new(self.cfg.ethereum.denoms.deposit_token, &eth_rp);
@@ -60,13 +60,36 @@ impl Strategy {
                 // prior to proceeding to gaia ica -> neutron routing
                 false => {
                     info!(target: DEPOSIT_PHASE, "IBC-Eureka transfer threshold met!");
-                    self.eth_to_lombard_routing(eth_rp, eth_deposit_acc_bal)
+                    self.eth_to_gaia_routing(eth_rp, eth_deposit_acc_bal)
                         .await?;
                 }
             }
         }
 
-        // Stage 2: deposit token routing from Lombard to Neutron
+        // Stage 1.5: deposit token routing from Lombard to Gaia. This should only be used
+        // in cases where the pfm hop from lombard to gaia failed and funds settled in the
+        // configured recovery address. if this happens, we manually trigger the ICA-IBC
+        // transfer from lombard to gaia before proceeding to the next step.
+        {
+            let lombard_ica_bal = self
+                .gaia_client
+                .query_balance(&self.cfg.gaia.ica_address, &self.cfg.gaia.deposit_denom)
+                .await?;
+
+            // depending on the lombard ICA deposit token balance, we either perform the ICA IBC routing
+            // of the balances to Gaia, or proceed to the next stage
+            match lombard_ica_bal == 0 {
+                true => {
+                    info!(target: DEPOSIT_PHASE, "Lombard ICA balance is zero! proceeding to position entry");
+                }
+                false => {
+                    info!(target: DEPOSIT_PHASE, "Lombard ICA deposit token balance is {lombard_ica_bal}; pulling funds to Neutron");
+                    self.lombard_to_gaia_routing(lombard_ica_bal).await?;
+                }
+            }
+        }
+
+        // Stage 2: deposit token routing from Gaia to Neutron
         {
             let gaia_ica_bal = self
                 .gaia_client
@@ -81,7 +104,7 @@ impl Strategy {
                 }
                 false => {
                     info!(target: DEPOSIT_PHASE, "Cosmos Hub ICA deposit token balance is {gaia_ica_bal}; pulling funds to Neutron");
-                    self.lombard_to_neutron_routing(gaia_ica_bal).await?;
+                    self.gaia_to_neutron_routing(gaia_ica_bal).await?;
                 }
             }
         }
@@ -151,7 +174,7 @@ impl Strategy {
 
     /// carries out the steps needed to route the deposits from Ethereum program deposit
     /// account to the configured Lombard ICA managed by Neutron Valence-ICA.
-    async fn eth_to_lombard_routing(
+    async fn eth_to_gaia_routing(
         &mut self,
         eth_rp: &CustomProvider,
         eth_deposit_acc_bal: U256,
@@ -172,6 +195,9 @@ impl Strategy {
                 return Ok(());
             }
         };
+
+        // TODO: process the skip api response in the format expected for IBC-Eureka
+        // Lombard mode transfer
 
         // format the response in format expected by the coprocessor and post it
         // there for proof
@@ -209,7 +235,6 @@ impl Strategy {
         // block execution until the funds arrive to the Cosmos Hub ICA owned
         // by the Valence Interchain Account on Neutron.
         // we poll
-        // TODO: doublecheck the precision conversion here
         let gaia_ica_balance = Uint128::from_str(&eth_deposit_acc_bal.to_string())?;
         info!(target: DEPOSIT_PHASE, "gaia ica expected deposit token bal = {gaia_ica_balance}; starting to poll");
 
@@ -232,25 +257,59 @@ impl Strategy {
         Ok(())
     }
 
-    async fn lombard_to_neutron_routing(
+    /// this shouldn't really be needed, just in case pfm hop from lombard to gaia fails
+    async fn lombard_to_gaia_routing(
+        &mut self,
+        lombard_ica_bal: u128,
+    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let ica_ibc_transfer_update_msg = json!({
+            "update_config": {
+                "new_config": {
+                    "amount": lombard_ica_bal.to_string(),
+                    "eureka_config": "none"
+                }
+            }
+        });
+        let ica_ibc_transfer_exec_msg =
+            valence_library_utils::msg::ExecuteMsg::<_, ()>::ProcessFunction(
+                valence_ica_ibc_transfer::msg::FunctionMsgs::Transfer {},
+            );
+
+        info!(target: DEPOSIT_PHASE, "enqueuing ica_ibc_transfer library update & transfer");
+        valence_core::enqueue_neutron(
+            &self.neutron_client,
+            &self.cfg.neutron.authorizations,
+            ICA_TRANSFER_LABEL,
+            vec![
+                to_json_binary(&ica_ibc_transfer_update_msg)?,
+                to_json_binary(&ica_ibc_transfer_exec_msg)?,
+            ],
+        )
+        .await?;
+
+        info!(target: DEPOSIT_PHASE, "tick: update & transfer");
+        valence_core::tick_neutron(&self.neutron_client, &self.cfg.neutron.processor).await?;
+
+        info!(target: DEPOSIT_PHASE, "polling for gaia ICA to receive the funds");
+
+        // block execution until funds arrive to the Cosmos Hub program deposit ICA
+        self.gaia_client
+            .poll_until_expected_balance(
+                &self.cfg.gaia.ica_address,
+                &self.cfg.gaia.deposit_denom,
+                lombard_ica_bal,
+                5,
+                30,
+            )
+            .await?;
+
+        Ok(())
+    }
+
+    async fn gaia_to_neutron_routing(
         &mut self,
         gaia_ica_bal: u128,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        // let ica_ibc_transfer_update_msg: valence_library_utils::msg::ExecuteMsg<
-        //     valence_ica_ibc_transfer::msg::FunctionMsgs,
-        //     valence_ica_ibc_transfer::msg::LibraryConfigUpdate,
-        // > = valence_library_utils::msg::ExecuteMsg::UpdateConfig {
-        //     new_config: valence_ica_ibc_transfer::msg::LibraryConfigUpdate {
-        //         input_addr: None,
-        //         amount: Some(gaia_ica_bal.into()),
-        //         denom: None,
-        //         receiver: None,
-        //         memo: None,
-        //         remote_chain_info: None,
-        //         denom_to_pfm_map: None,
-        //         eureka_config: OptionUpdate::Set(None),
-        //     },
-        // };
         let ica_ibc_transfer_update_msg = json!({
             "update_config": {
                 "new_config": {

@@ -1,5 +1,6 @@
 use std::{env, error::Error, path::Path};
 
+use packages::ibc_eureka_chain_ids::{EUREKA_COSMOS_HUB_CHAIN_ID, EUREKA_ETHEREUM_CHAIN_ID};
 use valence_domain_clients::clients::{
     coprocessor::CoprocessorClient, ethereum::EthereumClient, gaia::CosmosHubClient,
     ibc_eureka_route_client::IBCEurekaRouteClient, neutron::NeutronClient,
@@ -63,11 +64,6 @@ impl Strategy {
             env::var("INDEXER_API_URL").expect("indexer url key must be provided");
         let eureka_api_url =
             env::var("EUREKA_API_URL").expect("IBC Eureka route api url must be provided");
-        // TODO: these shouldn't be pulled from env
-        let eureka_src_chain_id =
-            env::var("EUREKA_SRC_CHAIN_ID").expect("IBC Eureka src chain id must be provided");
-        let eureka_dest_chain_id =
-            env::var("EUREKA_DEST_CHAIN_ID").expect("IBC Eureka dest chain id must be provided");
         let strategy_timeout: u64 = env::var("STRATEGY_TIMEOUT")
             .expect("Strategy timeout must be provided")
             .parse()?;
@@ -101,9 +97,9 @@ impl Strategy {
 
         let ibc_eureka_client = IBCEurekaRouteClient::new(
             &eureka_api_url,
-            &eureka_src_chain_id,
+            EUREKA_ETHEREUM_CHAIN_ID,
             &cfg.ethereum.denoms.deposit_token.to_string(),
-            &eureka_dest_chain_id,
+            EUREKA_COSMOS_HUB_CHAIN_ID,
             &cfg.gaia.deposit_denom,
         );
 
