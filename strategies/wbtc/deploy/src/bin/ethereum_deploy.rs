@@ -159,7 +159,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .unwrap();
     println!("Processor deployed at: {processor_address}");
 
-    // TODO: If wee already deployed it we don't need to deploy it again, we reuse the first one deployed
+    // TODO: If we already deployed it we don't need to deploy it again, we reuse the first one deployed
     let verification_gateway =
         SP1VerificationGateway::deploy_builder(&rp).into_transaction_request();
     let verification_gateway_implementation = eth_client

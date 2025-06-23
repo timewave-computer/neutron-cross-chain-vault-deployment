@@ -85,7 +85,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     eth_client.sign_and_send(tx).await?;
     println!("Authorization created successfully");
 
-    // TODO: Keep the ownership fo the authorization contract for now but we should transfer it eventually
+    // TODO: Keep the ownership of the authorization contract for now but we should transfer it eventually
 
     Ok(())
 }

@@ -1,6 +1,6 @@
 # Deploy instructions
 
-1. If the wasm blobs are not uploaded, run the `neutron_upload.rs` script which will upload all contracts in /packages/src/contracts/cw and output the code ids in `neutron_code_ids.toml`. These file will be used to instantiate the file.
+1. If the wasm blobs are not uploaded, run the `neutron_upload.rs` script which will upload all contracts in /packages/src/contracts/cw and output the code ids in `neutron_code_ids.toml`. This file will be used to instantiate the contracts.
 
 2. Fill in all the information in `neutron.toml` except the coprocessor app fields at the end and run the `neutron_deploy.rs` script which will instantiate all the contracts, trigger the ICA creation and output all relevant addresses in `neutron_strategy_config.toml` and `gaia_strategy_config.toml` which will be used by the strategist.
 
@@ -14,4 +14,6 @@
 
 ### Notes for Strategist
 
-This vault involves updating all the supervaults LPers configuration for the 2nd phase (maxBTC migration). Therefore, once the migration is completed, the corresponding LP denoms of the supervaults need to be updated because they will be different.
+This vault involves updating all the supervaults LPers configuration for the 2nd phase (maxBTC migration). Therefore, once the migration is completed, the corresponding LP denoms of the supervaults need to be updated because they will be different as we are using different supervaults.
+So, before relayer is restarted after the phase migration, the corresponding strategy_config files need to be updated with the right parameters.
+
