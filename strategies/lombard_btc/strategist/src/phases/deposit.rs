@@ -23,10 +23,10 @@ use crate::strategy_config::Strategy;
 
 impl Strategy {
     /// carries out the steps needed to bring the new deposits from Ethereum to
-    /// Neutron (via Cosmos Hub) before depositing them into Mars protocol.
+    /// Neutron (via Lombard) before depositing them into Mars protocol.
     /// consists of three stages:
-    /// 1. Ethereum -> Cosmos Hub routing
-    /// 2. Cosmos Hub -> Neutron routing
+    /// 1. Ethereum -> Lombard routing
+    /// 2. Lombard -> Neutron routing
     /// 3. Supervaults & Mars position entry
     pub async fn deposit(
         &mut self,
@@ -34,7 +34,7 @@ impl Strategy {
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         trace!(target: DEPOSIT_PHASE, "starting deposit phase");
 
-        // Stage 1: deposit token routing from Ethereum to Cosmos Hub
+        // Stage 1: deposit token routing from Ethereum to Lombard
         {
             let eth_deposit_token_contract =
                 ERC20::new(self.cfg.ethereum.denoms.deposit_token, &eth_rp);
@@ -60,13 +60,13 @@ impl Strategy {
                 // prior to proceeding to gaia ica -> neutron routing
                 false => {
                     info!(target: DEPOSIT_PHASE, "IBC-Eureka transfer threshold met!");
-                    self.eth_to_gaia_routing(eth_rp, eth_deposit_acc_bal)
+                    self.eth_to_lombard_routing(eth_rp, eth_deposit_acc_bal)
                         .await?;
                 }
             }
         }
 
-        // Stage 2: deposit token routing from Cosmos Hub to Neutron
+        // Stage 2: deposit token routing from Lombard to Neutron
         {
             let gaia_ica_bal = self
                 .gaia_client
@@ -81,7 +81,7 @@ impl Strategy {
                 }
                 false => {
                     info!(target: DEPOSIT_PHASE, "Cosmos Hub ICA deposit token balance is {gaia_ica_bal}; pulling funds to Neutron");
-                    self.gaia_to_neutron_routing(gaia_ica_bal).await?;
+                    self.lombard_to_neutron_routing(gaia_ica_bal).await?;
                 }
             }
         }
@@ -150,8 +150,8 @@ impl Strategy {
     }
 
     /// carries out the steps needed to route the deposits from Ethereum program deposit
-    /// account to the configured Cosmos Hub ICA managed by Neutron Valence-ICA.
-    async fn eth_to_gaia_routing(
+    /// account to the configured Lombard ICA managed by Neutron Valence-ICA.
+    async fn eth_to_lombard_routing(
         &mut self,
         eth_rp: &CustomProvider,
         eth_deposit_acc_bal: U256,
@@ -232,7 +232,7 @@ impl Strategy {
         Ok(())
     }
 
-    async fn gaia_to_neutron_routing(
+    async fn lombard_to_neutron_routing(
         &mut self,
         gaia_ica_bal: u128,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
