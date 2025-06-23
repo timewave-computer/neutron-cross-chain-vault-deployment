@@ -72,8 +72,8 @@ impl Strategy {
         // transfer from lombard to gaia before proceeding to the next step.
         {
             let lombard_ica_bal = self
-                .gaia_client
-                .query_balance(&self.cfg.gaia.ica_address, &self.cfg.gaia.deposit_denom)
+                .lombard_client
+                .query_balance(&self.cfg.lombard.ica, &self.cfg.lombard.deposit_denom)
                 .await?;
 
             // depending on the lombard ICA deposit token balance, we either perform the ICA IBC routing
