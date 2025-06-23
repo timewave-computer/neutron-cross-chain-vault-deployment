@@ -3,7 +3,9 @@ use std::error::Error;
 use alloy::primitives::U256;
 use cosmwasm_std::Binary;
 use log::info;
-use packages::{labels::REGISTER_OBLIGATION_LABEL, phases::REGISTRATION_PHASE};
+use packages::{
+    labels::REGISTER_OBLIGATION_LABEL, phases::REGISTRATION_PHASE, utils::valence_core,
+};
 use serde_json::json;
 use valence_domain_clients::{
     coprocessor::base_client::CoprocessorBaseClient,
@@ -83,7 +85,7 @@ impl Strategy {
             .await?;
 
             // tick the processor to register the obligation to the clearing queue
-            self.tick_neutron().await?;
+            valence_core::tick_neutron(&self.neutron_client, &self.cfg.neutron.processor).await?;
         }
 
         info!(target: REGISTRATION_PHASE, "finished processing withdraw requests; concluding obligation registration phase...");

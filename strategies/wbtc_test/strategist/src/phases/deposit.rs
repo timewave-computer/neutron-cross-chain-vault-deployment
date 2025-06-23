@@ -10,6 +10,7 @@ use packages::{
     labels::{ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_LABEL},
     phases::DEPOSIT_PHASE,
     types::sol_types::{Authorization, BaseAccount, ERC20},
+    utils::valence_core,
 };
 use serde_json::json;
 use valence_domain_clients::{
@@ -127,7 +128,9 @@ impl Strategy {
                         );
 
                     // enqueue all three actions under a single label as its an atomic subroutine
-                    self.enqueue_neutron(
+                    valence_core::enqueue_neutron(
+                        &self.neutron_client,
+                        &self.cfg.neutron.authorizations,
                         LEND_AND_PROVIDE_LIQUIDITY_LABEL,
                         vec![
                             to_json_binary(&splitter_exec_msg)?,
@@ -137,7 +140,8 @@ impl Strategy {
                     )
                     .await?;
 
-                    self.tick_neutron().await?;
+                    valence_core::tick_neutron(&self.neutron_client, &self.cfg.neutron.processor)
+                        .await?;
                 }
             }
         }
@@ -261,7 +265,9 @@ impl Strategy {
             );
 
         info!(target: DEPOSIT_PHASE, "enqueuing ica_ibc_transfer library update & transfer");
-        self.enqueue_neutron(
+        valence_core::enqueue_neutron(
+            &self.neutron_client,
+            &self.cfg.neutron.authorizations,
             ICA_TRANSFER_LABEL,
             vec![
                 to_json_binary(&ica_ibc_transfer_update_msg)?,
@@ -271,7 +277,7 @@ impl Strategy {
         .await?;
 
         info!(target: DEPOSIT_PHASE, "tick: update & transfer");
-        self.tick_neutron().await?;
+        valence_core::tick_neutron(&self.neutron_client, &self.cfg.neutron.processor).await?;
 
         info!(target: DEPOSIT_PHASE, "polling for neutron deposit account to receive the funds");
 

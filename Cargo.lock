@@ -5276,9 +5276,13 @@ name = "packages"
 version = "0.1.0"
 dependencies = [
  "alloy",
+ "cosmwasm-std",
  "log",
  "serde",
+ "valence-authorization-utils",
  "valence-clearing-queue-supervaults",
+ "valence-domain-clients",
+ "valence-processor-utils",
 ]
 
 [[package]]

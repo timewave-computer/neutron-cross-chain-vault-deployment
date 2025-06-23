@@ -5,7 +5,7 @@ use log::{info, warn};
 use packages::{
     labels::{MARS_WITHDRAW_LABEL, SETTLE_OBLIGATION_LABEL},
     phases::SETTLEMENT_PHASE,
-    utils::obligation::flatten_obligation_queue_amounts,
+    utils::{obligation::flatten_obligation_queue_amounts, valence_core},
 };
 use valence_clearing_queue_supervaults::msg::ObligationsResponse;
 use valence_domain_clients::cosmos::{base_client::BaseClient, wasm_client::WasmClient};
@@ -103,13 +103,21 @@ impl Strategy {
                     },
                 );
 
-            self.enqueue_neutron(
+            valence_core::enqueue_neutron(
+                &self.neutron_client,
+                &self.cfg.neutron.authorizations,
                 MARS_WITHDRAW_LABEL,
                 vec![to_json_binary(&mars_withdraw_msg)?],
             )
             .await?;
+            // self.enqueue_neutron(
+            //     MARS_WITHDRAW_LABEL,
+            //     vec![to_json_binary(&mars_withdraw_msg)?],
+            // )
+            // .await?;
 
-            self.tick_neutron().await?;
+            // self.tick_neutron().await?;
+            valence_core::tick_neutron(&self.neutron_client, &self.cfg.neutron.processor).await?;
         }
 
         if settlement_acc_bal_lp < lp_obligation_total {
@@ -130,13 +138,15 @@ impl Strategy {
                 );
 
             // enqueue the settlement message and tick the processor
-            self.enqueue_neutron(
+            valence_core::enqueue_neutron(
+                &self.neutron_client,
+                &self.cfg.neutron.authorizations,
                 SETTLE_OBLIGATION_LABEL,
                 vec![to_json_binary(&settlement_exec_msg)?],
             )
             .await?;
 
-            self.tick_neutron().await?;
+            valence_core::tick_neutron(&self.neutron_client, &self.cfg.neutron.processor).await?;
         }
 
         Ok(())
