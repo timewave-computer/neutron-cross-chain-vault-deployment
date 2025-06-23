@@ -237,6 +237,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     sol!(
         struct IBCEurekaTransferConfig {
             uint256 amount;
+            uint256 minAmountOut;
             address transferToken;
             address inputAccount;
             string recipient;
@@ -247,7 +248,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     );
 
     let eureka_transfer_config = IBCEurekaTransferConfig {
-        amount: U256::ZERO, // Full amount
+        amount: U256::ZERO,       // Full amount
+        minAmountOut: U256::ZERO, // No minimum amount out
         transferToken: parameters.vault.deposit_token,
         inputAccount: deposit_account,
         recipient: parameters.eureka_transfer.recipient,
