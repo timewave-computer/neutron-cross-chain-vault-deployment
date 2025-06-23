@@ -141,16 +141,16 @@ impl Strategy {
 
         if redemption_rate_sol_u256 > current_vault_rate {
             let change_decimal = Decimal::from_ratio(
-                Uint128::from_str(&redemption_rate_sol_u256.to_string()).unwrap(),
-                Uint128::from_str(&current_vault_rate.to_string()).unwrap(),
+                Uint128::from_str(&redemption_rate_sol_u256.to_string())?,
+                Uint128::from_str(&current_vault_rate.to_string())?,
             );
 
             let rate_delta = change_decimal - Decimal::one();
             info!(target: UPDATE_PHASE, "redemption rate epoch delta = +{rate_delta}");
         } else {
             let change_decimal = Decimal::from_ratio(
-                Uint128::from_str(&redemption_rate_sol_u256.to_string()).unwrap(),
-                Uint128::from_str(&current_vault_rate.to_string()).unwrap(),
+                Uint128::from_str(&redemption_rate_sol_u256.to_string())?,
+                Uint128::from_str(&current_vault_rate.to_string())?,
             );
             let rate_delta = Decimal::one() - change_decimal;
 
