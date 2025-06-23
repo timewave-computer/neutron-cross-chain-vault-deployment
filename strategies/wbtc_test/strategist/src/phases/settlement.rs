@@ -110,13 +110,7 @@ impl Strategy {
                 vec![to_json_binary(&mars_withdraw_msg)?],
             )
             .await?;
-            // self.enqueue_neutron(
-            //     MARS_WITHDRAW_LABEL,
-            //     vec![to_json_binary(&mars_withdraw_msg)?],
-            // )
-            // .await?;
 
-            // self.tick_neutron().await?;
             valence_core::tick_neutron(&self.neutron_client, &self.cfg.neutron.processor).await?;
         }
 
