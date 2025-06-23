@@ -5276,7 +5276,9 @@ name = "packages"
 version = "0.1.0"
 dependencies = [
  "alloy",
+ "log",
  "serde",
+ "valence-clearing-queue-supervaults",
 ]
 
 [[package]]

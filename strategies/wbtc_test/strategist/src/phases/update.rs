@@ -3,15 +3,16 @@ use std::{error::Error, str::FromStr};
 use alloy::{primitives::U256, providers::Provider};
 use cosmwasm_std::{Addr, Decimal, Uint128, Uint256};
 use log::{info, trace};
-use packages::types::sol_types::{BaseAccount, ERC20, OneWayVault};
+use packages::{
+    phases::UPDATE_PHASE,
+    types::sol_types::{BaseAccount, ERC20, OneWayVault},
+};
 use valence_domain_clients::{
     cosmos::{base_client::BaseClient, wasm_client::WasmClient},
     evm::base_client::{CustomProvider, EvmBaseClient},
 };
 
 use crate::strategy_config::Strategy;
-
-const UPDATE_PHASE: &str = "update";
 
 impl Strategy {
     /// performs the vault rate update

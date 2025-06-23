@@ -3,7 +3,7 @@ use std::error::Error;
 use alloy::primitives::U256;
 use cosmwasm_std::Binary;
 use log::info;
-use packages::labels::REGISTER_OBLIGATION_LABEL;
+use packages::{labels::REGISTER_OBLIGATION_LABEL, phases::REGISTRATION_PHASE};
 use serde_json::json;
 use valence_domain_clients::{
     coprocessor::base_client::CoprocessorBaseClient,
@@ -12,8 +12,6 @@ use valence_domain_clients::{
 };
 
 use crate::strategy_config::Strategy;
-
-const REGISTRATION_PHASE: &str = "registration";
 
 impl Strategy {
     /// reads the newly submitted withdrawal obligations that are not yet
