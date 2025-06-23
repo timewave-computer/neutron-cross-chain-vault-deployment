@@ -9,11 +9,13 @@ use std::{
 use cosmwasm_std::{Binary, Decimal, Uint64, Uint128};
 use serde::Deserialize;
 use sp1_sdk::{HashableKey, SP1VerifyingKey};
+use valence_clearing_queue_supervaults::msg::SupervaultSettlementInfo;
 use valence_domain_clients::{
     clients::{coprocessor::CoprocessorClient, neutron::NeutronClient},
     coprocessor::base_client::CoprocessorBaseClient,
     cosmos::{grpc_client::GrpcSigningClient, wasm_client::WasmClient},
 };
+use wbtc_test_deploy::DIR;
 use wbtc_test_types::{
     gaia_config::GaiaStrategyConfig,
     neutron_config::{
@@ -83,14 +85,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mnemonic = env::var("MNEMONIC").expect("mnemonic must be provided");
 
     let current_dir = env::current_dir()?;
-    let parameters = fs::read_to_string(current_dir.join("deploy/src/neutron.toml"))
+
+    let parameters = fs::read_to_string(current_dir.join(format!("{DIR}/neutron.toml")))
         .expect("Failed to read file");
 
     let params: Parameters = toml::from_str(&parameters).expect("Failed to parse TOML");
 
     // Read code IDS from the code ids file
-    let code_ids_content = fs::read_to_string(current_dir.join("deploy/src/neutron_code_ids.toml"))
-        .expect("Failed to read code ids file");
+    let code_ids_content =
+        fs::read_to_string(current_dir.join(format!("{DIR}/neutron_code_ids.toml")))
+            .expect("Failed to read code ids file");
     let uploaded_contracts: UploadedContracts =
         toml::from_str(&code_ids_content).expect("Failed to parse code ids");
 
@@ -442,9 +446,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
         settlement_acc_addr: LibraryAccountType::Addr(predicted_base_accounts[3].clone()),
         denom: params.program.deposit_token_on_neutron_denom.clone(),
         latest_id: None,
-        supervault_addr: params.program.supervault.clone(),
-        supervaults_sender: predicted_base_accounts[2].clone(), // Input account of supervaults lper library
-        settlement_ratio: Decimal::percent(params.program.initial_settlement_ratio_percentage),
+        mars_settlement_ratio: Decimal::percent(params.program.initial_settlement_ratio_percentage),
+        supervaults_settlement_info: vec![SupervaultSettlementInfo {
+            supervault_addr: params.program.supervault.clone(),
+            supervault_sender: predicted_base_accounts[2].clone(), // Input account of supervaults lper library
+            settlement_ratio: Decimal::one(), // 100% because there is only one supervault and the remaining all goes into it
+        }],
     };
     let instantiate_clearing_queue_msg = valence_library_utils::msg::InstantiateMsg::<
         valence_clearing_queue_supervaults::msg::LibraryConfig,
@@ -770,7 +777,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
 
     // Write the Gaia strategy config to a file
-    let gaia_cfg_path = current_dir.join("deploy/src/gaia_strategy_config.toml");
+    let gaia_cfg_path = current_dir.join(format!("{DIR}/gaia_strategy_config.toml"));
     fs::write(
         gaia_cfg_path,
         toml::to_string(&gaia_cfg).expect("Failed to serialize Gaia strategy config"),
