@@ -3,7 +3,9 @@ members = [
     "packages",
     "strategies/wbtc_test/deploy",
     "strategies/wbtc_test/strategist",
-    "strategies/wbtc_test/types"
+    "strategies/wbtc_test/types",
+    "strategies/wbtc/deploy",
+    "strategies/wbtc/types"
 ]
 resolver = "2"
 
