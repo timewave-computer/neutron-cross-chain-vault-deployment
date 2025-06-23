@@ -21,7 +21,7 @@ pub struct NeutronStrategyConfig {
     pub solvbtc_supervault: String,
     pub ebtc_supervault: String,
     pub pumpbtc_supervault: String,
-    pub bedrock_supervault: String,
+    pub bedrockbtc_supervault: String,
     pub maxbtc_supervault: String,
     /// authorizations module
     pub authorizations: String,
@@ -52,7 +52,7 @@ pub struct NeutronDenoms {
     pub solvbtc_supervault_lp: String,
     pub ebtc_supervault_lp: String,
     pub pumpbtc_supervault_lp: String,
-    pub bedrock_supervault_lp: String,
+    pub bedrockbtc_supervault_lp: String,
     pub maxbtc_supervault_lp: String,
 }
 
@@ -70,7 +70,7 @@ pub struct NeutronAccounts {
     pub solvbtc_supervault_deposit: String,
     pub ebtc_supervault_deposit: String,
     pub pumpbtc_supervault_deposit: String,
-    pub bedrock_supervault_deposit: String,
+    pub bedrockbtc_supervault_deposit: String,
     pub maxbtc_supervault_deposit: String,
     /// settlement account where funds will be sent to end users
     pub settlement: String,
@@ -88,7 +88,7 @@ pub struct NeutronLibraries {
     pub solvbtc_supervault_lper: String,
     pub ebtc_supervault_lper: String,
     pub pumpbtc_supervault_lper: String,
-    pub bedrock_supervault_lper: String,
+    pub bedrockbtc_supervault_lper: String,
     pub maxbtc_supervault_lper: String,
     /// Clearing queue
     pub clearing_queue: String,
@@ -106,7 +106,7 @@ pub struct NeutronLibraries {
     pub phase_shift_solvbtc_supervault_withdrawer: String,
     pub phase_shift_ebtc_supervault_withdrawer: String,
     pub phase_shift_pumpbtc_supervault_withdrawer: String,
-    pub phase_shift_bedrock_supervault_withdrawer: String,
+    pub phase_shift_bedrockbtc_supervault_withdrawer: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

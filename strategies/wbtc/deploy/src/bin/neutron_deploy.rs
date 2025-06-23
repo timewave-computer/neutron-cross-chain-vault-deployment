@@ -86,10 +86,10 @@ struct Program {
     pumpbtc_supervault_asset1: String,
     pumpbtc_supervault_asset2: String,
     pumpbtc_supervault_lp_denom: String,
-    bedrock_supervault: String,
-    bedrock_supervault_asset1: String,
-    bedrock_supervault_asset2: String,
-    bedrock_supervault_lp_denom: String,
+    bedrockbtc_supervault: String,
+    bedrockbtc_supervault_asset1: String,
+    bedrockbtc_supervault_asset2: String,
+    bedrockbtc_supervault_lp_denom: String,
     initial_split_mars_ratio: String,
     initial_split_fbtc_ratio: String,
     initial_split_lbtc_ratio: String,
@@ -103,7 +103,7 @@ struct Program {
     solvbtc_settlement_ratio_percentage: u64,
     ebtc_settlement_ratio_percentage: u64,
     pumpbtc_settlement_ratio_percentage: u64,
-    bedrock_settlement_ratio_percentage: u64,
+    bedrockbtc_settlement_ratio_percentage: u64,
     fbtc_denom: String,
     lbtc_denom: String,
     solvbtc_denom: String,
@@ -358,7 +358,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             Decimal::from_str(&params.program.initial_split_pumpbtc_ratio).unwrap(),
         ),
         (
-            predicted_base_accounts[7].clone(), // Bedrock WBTC supervault deposit account
+            predicted_base_accounts[7].clone(), // bedrockbtc WBTC supervault deposit account
             Decimal::from_str(&params.program.initial_split_bedrockbtc_ratio).unwrap(),
         ),
     ]);
@@ -458,7 +458,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 denom: UncheckedDenom::Native(
                     params.program.deposit_token_on_neutron_denom.clone(),
                 ),
-                account: LibraryAccountType::Addr(predicted_base_accounts[7].clone()), // Bedrock WBTC supervault deposit account
+                account: LibraryAccountType::Addr(predicted_base_accounts[7].clone()), // bedrockbtc WBTC supervault deposit account
                 amount: UncheckedSplitAmount::DynamicRatio {
                     contract_addr: dynamic_ratio_query_provider_address.clone(),
                     params: predicted_base_accounts[7].clone(),
@@ -686,36 +686,36 @@ async fn main() -> Result<(), Box<dyn Error>> {
         pumpbtc_supervaults_lper_library_address
     );
 
-    let bedrock_supervaults_lper_config = valence_supervaults_lper::msg::LibraryConfig {
+    let bedrockbtc_supervaults_lper_config = valence_supervaults_lper::msg::LibraryConfig {
         input_addr: LibraryAccountType::Addr(predicted_base_accounts[7].clone()),
         output_addr: LibraryAccountType::Addr(predicted_base_accounts[9].clone()),
-        vault_addr: params.program.bedrock_supervault.clone(),
+        vault_addr: params.program.bedrockbtc_supervault.clone(),
         lp_config: valence_supervaults_lper::msg::LiquidityProviderConfig {
             asset_data: valence_library_utils::liquidity_utils::AssetData {
-                asset1: params.program.bedrock_supervault_asset1.clone(),
-                asset2: params.program.bedrock_supervault_asset2.clone(),
+                asset1: params.program.bedrockbtc_supervault_asset1.clone(),
+                asset2: params.program.bedrockbtc_supervault_asset2.clone(),
             },
-            lp_denom: params.program.bedrock_supervault_lp_denom.clone(),
+            lp_denom: params.program.bedrockbtc_supervault_lp_denom.clone(),
         },
     };
-    let instantiate_bedrock_supervaults_lper_msg = valence_library_utils::msg::InstantiateMsg::<
+    let instantiate_bedrockbtc_supervaults_lper_msg = valence_library_utils::msg::InstantiateMsg::<
         valence_supervaults_lper::msg::LibraryConfig,
     > {
         owner: processor_address.clone(),
         processor: processor_address.clone(),
-        config: bedrock_supervaults_lper_config,
+        config: bedrockbtc_supervaults_lper_config,
     };
-    let bedrock_supervaults_lper_library_address = neutron_client
+    let bedrockbtc_supervaults_lper_library_address = neutron_client
         .instantiate(
             code_id_supervaults_lper,
-            "bedrock_supervault_lper".to_string(),
-            instantiate_bedrock_supervaults_lper_msg,
+            "bedrockbtc_supervault_lper".to_string(),
+            instantiate_bedrockbtc_supervaults_lper_msg,
             None,
         )
         .await?;
     println!(
-        "Bedrock-WBTC Supervaults lper library instantiated: {}",
-        bedrock_supervaults_lper_library_address
+        "bedrockbtc-WBTC Supervaults lper library instantiated: {}",
+        bedrockbtc_supervaults_lper_library_address
     );
 
     // We'll also instantiate the maxBTC-BTC one even though we don't have the address yet,
@@ -791,10 +791,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 ),
             },
             SupervaultSettlementInfo {
-                supervault_addr: params.program.bedrock_supervault.clone(),
+                supervault_addr: params.program.bedrockbtc_supervault.clone(),
                 supervault_sender: predicted_base_accounts[7].clone(),
                 settlement_ratio: Decimal::percent(
-                    params.program.bedrock_settlement_ratio_percentage,
+                    params.program.bedrockbtc_settlement_ratio_percentage,
                 ),
             },
         ],
@@ -991,37 +991,38 @@ async fn main() -> Result<(), Box<dyn Error>> {
         pumpbtc_supervault_withdrawer_library_address
     );
 
-    let bedrock_supervault_withdrawer_config = valence_supervaults_withdrawer::msg::LibraryConfig {
-        input_addr: LibraryAccountType::Addr(predicted_base_accounts[9].clone()),
-        output_addr: LibraryAccountType::Addr(predicted_base_accounts[9].clone()),
-        vault_addr: params.program.bedrock_supervault.clone(),
-        lw_config: valence_supervaults_withdrawer::msg::LiquidityWithdrawerConfig {
-            asset_data: valence_library_utils::liquidity_utils::AssetData {
-                asset1: params.program.bedrock_supervault_asset1.clone(),
-                asset2: params.program.bedrock_supervault_asset2.clone(),
+    let bedrockbtc_supervault_withdrawer_config =
+        valence_supervaults_withdrawer::msg::LibraryConfig {
+            input_addr: LibraryAccountType::Addr(predicted_base_accounts[9].clone()),
+            output_addr: LibraryAccountType::Addr(predicted_base_accounts[9].clone()),
+            vault_addr: params.program.bedrockbtc_supervault.clone(),
+            lw_config: valence_supervaults_withdrawer::msg::LiquidityWithdrawerConfig {
+                asset_data: valence_library_utils::liquidity_utils::AssetData {
+                    asset1: params.program.bedrockbtc_supervault_asset1.clone(),
+                    asset2: params.program.bedrockbtc_supervault_asset2.clone(),
+                },
+                lp_denom: params.program.bedrockbtc_supervault_lp_denom.clone(),
             },
-            lp_denom: params.program.bedrock_supervault_lp_denom.clone(),
-        },
-    };
-    let instantiate_bedrock_supervaults_withdrawer_msg =
+        };
+    let instantiate_bedrockbtc_supervaults_withdrawer_msg =
         valence_library_utils::msg::InstantiateMsg::<
             valence_supervaults_withdrawer::msg::LibraryConfig,
         > {
             owner: processor_address.clone(),
             processor: processor_address.clone(),
-            config: bedrock_supervault_withdrawer_config,
+            config: bedrockbtc_supervault_withdrawer_config,
         };
-    let bedrock_supervault_withdrawer_library_address = neutron_client
+    let bedrockbtc_supervault_withdrawer_library_address = neutron_client
         .instantiate(
             code_id_supervaults_withdrawer,
-            "bedrock_supervault_withdrawer".to_string(),
-            instantiate_bedrock_supervaults_withdrawer_msg,
+            "bedrockbtc_supervault_withdrawer".to_string(),
+            instantiate_bedrockbtc_supervaults_withdrawer_msg,
             None,
         )
         .await?;
     println!(
-        "Bedrock-WBTC Supervaults withdrawer library instantiated: {}",
-        bedrock_supervault_withdrawer_library_address
+        "bedrockbtc-WBTC Supervaults withdrawer library instantiated: {}",
+        bedrockbtc_supervault_withdrawer_library_address
     );
 
     // 2. Instantiate the maxbtc issuer that will issue the maxbtc token depositing the counterparty of the deposit token in the vault.
@@ -1089,8 +1090,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             },
             UncheckedSplitConfig {
                 denom: UncheckedDenom::Native(params.program.bedrockbtc_denom.clone()),
-                account: LibraryAccountType::Addr(predicted_base_accounts[7].clone()), // BedrockBTC deposit account
-                amount: UncheckedSplitAmount::FixedRatio(Decimal::one()), // 100% of Bedrock
+                account: LibraryAccountType::Addr(predicted_base_accounts[7].clone()), // bedrockbtc deposit account
+                amount: UncheckedSplitAmount::FixedRatio(Decimal::one()), // 100% of bedrockbtc
             },
         ],
     };
@@ -1299,22 +1300,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
         pumpbtc_supervault_deposit_account_address
     );
 
-    let bedrock_deposit_account_instantiate_msg = valence_account_utils::msg::InstantiateMsg {
+    let bedrockbtc_deposit_account_instantiate_msg = valence_account_utils::msg::InstantiateMsg {
         admin: params.general.owner.clone(),
-        approved_libraries: vec![bedrock_supervaults_lper_library_address.clone()],
+        approved_libraries: vec![bedrockbtc_supervaults_lper_library_address.clone()],
     };
-    let bedrock_supervault_deposit_account_address = neutron_client
+    let bedrockbtc_supervault_deposit_account_address = neutron_client
         .instantiate2(
             code_id_base_account,
-            "bedrock_supervault_deposit".to_string(),
-            bedrock_deposit_account_instantiate_msg,
+            "bedrockbtc_supervault_deposit".to_string(),
+            bedrockbtc_deposit_account_instantiate_msg,
             Some(params.general.owner.clone()),
             salts[7].clone(),
         )
         .await?;
     println!(
-        "Bedrock-WBTC supervault deposit account instantiated: {}",
-        bedrock_supervault_deposit_account_address
+        "bedrockbtc-WBTC supervault deposit account instantiated: {}",
+        bedrockbtc_supervault_deposit_account_address
     );
 
     let maxbtc_btc_deposit_account_instantiate_msg = valence_account_utils::msg::InstantiateMsg {
@@ -1347,7 +1348,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             solvbtc_supervault_withdrawer_library_address.clone(),
             ebtc_supervault_withdrawer_library_address.clone(),
             pumpbtc_supervault_withdrawer_library_address.clone(),
-            bedrock_supervault_withdrawer_library_address.clone(),
+            bedrockbtc_supervault_withdrawer_library_address.clone(),
             maxbtc_issuer_library_address.clone(),
         ],
     };
@@ -1373,7 +1374,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         solvbtc_supervault_lp: params.program.solvbtc_supervault_lp_denom.clone(),
         ebtc_supervault_lp: params.program.ebtc_supervault_lp_denom.clone(),
         pumpbtc_supervault_lp: params.program.pumpbtc_supervault_lp_denom.clone(),
-        bedrock_supervault_lp: params.program.bedrock_supervault_lp_denom.clone(),
+        bedrockbtc_supervault_lp: params.program.bedrockbtc_supervault_lp_denom.clone(),
         maxbtc_supervault_lp: "TBD".to_string(), // This will need to be updated after phase shift
     };
 
@@ -1387,7 +1388,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         solvbtc_supervault_deposit: solvbtc_supervault_deposit_account_address,
         ebtc_supervault_deposit: ebtc_supervault_deposit_account_address,
         pumpbtc_supervault_deposit: pumpbtc_supervault_deposit_account_address,
-        bedrock_supervault_deposit: bedrock_supervault_deposit_account_address,
+        bedrockbtc_supervault_deposit: bedrockbtc_supervault_deposit_account_address,
         maxbtc_supervault_deposit: maxbtc_btc_supervault_deposit_account_address,
     };
 
@@ -1401,7 +1402,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         solvbtc_supervault_lper: solvbtc_supervaults_lper_library_address,
         ebtc_supervault_lper: ebtc_supervaults_lper_library_address,
         pumpbtc_supervault_lper: pumpbtc_supervaults_lper_library_address,
-        bedrock_supervault_lper: bedrock_supervaults_lper_library_address,
+        bedrockbtc_supervault_lper: bedrockbtc_supervaults_lper_library_address,
         maxbtc_supervault_lper: maxbtc_btc_supervaults_lper_library_address,
         phase_shift_splitter: phase_shift_splitter_library_address,
         phase_shift_forwarder: phase_shift_forwarder_library_address,
@@ -1411,7 +1412,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         phase_shift_solvbtc_supervault_withdrawer: solvbtc_supervault_withdrawer_library_address,
         phase_shift_ebtc_supervault_withdrawer: ebtc_supervault_withdrawer_library_address,
         phase_shift_pumpbtc_supervault_withdrawer: pumpbtc_supervault_withdrawer_library_address,
-        phase_shift_bedrock_supervault_withdrawer: bedrock_supervault_withdrawer_library_address,
+        phase_shift_bedrockbtc_supervault_withdrawer:
+            bedrockbtc_supervault_withdrawer_library_address,
     };
 
     let coprocessor_app_ids = NeutronCoprocessorAppIds {
@@ -1428,7 +1430,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         solvbtc_supervault: params.program.solvbtc_supervault.clone(),
         ebtc_supervault: params.program.ebtc_supervault.clone(),
         pumpbtc_supervault: params.program.pumpbtc_supervault.clone(),
-        bedrock_supervault: params.program.bedrock_supervault.clone(),
+        bedrockbtc_supervault: params.program.bedrockbtc_supervault.clone(),
         maxbtc_supervault: "TBD".to_string(), // This will need to be updated after phase shift
         denoms,
         accounts,

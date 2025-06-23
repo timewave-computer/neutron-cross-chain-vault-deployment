@@ -220,7 +220,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .clone(),
         ntrn_strategy_config
             .libraries
-            .bedrock_supervault_lper
+            .bedrockbtc_supervault_lper
             .clone(),
     ] {
         let provide_liquidity_function = AtomicFunction {
@@ -274,7 +274,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .clone(),
         ntrn_strategy_config
             .libraries
-            .bedrock_supervault_lper
+            .bedrockbtc_supervault_lper
             .clone(),
         ntrn_strategy_config
             .libraries
@@ -425,7 +425,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .clone(),
         ntrn_strategy_config
             .libraries
-            .bedrock_supervault_lper
+            .bedrockbtc_supervault_lper
             .clone(),
     ] {
         let withdraw_function = AtomicFunction {
@@ -513,7 +513,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .clone(),
         ntrn_strategy_config
             .libraries
-            .bedrock_supervault_lper
+            .bedrockbtc_supervault_lper
             .clone(),
         ntrn_strategy_config
             .libraries
