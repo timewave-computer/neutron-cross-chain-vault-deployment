@@ -111,7 +111,6 @@ impl Strategy {
             )
             .await?;
 
-            // self.tick_neutron().await?;
             valence_core::tick_neutron(&self.neutron_client, &self.cfg.neutron.processor).await?;
         }
 
