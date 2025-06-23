@@ -3,13 +3,13 @@ use std::error::Error;
 use alloy::primitives::U256;
 use cosmwasm_std::Binary;
 use log::info;
+use packages::labels::REGISTER_OBLIGATION_LABEL;
 use serde_json::json;
 use valence_domain_clients::{
     coprocessor::base_client::CoprocessorBaseClient,
     cosmos::{base_client::BaseClient, wasm_client::WasmClient},
     indexer::one_way_vault::OneWayVaultIndexer,
 };
-use wbtc_test_types::labels::REGISTER_OBLIGATION_LABEL;
 
 use crate::strategy_config::Strategy;
 

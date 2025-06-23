@@ -2,9 +2,9 @@ use std::error::Error;
 
 use cosmwasm_std::to_json_binary;
 use log::{info, warn};
+use packages::labels::{MARS_WITHDRAW_LABEL, SETTLE_OBLIGATION_LABEL};
 use valence_clearing_queue_supervaults::{msg::ObligationsResponse, state::WithdrawalObligation};
 use valence_domain_clients::cosmos::{base_client::BaseClient, wasm_client::WasmClient};
-use wbtc_test_types::labels::{MARS_WITHDRAW_LABEL, SETTLE_OBLIGATION_LABEL};
 
 use crate::strategy_config::Strategy;
 

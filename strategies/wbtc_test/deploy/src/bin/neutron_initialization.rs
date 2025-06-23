@@ -1,6 +1,10 @@
 use std::{env, error::Error, fs};
 
 use cosmwasm_std::Binary;
+use packages::labels::{
+    ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_LABEL, MARS_WITHDRAW_LABEL, PHASE_SHIFT_LABEL,
+    REGISTER_OBLIGATION_LABEL, SETTLE_OBLIGATION_LABEL,
+};
 use serde::Deserialize;
 use sp1_sdk::{HashableKey, SP1VerifyingKey};
 use valence_authorization_utils::{
@@ -18,13 +22,7 @@ use valence_domain_clients::{
 };
 use valence_library_utils::LibraryAccountType;
 use wbtc_test_deploy::DIR;
-use wbtc_test_types::{
-    labels::{
-        ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_LABEL, MARS_WITHDRAW_LABEL,
-        PHASE_SHIFT_LABEL, REGISTER_OBLIGATION_LABEL, SETTLE_OBLIGATION_LABEL,
-    },
-    neutron_config::NeutronStrategyConfig,
-};
+use wbtc_test_types::neutron_config::NeutronStrategyConfig;
 
 #[derive(Deserialize, Debug)]
 struct Parameters {
