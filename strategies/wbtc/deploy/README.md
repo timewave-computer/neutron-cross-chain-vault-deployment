@@ -11,3 +11,9 @@
 5. Run `neutron_initialization.rs` which will create all the authorizations including the ZK authorization.
 
 6. Run `ethereum_initialization.rs` which will create the relevant IBC Eureka ZK Authorization on the authorization contract that the strategist can execute.
+
+### Notes for Strategist
+
+This vault involves updating all the supervaults LPers configuration for the 2nd phase (maxBTC migration). Therefore, once the migration is completed, the corresponding LP denoms of the supervaults need to be updated because they will be different as we are using different supervaults.
+So, before relayer is restarted after the phase migration, the corresponding strategy_config files need to be updated with the right parameters.
+

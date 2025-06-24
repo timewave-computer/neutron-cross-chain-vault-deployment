@@ -26,6 +26,5 @@ initial_split_percentage_to_supervault = 20
 # Mars, so we if we put 75 here, it means 75% of the clearing queue will be settled to Mars and 25% to Supervaults.
 initial_settlement_ratio_percentage = 80
 
-
 [coprocessor_app]
 clearing_queue_coprocessor_app_id = "f8923f9f3da06b726fbaf1a41a6a375c86ff2180f8c11a60d1f7ad90ac9b4281" # TBD after we have the app deployed

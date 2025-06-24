@@ -20,8 +20,8 @@ use valence_domain_clients::{
     coprocessor::base_client::CoprocessorBaseClient,
     evm::{base_client::EvmBaseClient, request_provider_client::RequestProviderClient},
 };
-use wbtc_test_deploy::{DIR, SP1_VERIFIER};
-use wbtc_test_types::ethereum_config::{
+use wbtc_deploy::{DIR, SP1_VERIFIER};
+use wbtc_types::ethereum_config::{
     EthereumAccounts, EthereumCoprocessorAppIds, EthereumDenoms, EthereumLibraries,
     EthereumStrategyConfig,
 };
@@ -159,6 +159,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .unwrap();
     println!("Processor deployed at: {processor_address}");
 
+    // TODO: If we already deployed it we don't need to deploy it again, we reuse the first one deployed
     let verification_gateway =
         SP1VerificationGateway::deploy_builder(&rp).into_transaction_request();
     let verification_gateway_implementation = eth_client
