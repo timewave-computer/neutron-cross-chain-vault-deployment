@@ -5279,6 +5279,7 @@ dependencies = [
  "async-trait",
  "cosmwasm-std",
  "log",
+ "mmvault",
  "serde",
  "valence-authorization-utils",
  "valence-clearing-queue-supervaults",

@@ -2,7 +2,7 @@ use std::{env, error::Error, path::Path};
 
 use packages::{
     ibc_eureka_chain_ids::{EUREKA_COSMOS_HUB_CHAIN_ID, EUREKA_ETHEREUM_CHAIN_ID},
-    utils::mars::MarsLending,
+    utils::{mars::MarsLending, supervaults::Supervaults},
 };
 use valence_domain_clients::clients::{
     coprocessor::CoprocessorClient, ethereum::EthereumClient, gaia::CosmosHubClient,
@@ -53,6 +53,8 @@ pub struct Strategy {
 }
 
 impl MarsLending for Strategy {}
+
+impl Supervaults for Strategy {}
 
 #[allow(dead_code)]
 impl Strategy {

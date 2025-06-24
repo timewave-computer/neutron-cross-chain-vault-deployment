@@ -14,3 +14,4 @@ cosmwasm-std                        = { workspace = true }
 valence-processor-utils             = { workspace = true }
 async-trait                         = { workspace = true }
 valence-lending-utils               = { workspace = true }
+mmvault                             = { workspace = true }
