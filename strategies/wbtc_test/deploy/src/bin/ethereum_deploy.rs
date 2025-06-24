@@ -3,12 +3,11 @@ use std::{env, error::Error, fs};
 use alloy::{
     hex::FromHex,
     primitives::{Address, Bytes, FixedBytes, U256},
-    sol,
     sol_types::SolValue,
 };
 use cosmwasm_std::Uint128;
 use packages::types::sol_types::{
-    Authorization, BaseAccount, ERC1967Proxy, IBCEurekaTransfer,
+    Authorization, BaseAccount, ERC1967Proxy, IBCEurekaTransfer, IBCEurekaTransferConfig,
     OneWayVault::{self, FeeDistributionConfig, OneWayVaultConfig},
     SP1VerificationGateway,
     processor_contract::LiteProcessor,
@@ -231,20 +230,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     eth_client.sign_and_send(add_authorization_tx).await?;
     println!("Authorization added to processor");
-
-    // Deploy Eureka Transfer
-    sol!(
-        struct IBCEurekaTransferConfig {
-            uint256 amount;
-            uint256 minAmountOut;
-            address transferToken;
-            address inputAccount;
-            string recipient;
-            string sourceClient;
-            uint64 timeout;
-            address eurekaHandler;
-        }
-    );
 
     let eureka_transfer_config = IBCEurekaTransferConfig {
         amount: U256::ZERO,       // Full amount

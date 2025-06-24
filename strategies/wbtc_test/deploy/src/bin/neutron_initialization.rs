@@ -164,7 +164,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     authorizations.push(authorization_ica_transfer);
 
     // Subroutine for Mars lending and Supervault LP providing which involves Split, Lend and Deposit
-    let forward_function = AtomicFunction {
+    let split_function = AtomicFunction {
         domain: Domain::Main,
         message_details: MessageDetails {
             message_type: MessageType::CosmwasmExecuteMsg,
@@ -214,7 +214,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let subroutine_lending_and_providing_liquidity = AtomicSubroutineBuilder::new()
-        .with_function(forward_function.clone())
+        .with_function(split_function)
         .with_function(lend_function)
         .with_function(provide_liquidity_function)
         .build();
