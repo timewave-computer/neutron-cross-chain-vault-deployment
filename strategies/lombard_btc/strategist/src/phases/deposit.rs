@@ -26,10 +26,10 @@ const MIN_SPLIT_BALANCE: u128 = 2;
 
 impl Strategy {
     /// carries out the steps needed to bring the new deposits from Ethereum to
-    /// Neutron (via Cosmos Hub) before depositing them into Mars protocol.
+    /// Neutron (via Lombard & Cosmos Hub) before depositing them into Mars protocol.
     /// consists of three stages:
-    /// 1. Ethereum -> Cosmos Hub routing
-    /// 2. Cosmos Hub -> Neutron routing
+    /// 1. Ethereum -> Hub routing
+    /// 2. Hub -> Neutron routing
     /// 3. Supervaults & Mars position entry
     pub async fn deposit(
         &mut self,
@@ -37,7 +37,7 @@ impl Strategy {
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         trace!(target: DEPOSIT_PHASE, "starting deposit phase");
 
-        // Stage 1: deposit token routing from Ethereum to Cosmos Hub
+        // Stage 1: deposit token routing from Ethereum to Cosmos hub
         {
             let eth_deposit_token_contract =
                 ERC20::new(self.cfg.ethereum.denoms.deposit_token, &eth_rp);
@@ -69,7 +69,7 @@ impl Strategy {
             }
         }
 
-        // Stage 2: deposit token routing from Cosmos Hub to Neutron
+        // Stage 2: deposit token routing from Gaia to Neutron
         {
             let gaia_ica_bal = self
                 .gaia_client
@@ -153,7 +153,7 @@ impl Strategy {
     }
 
     /// carries out the steps needed to route the deposits from Ethereum program deposit
-    /// account to the configured Cosmos Hub ICA managed by Neutron Valence-ICA.
+    /// account to the configured Lombard ICA managed by Neutron Valence-ICA.
     async fn eth_to_gaia_routing(
         &mut self,
         eth_rp: &CustomProvider,
@@ -175,6 +175,9 @@ impl Strategy {
                 return Ok(());
             }
         };
+
+        // TODO: process the skip api response in the format expected for IBC-Eureka
+        // Lombard mode transfer
 
         // format the response in format expected by the coprocessor and post it
         // there for proof
@@ -238,21 +241,6 @@ impl Strategy {
         &mut self,
         gaia_ica_bal: u128,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        // let ica_ibc_transfer_update_msg: valence_library_utils::msg::ExecuteMsg<
-        //     valence_ica_ibc_transfer::msg::FunctionMsgs,
-        //     valence_ica_ibc_transfer::msg::LibraryConfigUpdate,
-        // > = valence_library_utils::msg::ExecuteMsg::UpdateConfig {
-        //     new_config: valence_ica_ibc_transfer::msg::LibraryConfigUpdate {
-        //         input_addr: None,
-        //         amount: Some(gaia_ica_bal.into()),
-        //         denom: None,
-        //         receiver: None,
-        //         memo: None,
-        //         remote_chain_info: None,
-        //         denom_to_pfm_map: None,
-        //         eureka_config: OptionUpdate::Set(None),
-        //     },
-        // };
         let ica_ibc_transfer_update_msg = json!({
             "update_config": {
                 "new_config": {

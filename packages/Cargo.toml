@@ -4,5 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-alloy = { workspace = true }
-serde = { workspace = true }
+alloy                               = { workspace = true }
+serde                               = { workspace = true }
+valence-clearing-queue-supervaults  = { workspace = true }
+log                                 = { workspace = true }
+valence-domain-clients              = { workspace = true }
+valence-authorization-utils         = { workspace = true }
+cosmwasm-std                        = { workspace = true }
+valence-processor-utils             = { workspace = true }

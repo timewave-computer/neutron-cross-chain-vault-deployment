@@ -1,0 +1,34 @@
+[package]
+name    = "lombard_btc_deploy"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+lombard_btc_types                    = { path = "../types" }
+packages                             = { path = "../../../packages" }
+anyhow                               = { workspace = true }
+toml                                 = { workspace = true }
+serde                                = { workspace = true }
+cosmwasm-std                         = { workspace = true }
+cosmrs                               = { workspace = true }
+dotenv                               = { workspace = true }
+tokio                                = { workspace = true }
+valence-domain-clients               = { workspace = true }
+alloy                                = { workspace = true }
+hex                                  = { workspace = true }
+valence-authorization-utils          = { workspace = true }
+valence-processor-utils              = { workspace = true }
+valence-library-utils                = { workspace = true }
+valence-account-utils                = { workspace = true }
+valence-ica-ibc-transfer             = { workspace = true }
+valence-mars-lending                 = { workspace = true }
+valence-supervaults-lper             = { workspace = true }
+valence-supervaults-withdrawer       = { workspace = true }
+valence-splitter-library             = { workspace = true }
+valence-forwarder-library            = { workspace = true }
+valence-clearing-queue-supervaults   = { workspace = true }
+valence-dynamic-ratio-query-provider = { workspace = true }
+valence-verification-gateway         = { workspace = true }
+valence-maxbtc-issuer                = { workspace = true }
+sp1-sdk                              = { workspace = true }
+bincode                              = { workspace = true }

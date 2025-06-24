@@ -44,7 +44,7 @@ impl Strategy {
         info!(target: UPDATE_PHASE, "eth_deposit_acc_balance={eth_deposit_acc_balance}");
 
         // perform u256 -> u128 conversion
-        let eth_deposit_token_total_u128: u128 = u128::try_from(eth_deposit_acc_balance)?;
+        let eth_deposit_token_total_u128 = u128::try_from(eth_deposit_acc_balance)?;
         info!(target: UPDATE_PHASE, "eth_deposit_token_total_u128={eth_deposit_token_total_u128}");
 
         let eth_vault_issued_shares = self
@@ -53,13 +53,13 @@ impl Strategy {
             .await?
             ._0;
 
-        info!(target: UPDATE_PHASE, "eth_vault_issued_shares={eth_vault_issued_shares}");
-
         // if there are no shares issued, update cannot be performed because it's impossible to
         // calculate the redemption rate
         if eth_vault_issued_shares.is_zero() {
             return Err("cannot calculate redemption rate with zero issued vault shares".into());
         }
+
+        info!(target: UPDATE_PHASE, "eth_vault_issued_shares={eth_vault_issued_shares}");
 
         // perform u256 -> u128 conversion
         let eth_vault_issued_shares_u128 = u128::try_from(eth_vault_issued_shares)?;
@@ -70,6 +70,14 @@ impl Strategy {
             .query_balance(&self.cfg.gaia.ica_address, &self.cfg.gaia.deposit_denom)
             .await?;
         info!(target: UPDATE_PHASE, "gaia_ica_balance={gaia_ica_balance}");
+
+        // this should always be zero, but just in case pfm from lombard to the hub fails, there
+        // may be some funds pending to be recovered into the program.
+        let lombard_ica_bal = self
+            .lombard_client
+            .query_balance(&self.cfg.lombard.ica, &self.cfg.lombard.deposit_denom)
+            .await?;
+        info!(target: UPDATE_PHASE, "Lombard ICA balance = {lombard_ica_bal}");
 
         let neutron_deposit_acc_balance = self
             .neutron_client
@@ -126,6 +134,7 @@ impl Strategy {
             neutron_deposit_acc_balance,
             neutron_settlement_acc_deposit_token_balance,
             eth_deposit_token_total_u128,
+            lombard_ica_bal,
         ]
         .iter()
         .sum();
