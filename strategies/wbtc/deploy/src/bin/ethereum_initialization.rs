@@ -12,8 +12,8 @@ use valence_domain_clients::{
     coprocessor::base_client::CoprocessorBaseClient,
     evm::{base_client::EvmBaseClient, request_provider_client::RequestProviderClient},
 };
-use wbtc_test_deploy::DIR;
-use wbtc_test_types::ethereum_config::EthereumStrategyConfig;
+use wbtc_deploy::DIR;
+use wbtc_types::ethereum_config::EthereumStrategyConfig;
 
 #[derive(Deserialize, Debug)]
 struct Parameters {
