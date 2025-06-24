@@ -4,7 +4,7 @@
 
 2. Fill in all the information in `neutron.toml` except the coprocessor app fields at the end and run the `neutron_deploy.rs` script which will instantiate all the contracts, trigger the ICA creation and output all relevant addresses in `neutron_strategy_config.toml` and `gaia_strategy_config.toml` which will be used by the strategist.
 
-3. Deploy on Ethereum running `ethereum_deploy.rs`. Note that we don't need to transfer to the ICA from Eureka because we'll do that using a memo. We'll be transfering to the contracto on Lombard that will trigger the actions to swap the iLBTCv to LBTC and forward them to the ICA we created on the Hub.
+3. Deploy on Ethereum running `ethereum_deploy.rs`. Note that we don't need to transfer to the ICA from Eureka because we'll do that using a memo. We'll be transfering to the contract on Lombard that will trigger the actions to swap the iLBTCv to LBTC and forward them to the ICA we created on the Hub.
 
 4. Now that we have deployed on both Ethereum and Neutron we can finalize the coprocessor apps and get their relevant IDs.
 
