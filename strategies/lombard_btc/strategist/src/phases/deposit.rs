@@ -26,10 +26,10 @@ const MIN_SPLIT_BALANCE: u128 = 2;
 
 impl Strategy {
     /// carries out the steps needed to bring the new deposits from Ethereum to
-    /// Neutron (via Lombard) before depositing them into Mars protocol.
+    /// Neutron (via Lombard & Cosmos Hub) before depositing them into Mars protocol.
     /// consists of three stages:
-    /// 1. Ethereum -> Lombard routing
-    /// 2. Lombard -> Neutron routing
+    /// 1. Ethereum -> Hub routing
+    /// 2. Hub -> Neutron routing
     /// 3. Supervaults & Mars position entry
     pub async fn deposit(
         &mut self,
@@ -65,29 +65,6 @@ impl Strategy {
                     info!(target: DEPOSIT_PHASE, "IBC-Eureka transfer threshold met!");
                     self.eth_to_gaia_routing(eth_rp, eth_deposit_acc_bal)
                         .await?;
-                }
-            }
-        }
-
-        // Stage 1.5: deposit token routing from Lombard to Gaia. This should only be used
-        // in cases where the pfm hop from lombard to gaia failed and funds settled in the
-        // configured recovery address. if this happens, we manually trigger the ICA-IBC
-        // transfer from lombard to gaia before proceeding to the next step.
-        {
-            let lombard_ica_bal = self
-                .lombard_client
-                .query_balance(&self.cfg.lombard.ica, &self.cfg.lombard.deposit_denom)
-                .await?;
-
-            // depending on the lombard ICA deposit token balance, we either perform the ICA IBC routing
-            // of the balances to Gaia, or proceed to the next stage
-            match lombard_ica_bal == 0 {
-                true => {
-                    info!(target: DEPOSIT_PHASE, "Lombard ICA balance is zero! proceeding to position entry");
-                }
-                false => {
-                    info!(target: DEPOSIT_PHASE, "Lombard ICA deposit token balance is {lombard_ica_bal}; pulling funds to Neutron");
-                    self.lombard_to_gaia_routing(lombard_ica_bal).await?;
                 }
             }
         }
@@ -257,55 +234,6 @@ impl Strategy {
                 100, // for 100 times
             )
             .await?;
-        Ok(())
-    }
-
-    /// this shouldn't really be needed, just in case pfm hop from lombard to gaia fails
-    async fn lombard_to_gaia_routing(
-        &mut self,
-        lombard_ica_bal: u128,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let ica_ibc_transfer_update_msg = json!({
-            "update_config": {
-                "new_config": {
-                    "amount": lombard_ica_bal.to_string(),
-                    "eureka_config": "none"
-                }
-            }
-        });
-        let ica_ibc_transfer_exec_msg =
-            valence_library_utils::msg::ExecuteMsg::<_, ()>::ProcessFunction(
-                valence_ica_ibc_transfer::msg::FunctionMsgs::Transfer {},
-            );
-
-        info!(target: DEPOSIT_PHASE, "enqueuing ica_ibc_transfer library update & transfer");
-        valence_core::enqueue_neutron(
-            &self.neutron_client,
-            &self.cfg.neutron.authorizations,
-            ICA_TRANSFER_LABEL,
-            vec![
-                to_json_binary(&ica_ibc_transfer_update_msg)?,
-                to_json_binary(&ica_ibc_transfer_exec_msg)?,
-            ],
-        )
-        .await?;
-
-        info!(target: DEPOSIT_PHASE, "tick: update & transfer");
-        valence_core::tick_neutron(&self.neutron_client, &self.cfg.neutron.processor).await?;
-
-        info!(target: DEPOSIT_PHASE, "polling for gaia ICA to receive the funds");
-
-        // block execution until funds arrive to the Cosmos Hub program deposit ICA
-        self.gaia_client
-            .poll_until_expected_balance(
-                &self.cfg.gaia.ica_address,
-                &self.cfg.gaia.deposit_denom,
-                lombard_ica_bal,
-                5,
-                30,
-            )
-            .await?;
-
         Ok(())
     }
 
