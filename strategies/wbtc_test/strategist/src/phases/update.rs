@@ -6,6 +6,7 @@ use log::{info, trace};
 use packages::{
     phases::UPDATE_PHASE,
     types::sol_types::{BaseAccount, ERC20, OneWayVault},
+    utils::mars::MarsLending,
 };
 use valence_domain_clients::{
     cosmos::{base_client::BaseClient, wasm_client::WasmClient},
@@ -110,7 +111,14 @@ impl Strategy {
         // both mars and supervaults positions are derivatives of the
         // underlying denom. we do the necessary accounting for both and
         // fetch the tvl expressed in the underlying deposit token.
-        let mars_tvl = self.mars_accounting().await?;
+        let mars_tvl = Strategy::query_mars_lending_denom_amount(
+            &self.neutron_client,
+            &self.cfg.neutron.mars_pool,
+            &self.cfg.neutron.accounts.mars_deposit,
+            &self.cfg.neutron.denoms.deposit_token,
+        )
+        .await?;
+
         info!(target: UPDATE_PHASE, "mars_tvl={mars_tvl}");
 
         let supervaults_tvl = self.supervaults_accounting().await?;
@@ -174,60 +182,6 @@ impl Strategy {
             .await?;
 
         Ok(())
-    }
-
-    /// calculates total value of the active Mars lending position,
-    /// expressed in the deposit token
-    async fn mars_accounting(&mut self) -> Result<u128, Box<dyn Error + Send + Sync>> {
-        // query the mars credit account created and owned by the mars input account
-        let mars_input_acc_credit_accounts: Vec<valence_lending_utils::mars::Account> = self
-            .neutron_client
-            .query_contract_state(
-                &self.cfg.neutron.mars_pool,
-                valence_lending_utils::mars::QueryMsg::Accounts {
-                    owner: self.cfg.neutron.accounts.mars_deposit.to_string(),
-                    start_after: None,
-                    limit: None,
-                },
-            )
-            .await?;
-
-        info!(target: UPDATE_PHASE, "mars input credit accounts = {:?}", mars_input_acc_credit_accounts);
-
-        // extract the credit account id. while credit accounts are returned as a vec,
-        // mars lending library should only ever create one credit account and re-use it
-        // for all LP actions, so we get the [0]
-        let mars_input_credit_account_id = match mars_input_acc_credit_accounts.len() {
-            // if this is the first cycle and no credit accounts exist,
-            // we early return mars tvl 0
-            0 => return Ok(0),
-            _ => mars_input_acc_credit_accounts[0].id.to_string(),
-        };
-
-        info!(target: UPDATE_PHASE, "mars input credit account id = #{mars_input_credit_account_id}");
-
-        // query mars positions owned by the credit account id
-        let mars_positions_response: valence_lending_utils::mars::Positions = self
-            .neutron_client
-            .query_contract_state(
-                &self.cfg.neutron.mars_pool,
-                valence_lending_utils::mars::QueryMsg::Positions {
-                    account_id: mars_input_credit_account_id,
-                },
-            )
-            .await?;
-
-        info!(target: UPDATE_PHASE, "mars credit account positions = {:?}", mars_positions_response);
-
-        // find the relevant denom among the active lends
-        let mut mars_lending_deposit_token_amount = Uint128::zero();
-        for lend in mars_positions_response.lends {
-            if lend.denom == self.cfg.neutron.denoms.deposit_token {
-                mars_lending_deposit_token_amount = lend.amount;
-            }
-        }
-
-        Ok(mars_lending_deposit_token_amount.u128())
     }
 
     /// calculates total value of the active supervault position,

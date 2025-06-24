@@ -5276,12 +5276,14 @@ name = "packages"
 version = "0.1.0"
 dependencies = [
  "alloy",
+ "async-trait",
  "cosmwasm-std",
  "log",
  "serde",
  "valence-authorization-utils",
  "valence-clearing-queue-supervaults",
  "valence-domain-clients",
+ "valence-lending-utils",
  "valence-processor-utils",
 ]
 
