@@ -1,7 +1,7 @@
 use std::{error::Error, str::FromStr};
 
 use alloy::{primitives::U256, providers::Provider};
-use cosmwasm_std::{Addr, Decimal, Uint128, Uint256};
+use cosmwasm_std::{Addr, Decimal, Uint128};
 use log::{info, trace};
 use packages::{
     phases::UPDATE_PHASE,
@@ -43,11 +43,9 @@ impl Strategy {
             ._0;
         info!(target: UPDATE_PHASE, "eth_deposit_acc_balance={eth_deposit_acc_balance}");
 
-        let eth_deposit_token_total_uint256 =
-            Uint256::from_be_bytes(eth_deposit_acc_balance.to_be_bytes());
-        let eth_deposit_token_total_uint128 =
-            Uint128::from_str(&eth_deposit_token_total_uint256.to_string())?;
-        info!(target: UPDATE_PHASE, "eth_deposit_acc_balance_u128={eth_deposit_token_total_uint128}");
+        // perform u256 -> u128 conversion
+        let eth_deposit_token_total_u128 = u128::try_from(eth_deposit_acc_balance)?;
+        info!(target: UPDATE_PHASE, "eth_deposit_token_total_u128={eth_deposit_token_total_u128}");
 
         let eth_vault_issued_shares = self
             .eth_client
@@ -55,11 +53,10 @@ impl Strategy {
             .await?
             ._0;
         info!(target: UPDATE_PHASE, "eth_vault_issued_shares={eth_vault_issued_shares}");
-        let eth_vault_issued_shares_uint256 =
-            Uint256::from_be_bytes(eth_vault_issued_shares.to_be_bytes());
-        let eth_vault_issued_shares_uint128 =
-            Uint128::from_str(&eth_vault_issued_shares_uint256.to_string())?;
-        info!(target: UPDATE_PHASE, "eth_vault_issued_shares_uint128={eth_vault_issued_shares_uint128}");
+
+        // perform u256 -> u128 conversion
+        let eth_vault_issued_shares_u128 = u128::try_from(eth_vault_issued_shares)?;
+        info!(target: UPDATE_PHASE, "eth_vault_issued_shares_u128={eth_vault_issued_shares_u128}");
 
         let gaia_ica_balance = self
             .gaia_client
@@ -121,7 +118,7 @@ impl Strategy {
             gaia_ica_balance,
             neutron_deposit_acc_balance,
             neutron_settlement_acc_deposit_token_balance,
-            eth_deposit_token_total_uint128.u128(),
+            eth_deposit_token_total_u128,
         ]
         .iter()
         .sum();
@@ -132,7 +129,8 @@ impl Strategy {
         let redemption_rate_decimal = Decimal::from_ratio(
             deposit_token_total,
             // multiplying the denominator by the scaling factor
-            eth_vault_issued_shares_uint128.checked_mul(self.cfg.ethereum.rate_scaling_factor)?,
+            Uint128::from(eth_vault_issued_shares_u128)
+                .checked_mul(self.cfg.ethereum.rate_scaling_factor)?,
         );
         info!(target: UPDATE_PHASE, "redemption rate decimal={redemption_rate_decimal}");
 

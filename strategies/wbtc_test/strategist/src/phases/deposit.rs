@@ -21,6 +21,9 @@ use valence_domain_clients::{
 
 use crate::strategy_config::Strategy;
 
+/// minimum Valence account balance to perform a split
+const MIN_SPLIT_BALANCE: u128 = 2;
+
 impl Strategy {
     /// carries out the steps needed to bring the new deposits from Ethereum to
     /// Neutron (via Cosmos Hub) before depositing them into Mars protocol.
@@ -98,7 +101,7 @@ impl Strategy {
 
             // depending on the neutron deposit account balance, we either conclude the deposit phase
             // or perform the configured split before entering into Mars and Supervault positions.
-            match neutron_deposit_bal < 2 {
+            match neutron_deposit_bal < MIN_SPLIT_BALANCE {
                 true => {
                     info!(target: DEPOSIT_PHASE, "Neutron deposit account balance is insufficient for entry! concluding the deposit phase...");
                 }
