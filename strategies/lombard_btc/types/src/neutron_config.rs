@@ -72,7 +72,6 @@ pub struct NeutronLibraries {
     pub clearing_queue: String,
     /// ICA transfer libraries
     pub ica_transfer_gaia: String,
-    pub ica_transfer_lombard: String,
     /// phase shift maxBTC issuer library
     pub phase_shift_maxbtc_issuer: String,
     /// phase shift forwarder

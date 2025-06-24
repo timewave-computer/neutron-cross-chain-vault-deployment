@@ -51,3 +51,16 @@ sol!(
     SP1VerificationGateway,
     "src/contracts/evm/SP1VerificationGateway.sol/SP1VerificationGateway.json",
 );
+
+sol!(
+    struct IBCEurekaTransferConfig {
+        uint256 amount;
+        uint256 minAmountOut;
+        address transferToken;
+        address inputAccount;
+        string recipient;
+        string sourceClient;
+        uint64 timeout;
+        address eurekaHandler;
+    }
+);

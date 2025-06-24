@@ -6,6 +6,11 @@ use alloy::{
     sol_types::SolValue,
 };
 use cosmwasm_std::Uint128;
+use lombard_btc_deploy::{DIR, SP1_VERIFIER};
+use lombard_btc_types::ethereum_config::{
+    EthereumAccounts, EthereumCoprocessorAppIds, EthereumDenoms, EthereumLibraries,
+    EthereumStrategyConfig,
+};
 use packages::types::sol_types::{
     Authorization, BaseAccount, ERC1967Proxy, IBCEurekaTransfer, IBCEurekaTransferConfig,
     OneWayVault::{self, FeeDistributionConfig, OneWayVaultConfig},
@@ -18,11 +23,6 @@ use valence_domain_clients::{
     clients::{coprocessor::CoprocessorClient, ethereum::EthereumClient},
     coprocessor::base_client::CoprocessorBaseClient,
     evm::{base_client::EvmBaseClient, request_provider_client::RequestProviderClient},
-};
-use wbtc_deploy::{DIR, SP1_VERIFIER};
-use wbtc_types::ethereum_config::{
-    EthereumAccounts, EthereumCoprocessorAppIds, EthereumDenoms, EthereumLibraries,
-    EthereumStrategyConfig,
 };
 
 #[derive(Deserialize, Debug)]
@@ -158,7 +158,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .unwrap();
     println!("Processor deployed at: {processor_address}");
 
-    // TODO: If we already deployed it we don't need to deploy it again, we reuse the first one deployed
     let verification_gateway =
         SP1VerificationGateway::deploy_builder(&rp).into_transaction_request();
     let verification_gateway_implementation = eth_client
@@ -232,7 +231,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     eth_client.sign_and_send(add_authorization_tx).await?;
     println!("Authorization added to processor");
 
-    // Deploy Eureka Transfer
     let eureka_transfer_config = IBCEurekaTransferConfig {
         amount: U256::ZERO,       // Full amount
         minAmountOut: U256::ZERO, // No minimum amount out

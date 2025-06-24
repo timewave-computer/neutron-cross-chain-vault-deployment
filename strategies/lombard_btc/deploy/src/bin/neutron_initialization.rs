@@ -1,6 +1,8 @@
 use std::{env, error::Error, fs};
 
 use cosmwasm_std::{Binary, to_json_binary};
+use lombard_btc_deploy::DIR;
+use lombard_btc_types::neutron_config::NeutronStrategyConfig;
 use packages::labels::{
     ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_LABEL, MARS_WITHDRAW_LABEL, PHASE_SHIFT_LABEL,
     REGISTER_OBLIGATION_LABEL, SETTLE_OBLIGATION_LABEL,
@@ -21,8 +23,6 @@ use valence_domain_clients::{
     cosmos::wasm_client::WasmClient,
 };
 use valence_library_utils::LibraryAccountType;
-use wbtc_test_deploy::DIR;
-use wbtc_test_types::neutron_config::NeutronStrategyConfig;
 
 #[derive(Deserialize, Debug)]
 struct Parameters {
@@ -130,7 +130,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             },
         },
         contract_address: LibraryAccountType::Addr(
-            ntrn_strategy_config.libraries.ica_transfer.clone(),
+            ntrn_strategy_config.libraries.ica_transfer_gaia.clone(),
         ),
     };
 
@@ -147,7 +147,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 ])]),
             },
         },
-        contract_address: LibraryAccountType::Addr(ntrn_strategy_config.libraries.ica_transfer),
+        contract_address: LibraryAccountType::Addr(
+            ntrn_strategy_config.libraries.ica_transfer_gaia,
+        ),
     };
 
     let subroutine_ica_transfer = AtomicSubroutineBuilder::new()
