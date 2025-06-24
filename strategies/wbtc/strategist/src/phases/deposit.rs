@@ -7,7 +7,7 @@ use alloy::{
 use cosmwasm_std::{Uint128, to_json_binary};
 use log::{info, trace, warn};
 use packages::{
-    labels::{ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_LABEL},
+    labels::ICA_TRANSFER_LABEL,
     phases::DEPOSIT_PHASE,
     types::sol_types::{Authorization, BaseAccount, ERC20},
     utils::valence_core,
@@ -18,11 +18,14 @@ use valence_domain_clients::{
     cosmos::base_client::BaseClient,
     evm::base_client::{CustomProvider, EvmBaseClient},
 };
+use wbtc_types::labels::LEND_AND_PROVIDE_LIQUIDITY_PHASE1_LABEL;
 
 use crate::strategy_config::Strategy;
 
-/// minimum Valence account balance to perform a split
-const MIN_SPLIT_BALANCE: u128 = 2;
+/// minimum Valence account balance to perform a split.
+/// there are 6 supervaults, so we need at least 6 tokens
+/// to be able to perform a split
+const MIN_SPLIT_BALANCE: u128 = 6;
 
 impl Strategy {
     /// carries out the steps needed to bring the new deposits from Ethereum to
@@ -108,7 +111,7 @@ impl Strategy {
                 false => {
                     info!(target: DEPOSIT_PHASE, "Neutron deposit account balance = {neutron_deposit_bal}; lending & LPing...");
                     // use Splitter to route funds from the Neutron program deposit
-                    // account to the Mars and Supervaults deposit accounts
+                    // account to the Mars and all Supervault deposit accounts
                     let splitter_exec_msg =
                         valence_library_utils::msg::ExecuteMsg::<_, ()>::ProcessFunction(
                             valence_splitter_library::msg::FunctionMsgs::Split {},
@@ -129,16 +132,25 @@ impl Strategy {
                                 expected_vault_ratio_range: None,
                             },
                         );
+                    let supervaults_lper_execute_msg =
+                        to_json_binary(&supervaults_lper_execute_msg)?;
 
                     // enqueue all three actions under a single label as its an atomic subroutine
                     valence_core::enqueue_neutron(
                         &self.neutron_client,
                         &self.cfg.neutron.authorizations,
-                        LEND_AND_PROVIDE_LIQUIDITY_LABEL,
+                        LEND_AND_PROVIDE_LIQUIDITY_PHASE1_LABEL,
                         vec![
                             to_json_binary(&splitter_exec_msg)?,
                             to_json_binary(&mars_lending_exec_msg)?,
-                            to_json_binary(&supervaults_lper_execute_msg)?,
+                            // there are 6 target supervaults with the same function api so we
+                            // insert the same binary six times
+                            supervaults_lper_execute_msg.clone(),
+                            supervaults_lper_execute_msg.clone(),
+                            supervaults_lper_execute_msg.clone(),
+                            supervaults_lper_execute_msg.clone(),
+                            supervaults_lper_execute_msg.clone(),
+                            supervaults_lper_execute_msg,
                         ],
                     )
                     .await?;
