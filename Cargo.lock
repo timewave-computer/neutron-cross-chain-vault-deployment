@@ -9027,6 +9027,39 @@ dependencies = [
 ]
 
 [[package]]
+name = "wbtc_strategist"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "async-trait",
+ "cosmwasm-std",
+ "dotenv",
+ "env_logger",
+ "hex",
+ "log",
+ "mmvault",
+ "packages",
+ "serde",
+ "serde_json",
+ "tokio",
+ "valence-account-utils",
+ "valence-authorization-utils",
+ "valence-clearing-queue-supervaults",
+ "valence-domain-clients",
+ "valence-forwarder-library",
+ "valence-ica-ibc-transfer",
+ "valence-lending-utils",
+ "valence-library-utils",
+ "valence-mars-lending",
+ "valence-processor-utils",
+ "valence-splitter-library",
+ "valence-strategist-utils",
+ "valence-supervaults-lper",
+ "valence-verification-gateway",
+ "wbtc_types",
+]
+
+[[package]]
 name = "wbtc_test_deploy"
 version = "0.1.0"
 dependencies = [
