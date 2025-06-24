@@ -52,6 +52,13 @@ impl Strategy {
             .query(one_way_vault_contract.totalSupply())
             .await?
             ._0;
+
+        // if there are no shares issued, update cannot be performed because it's impossible to
+        // calculate the redemption rate
+        if eth_vault_issued_shares.is_zero() {
+            return Err("cannot calculate redemption rate with zero issued vault shares".into());
+        }
+
         info!(target: UPDATE_PHASE, "eth_vault_issued_shares={eth_vault_issued_shares}");
 
         // perform u256 -> u128 conversion
