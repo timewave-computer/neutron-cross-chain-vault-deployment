@@ -143,8 +143,10 @@ impl Strategy {
             // if current iteration denom is the deposit token, we may need to withdraw
             // the diff from mars lending to be able to fulfill the obligations
             if payout_coin.denom == self.cfg.neutron.denoms.deposit_token {
-                let obligations_delta =
-                    payout_coin.amount.u128() - settlement_acc_obligation_denom_bal;
+                let obligations_delta = payout_coin
+                    .amount
+                    .u128()
+                    .saturating_sub(settlement_acc_obligation_denom_bal);
                 info!(
                     target: SETTLEMENT_PHASE, "settlement_account deposit_token balance deficit = {obligations_delta}"
                 );
