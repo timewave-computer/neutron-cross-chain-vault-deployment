@@ -61,6 +61,11 @@ pub trait Supervaults {
             )
             .await?;
 
+            // if expected share amount is zero we return tvl of 0
+            if expected_lp_shares.is_zero() {
+                return Ok(0);
+            }
+
             Decimal::from_ratio(withdraw_amount_0, expected_lp_shares)
         } else {
             let expected_lp_shares = Self::simulate_supervault_provide_liquidity(
@@ -71,6 +76,11 @@ pub trait Supervaults {
                 withdraw_amount_1,
             )
             .await?;
+
+            // if expected share amount is zero we return tvl of 0
+            if expected_lp_shares.is_zero() {
+                return Ok(0);
+            }
 
             Decimal::from_ratio(withdraw_amount_1, expected_lp_shares)
         };
