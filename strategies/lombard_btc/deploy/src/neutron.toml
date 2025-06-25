@@ -27,4 +27,4 @@ initial_split_percentage_to_supervault = 20
 initial_settlement_ratio_percentage = 80
 
 [coprocessor_app]
-clearing_queue_coprocessor_app_id = "" # TBD after we have the app deployed
+clearing_queue_coprocessor_app_id = "9677b137b3e9f84178497702a01c4700a0eea48acf491040867cab64ca75abf2"
