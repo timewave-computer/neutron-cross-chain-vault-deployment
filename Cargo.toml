@@ -8,6 +8,7 @@ members = [
     "strategies/lombard_btc/strategist",
     "strategies/lombard_btc/types",
     "strategies/wbtc/deploy",
+    "strategies/wbtc/strategist",
     "strategies/wbtc/types"
 ]
 resolver = "2"

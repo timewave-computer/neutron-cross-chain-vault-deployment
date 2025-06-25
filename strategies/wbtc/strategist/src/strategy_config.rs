@@ -1,18 +1,17 @@
 use std::{env, error::Error, path::Path};
 
-use lombard_btc_types::{
-    coprocessor_config::CoprocessorStrategyConfig, ethereum_config::EthereumStrategyConfig,
-    gaia_config::GaiaStrategyConfig, lombard_config::LombardStrategyConfig,
-    neutron_config::NeutronStrategyConfig,
-};
 use packages::{
     ibc_eureka_chain_ids::{EUREKA_COSMOS_HUB_CHAIN_ID, EUREKA_ETHEREUM_CHAIN_ID},
     utils::{mars::MarsLending, supervaults::Supervaults},
 };
 use valence_domain_clients::clients::{
     coprocessor::CoprocessorClient, ethereum::EthereumClient, gaia::CosmosHubClient,
-    ibc_eureka_route_client::IBCEurekaRouteClient, lombard::LombardClient, neutron::NeutronClient,
+    ibc_eureka_route_client::IBCEurekaRouteClient, neutron::NeutronClient,
     valence_indexer::OneWayVaultIndexerClient,
+};
+use wbtc_types::{
+    coprocessor_config::CoprocessorStrategyConfig, ethereum_config::EthereumStrategyConfig,
+    gaia_config::GaiaStrategyConfig, neutron_config::NeutronStrategyConfig,
 };
 
 use serde::{Deserialize, Serialize};
@@ -25,7 +24,6 @@ pub struct StrategyConfig {
     pub neutron: NeutronStrategyConfig,
     pub gaia: GaiaStrategyConfig,
     pub coprocessor: CoprocessorStrategyConfig,
-    pub lombard: LombardStrategyConfig,
 }
 
 // main strategy struct that wraps around the StrategyConfig
@@ -46,8 +44,6 @@ pub struct Strategy {
     pub(crate) gaia_client: CosmosHubClient,
     /// active neutron client
     pub(crate) neutron_client: NeutronClient,
-    /// active lombard client
-    pub(crate) lombard_client: LombardClient,
     /// active one way vault indexer client
     pub(crate) indexer_client: OneWayVaultIndexerClient,
     /// skip route client for IBC eureka
@@ -88,14 +84,6 @@ impl Strategy {
         )
         .await?;
 
-        let lombard_client = LombardClient::new(
-            &cfg.lombard.grpc_url,
-            &cfg.lombard.grpc_port,
-            &mnemonic,
-            &cfg.lombard.chain_id,
-        )
-        .await?;
-
         let neutron_client = NeutronClient::new(
             &cfg.neutron.grpc_url,
             &cfg.neutron.grpc_port,
@@ -132,15 +120,13 @@ impl Strategy {
             indexer_client,
             coprocessor_client,
             ibc_eureka_client,
-            lombard_client,
         })
     }
 
-    /// constructor helper that takes in four paths:
+    /// constructor helper that takes in three paths:
     /// - neutron config path
     /// - ethereum config path
     /// - cosmos hub config path
-    /// - lombard config path
     ///
     /// reads the configs from those paths, sets up each domain config,
     /// wraps them in a `StrategyConfig`, and uses that to call the initializer above.
@@ -149,7 +135,6 @@ impl Strategy {
         gaia_path: P,
         eth_path: P,
         coprocessor_path: P,
-        lombard_path: P,
     ) -> Result<Self, Box<dyn Error>> {
         let neutron_cfg = NeutronStrategyConfig::from_file(neutron_path)
             .map_err(|e| format!("invalid neutron config: {:?}", e))?;
@@ -159,15 +144,12 @@ impl Strategy {
             .map_err(|e| format!("invalid gaia config: {:?}", e))?;
         let coprocessor_cfg = CoprocessorStrategyConfig::from_file(coprocessor_path)
             .map_err(|e| format!("invalid coprocessor config: {:?}", e))?;
-        let lombard_cfg = LombardStrategyConfig::from_file(lombard_path)
-            .map_err(|e| format!("invalid lombard config: {:?}", e))?;
 
         let strategy_cfg = StrategyConfig {
             ethereum: eth_cfg,
             neutron: neutron_cfg,
             gaia: gaia_cfg,
             coprocessor: coprocessor_cfg,
-            lombard: lombard_cfg,
         };
 
         Self::new(strategy_cfg).await

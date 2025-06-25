@@ -86,7 +86,8 @@ impl Strategy {
         if settlement_acc_bal_deposit < deposit_obligation_total {
             // 3. simulate Mars protocol withdrawal to obtain the funds necessary
             // to fulfill all active withdrawal requests
-            let obligations_delta = deposit_obligation_total - settlement_acc_bal_deposit;
+            let obligations_delta =
+                deposit_obligation_total.saturating_sub(settlement_acc_bal_deposit);
             info!(
                 target: SETTLEMENT_PHASE, "settlement_account deposit_token balance deficit = {obligations_delta}"
             );

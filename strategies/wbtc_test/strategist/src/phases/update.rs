@@ -1,14 +1,15 @@
 use std::{error::Error, str::FromStr};
 
 use alloy::{primitives::U256, providers::Provider};
-use cosmwasm_std::{Addr, Decimal, Uint128};
+use cosmwasm_std::{Decimal, Uint128};
 use log::{info, trace};
 use packages::{
     phases::UPDATE_PHASE,
     types::sol_types::{BaseAccount, ERC20, OneWayVault},
+    utils::{mars::MarsLending, supervaults::Supervaults},
 };
 use valence_domain_clients::{
-    cosmos::{base_client::BaseClient, wasm_client::WasmClient},
+    cosmos::base_client::BaseClient,
     evm::base_client::{CustomProvider, EvmBaseClient},
 };
 
@@ -110,10 +111,24 @@ impl Strategy {
         // both mars and supervaults positions are derivatives of the
         // underlying denom. we do the necessary accounting for both and
         // fetch the tvl expressed in the underlying deposit token.
-        let mars_tvl = self.mars_accounting().await?;
+        let mars_tvl = Strategy::query_mars_lending_denom_amount(
+            &self.neutron_client,
+            &self.cfg.neutron.mars_pool,
+            &self.cfg.neutron.accounts.mars_deposit,
+            &self.cfg.neutron.denoms.deposit_token,
+        )
+        .await?;
+
         info!(target: UPDATE_PHASE, "mars_tvl={mars_tvl}");
 
-        let supervaults_tvl = self.supervaults_accounting().await?;
+        let supervaults_tvl = Strategy::query_supervault_tvl_expressed_in_denom(
+            &self.neutron_client,
+            &self.cfg.neutron.supervault,
+            &self.cfg.neutron.accounts.supervault_deposit,
+            &self.cfg.neutron.accounts.settlement,
+            &self.cfg.neutron.denoms.deposit_token,
+        )
+        .await?;
         info!(target: UPDATE_PHASE, "supervaults_tvl={supervaults_tvl}");
 
         // sum all deposit assets
@@ -174,152 +189,5 @@ impl Strategy {
             .await?;
 
         Ok(())
-    }
-
-    /// calculates total value of the active Mars lending position,
-    /// expressed in the deposit token
-    async fn mars_accounting(&mut self) -> Result<u128, Box<dyn Error + Send + Sync>> {
-        // query the mars credit account created and owned by the mars input account
-        let mars_input_acc_credit_accounts: Vec<valence_lending_utils::mars::Account> = self
-            .neutron_client
-            .query_contract_state(
-                &self.cfg.neutron.mars_pool,
-                valence_lending_utils::mars::QueryMsg::Accounts {
-                    owner: self.cfg.neutron.accounts.mars_deposit.to_string(),
-                    start_after: None,
-                    limit: None,
-                },
-            )
-            .await?;
-
-        info!(target: UPDATE_PHASE, "mars input credit accounts = {:?}", mars_input_acc_credit_accounts);
-
-        // extract the credit account id. while credit accounts are returned as a vec,
-        // mars lending library should only ever create one credit account and re-use it
-        // for all LP actions, so we get the [0]
-        let mars_input_credit_account_id = match mars_input_acc_credit_accounts.len() {
-            // if this is the first cycle and no credit accounts exist,
-            // we early return mars tvl 0
-            0 => return Ok(0),
-            _ => mars_input_acc_credit_accounts[0].id.to_string(),
-        };
-
-        info!(target: UPDATE_PHASE, "mars input credit account id = #{mars_input_credit_account_id}");
-
-        // query mars positions owned by the credit account id
-        let mars_positions_response: valence_lending_utils::mars::Positions = self
-            .neutron_client
-            .query_contract_state(
-                &self.cfg.neutron.mars_pool,
-                valence_lending_utils::mars::QueryMsg::Positions {
-                    account_id: mars_input_credit_account_id,
-                },
-            )
-            .await?;
-
-        info!(target: UPDATE_PHASE, "mars credit account positions = {:?}", mars_positions_response);
-
-        // find the relevant denom among the active lends
-        let mut mars_lending_deposit_token_amount = Uint128::zero();
-        for lend in mars_positions_response.lends {
-            if lend.denom == self.cfg.neutron.denoms.deposit_token {
-                mars_lending_deposit_token_amount = lend.amount;
-            }
-        }
-
-        Ok(mars_lending_deposit_token_amount.u128())
-    }
-
-    /// calculates total value of the active supervault position,
-    /// expressed in the deposit token denom
-    async fn supervaults_accounting(&mut self) -> Result<u128, Box<dyn Error + Send + Sync>> {
-        let lp_shares_balance: Uint128 = self
-            .neutron_client
-            .query_balance(
-                &self.cfg.neutron.accounts.settlement,
-                &self.cfg.neutron.denoms.supervault_lp,
-            )
-            .await?
-            .into();
-
-        // if no shares are available, we early return supervaults tvl of 0
-        if lp_shares_balance.is_zero() {
-            return Ok(0);
-        }
-
-        // query the supervault config to get the pair denom ordering
-        let supervault_cfg: mmvault::state::Config = self
-            .neutron_client
-            .query_contract_state(
-                &self.cfg.neutron.supervault,
-                mmvault::msg::QueryMsg::GetConfig {},
-            )
-            .await?;
-
-        // simulate the liquidation of all LP shares owned by the settlement account.
-        // this simulation returns a tuple of expected asset amounts, in order.
-        let (withdraw_amount_0, withdraw_amount_1): (Uint128, Uint128) = self
-            .neutron_client
-            .query_contract_state(
-                &self.cfg.neutron.supervault,
-                mmvault::msg::QueryMsg::SimulateWithdrawLiquidity {
-                    amount: lp_shares_balance,
-                },
-            )
-            .await?;
-
-        // the returned amounts above include a non-deposit denom which is not
-        // relevant for our TVL calculation that is denominated in the deposit
-        // denom. to deal with that, we need to express the LP shares entirely
-        // in terms of the deposit denom.
-        // we do this by:
-        // 1. finding our deposit token withdraw amount
-        // 2. simulating LP for that amount to know the deposit_token -> shares
-        // exchange rate
-        // 3. assuming the same rate for whole position
-        let exchange_rate =
-            if self.cfg.neutron.denoms.deposit_token == supervault_cfg.pair_data.token_0.denom {
-                // simulate LP with the deposit token. amount here does not really matter,
-                // but to avoid some rounding errors with small amounts we pass the expected
-                // withdraw amount to get a reasonable value.
-                let expected_lp_shares: Uint128 = self
-                    .neutron_client
-                    .query_contract_state(
-                        &self.cfg.neutron.supervault,
-                        mmvault::msg::QueryMsg::SimulateProvideLiquidity {
-                            amount_0: withdraw_amount_0,
-                            amount_1: Uint128::zero(),
-                            sender: Addr::unchecked(
-                                self.cfg.neutron.accounts.supervault_deposit.to_string(),
-                            ),
-                        },
-                    )
-                    .await?;
-
-                Decimal::from_ratio(withdraw_amount_0, expected_lp_shares)
-            } else {
-                let expected_lp_shares: Uint128 = self
-                    .neutron_client
-                    .query_contract_state(
-                        &self.cfg.neutron.supervault,
-                        mmvault::msg::QueryMsg::SimulateProvideLiquidity {
-                            amount_0: Uint128::zero(),
-                            amount_1: withdraw_amount_1,
-                            sender: Addr::unchecked(
-                                self.cfg.neutron.accounts.supervault_deposit.to_string(),
-                            ),
-                        },
-                    )
-                    .await?;
-
-                Decimal::from_ratio(withdraw_amount_1, expected_lp_shares)
-            };
-
-        // multiply the lp_shares balance by the derived (deposit_token / lp_shares) exchange rate
-        // to get the lp_shares balance value expressed in deposit token denom
-        let lp_shares_deposit_denom_equivalent =
-            lp_shares_balance.checked_mul_floor(exchange_rate)?;
-
-        Ok(lp_shares_deposit_denom_equivalent.u128())
     }
 }
