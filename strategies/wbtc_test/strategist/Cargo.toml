@@ -25,14 +25,6 @@ valence-verification-gateway       = { workspace = true }
 valence-strategist-utils           = { workspace = true }
 valence-splitter-library           = { workspace = true }
 log                                = { workspace = true }
-env_logger                         = { workspace = true }
-multi_log                          = { workspace = true }
-opentelemetry_sdk                  = { workspace = true }
-opentelemetry-otlp                 = { workspace = true }
-opentelemetry-stdout               = { workspace = true }
-opentelemetry-appender-log         = { workspace = true }
-
-
 async-trait                        = { workspace = true }
 valence-lending-utils              = { workspace = true }
 mmvault                            = { workspace = true }

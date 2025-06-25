@@ -3,11 +3,8 @@ use log::{info, warn};
 use std::{env, error::Error};
 use valence_strategist_utils::worker::ValenceWorker;
 use wbtc_test_strategist::strategy_config::Strategy;
-use opentelemetry_otlp::{WithExportConfig, Protocol};
-use opentelemetry_appender_log::{OpenTelemetryLogBridge};
-use opentelemetry_sdk::logs::{BatchLogProcessor, SdkLoggerProvider};
-use opentelemetry_sdk::{Resource};
-use multi_log;
+use packages::utils::logging::setup_logging;
+
 
 const RUNNER: &str = "runner";
 
@@ -16,32 +13,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // load environment variables
     dotenv().ok();
 
-    match env::var("OTLP_ENDPOINT") {
-        Ok(otlp_endpoint) => {
-            let otlp_exporter = opentelemetry_otlp::LogExporter::builder()
-                .with_http()
-                .with_protocol(Protocol::HttpBinary)
-                .with_endpoint(otlp_endpoint)
-                .build()?;
-            let otlp_logger_provider = SdkLoggerProvider::builder()
-                .with_resource(
-                    Resource::builder()
-                    .with_service_name("neutron-strategist")
-                    .build(),
-                )
-                .with_log_processor(BatchLogProcessor::builder(otlp_exporter).build())
-                .build();
-            let otlp_logger = Box::new(OpenTelemetryLogBridge::new(&otlp_logger_provider));
-            let std_logger = Box::new(env_logger::Builder::from_default_env().build());
-            let _ = multi_log::MultiLogger::init(vec![otlp_logger, std_logger], log::Level::Trace);
-
-        },
-        Err(_) => {
-            env_logger::init();
-            info!(target: RUNNER, "OTLP_ENDPOINT not set, skipping OpenTelemetry logging");
-        }
-    };
-    
+    setup_logging().await?;
+        
     info!(target: RUNNER, "starting the strategist runner");
 
     // get configuration paths from environment variables

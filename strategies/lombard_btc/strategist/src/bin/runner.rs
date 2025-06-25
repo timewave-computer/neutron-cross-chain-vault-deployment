@@ -3,6 +3,7 @@ use log::{info, warn};
 use lombard_btc_strategist::strategy_config::Strategy;
 use std::{env, error::Error};
 use valence_strategist_utils::worker::ValenceWorker;
+use packages::utils::logging::setup_logging;
 
 const RUNNER: &str = "runner";
 
@@ -11,8 +12,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // load environment variables
     dotenv().ok();
 
-    // initialize the logger
-    env_logger::init();
+    setup_logging().await?;
 
     info!(target: RUNNER, "starting the strategist runner");
 
