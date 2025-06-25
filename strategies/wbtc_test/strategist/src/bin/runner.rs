@@ -33,7 +33,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 .build();
             let otlp_logger = Box::new(OpenTelemetryLogBridge::new(&otlp_logger_provider));
             let std_logger = Box::new(env_logger::Builder::from_default_env().build());
-            let _ = multi_log::MultiLogger::init(vec![otlp_logger, std_logger], log::Level::Info);
+            let _ = multi_log::MultiLogger::init(vec![otlp_logger, std_logger], log::Level::Trace);
 
         },
         Err(_) => {
