@@ -5,7 +5,7 @@ use log::{info, warn};
 use packages::{
     labels::{MARS_WITHDRAW_LABEL, SETTLE_OBLIGATION_LABEL},
     phases::SETTLEMENT_PHASE,
-    utils::{obligation::batch_obligation_queue_payouts, valence_core},
+    utils::{obligation::batch_obligation_queue_payout_coins, valence_core},
 };
 use valence_clearing_queue_supervaults::msg::ObligationsResponse;
 use valence_domain_clients::cosmos::{base_client::BaseClient, wasm_client::WasmClient};
@@ -125,24 +125,26 @@ impl Strategy {
             target: SETTLEMENT_PHASE, "clearing queue length = {}", clearing_queue.obligations.len()
         );
 
-        let obligation_amounts_map = batch_obligation_queue_payouts(&clearing_queue.obligations);
+        let batched_obligation_payouts =
+            batch_obligation_queue_payout_coins(&clearing_queue.obligations);
 
         info!(
-            target: SETTLEMENT_PHASE, "total obligations = {obligation_amounts_map:?}"
+            target: SETTLEMENT_PHASE, "batched obligations = {batched_obligation_payouts:?}"
         );
 
         // iterate over the batched obligations
-        for (obligation_denom, obligation_amount) in obligation_amounts_map {
+        for payout_coin in batched_obligation_payouts {
             // if settlement acc doesn't have the denom, default to 0
             let settlement_acc_obligation_denom_bal = settlement_acc_balances
-                .get(&obligation_denom)
+                .get(&payout_coin.denom)
                 .cloned()
                 .unwrap_or_default();
 
             // if current iteration denom is the deposit token, we may need to withdraw
             // the diff from mars lending to be able to fulfill the obligations
-            if obligation_denom == self.cfg.neutron.denoms.deposit_token {
-                let obligations_delta = obligation_amount - settlement_acc_obligation_denom_bal;
+            if payout_coin.denom == self.cfg.neutron.denoms.deposit_token {
+                let obligations_delta =
+                    payout_coin.amount.u128() - settlement_acc_obligation_denom_bal;
                 info!(
                     target: SETTLEMENT_PHASE, "settlement_account deposit_token balance deficit = {obligations_delta}"
                 );
@@ -169,12 +171,14 @@ impl Strategy {
 
                 valence_core::tick_neutron(&self.neutron_client, &self.cfg.neutron.processor)
                     .await?;
-            } else if settlement_acc_obligation_denom_bal < obligation_amount {
+            } else if settlement_acc_obligation_denom_bal < payout_coin.amount.u128() {
                 // if settlement account balance is insufficient, something likely went wrong
                 // with the configuration. this will require manual intervention, so we do not error
                 // out in case previously observed obligations were valid and could be settled.
-                warn!(target: SETTLEMENT_PHASE, "insufficient {obligation_denom} balance for settlement!
-                    available: {settlement_acc_obligation_denom_bal}, obligation amt: {obligation_amount}");
+                warn!(target: SETTLEMENT_PHASE, "insufficient {} balance for settlement!
+                    available: {settlement_acc_obligation_denom_bal}, obligation amt: {}",
+                    payout_coin.denom,
+                    payout_coin.amount);
             }
         }
 

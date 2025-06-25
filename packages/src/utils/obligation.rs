@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 
+use cosmwasm_std::{coin, Coin};
 use log::warn;
 use valence_clearing_queue_supervaults::state::WithdrawalObligation;
 
 use crate::phases::SETTLEMENT_PHASE;
 
-// TODO: remove this and use the batch function below
+// TODO: deprecate this in favor of `batch_obligation_queue_payout_coins` below.
 /// helper function that flattens a vec of withdraw obligations
 /// into a single batch.
 /// returns a tuple: (amount_1, amount_2), respecting the order
@@ -33,17 +34,20 @@ pub fn flatten_obligation_queue_amounts(
     (amount_1, amount_2)
 }
 
-pub fn batch_obligation_queue_payouts(
-    obligations: &[WithdrawalObligation],
-) -> HashMap<String, u128> {
-    let mut amount_map: HashMap<String, u128> = HashMap::new();
+pub fn batch_obligation_queue_payout_coins(obligations: &[WithdrawalObligation]) -> Vec<Coin> {
+    let mut totals: HashMap<String, u128> = HashMap::new();
 
-    for obligation in obligations {
-        for payout_coin in &obligation.payout_coins {
-            *amount_map.entry(payout_coin.denom.to_string()).or_insert(0) +=
-                payout_coin.amount.u128();
+    for ob in obligations {
+        for coin in &ob.payout_coins {
+            totals
+                .entry(coin.denom.to_string())
+                .and_modify(|amt| *amt += coin.amount.u128())
+                .or_insert(coin.amount.u128());
         }
     }
 
-    amount_map
+    totals
+        .into_iter()
+        .map(|(denom, amount)| coin(amount, denom))
+        .collect()
 }
