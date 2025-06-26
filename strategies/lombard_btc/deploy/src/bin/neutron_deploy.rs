@@ -209,7 +209,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             code_id_verification_gateway,
             "verification-gateway".to_string(),
             instantiate_verification_gateway_msg,
-            None,
+            Some(params.general.valence_owner.clone()),
         )
         .await?;
 
