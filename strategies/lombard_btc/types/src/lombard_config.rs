@@ -14,6 +14,16 @@ pub struct LombardStrategyConfig {
     pub deposit_denom: String,
     /// recovery ica address
     pub ica: String,
+
+    /// ibc eureka denom that arrives from eth
+    pub eureka_denom: String,
+    /// native denom issued on lombard chain
+    pub native_denom: String,
+
+    /// IBC entry point contract addr
+    pub entry_contract: String,
+    /// IBC callback contract addr
+    pub callback_contract: String,
 }
 
 impl ValenceWorkerTomlSerde for LombardStrategyConfig {}
