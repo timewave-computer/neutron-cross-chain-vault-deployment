@@ -182,10 +182,13 @@ impl Strategy {
         // format the response in format expected by the coprocessor and post it
         // there for proof
         let coprocessor_input = json!({"skip_response": skip_api_response});
-        info!(target: DEPOSIT_PHASE, "posting skip-api response to co-processor app id: {}", &self.cfg.coprocessor.eureka_circuit_id);
+        info!(target: DEPOSIT_PHASE, "posting skip-api response to co-processor app id: {}", &self.cfg.ethereum.coprocessor_app_ids.ibc_eureka);
         let skip_response_zkp = self
             .coprocessor_client
-            .prove(&self.cfg.coprocessor.eureka_circuit_id, &coprocessor_input)
+            .prove(
+                &self.cfg.ethereum.coprocessor_app_ids.ibc_eureka,
+                &coprocessor_input,
+            )
             .await?;
 
         info!(target: DEPOSIT_PHASE, "co_processor zkp post response: {:?}", skip_response_zkp);

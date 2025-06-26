@@ -1,9 +1,8 @@
 use std::{env, error::Error, path::Path};
 
 use lombard_btc_types::{
-    coprocessor_config::CoprocessorStrategyConfig, ethereum_config::EthereumStrategyConfig,
-    gaia_config::GaiaStrategyConfig, lombard_config::LombardStrategyConfig,
-    neutron_config::NeutronStrategyConfig,
+    ethereum_config::EthereumStrategyConfig, gaia_config::GaiaStrategyConfig,
+    lombard_config::LombardStrategyConfig, neutron_config::NeutronStrategyConfig,
 };
 use packages::{
     ibc_eureka_chain_ids::{EUREKA_COSMOS_HUB_CHAIN_ID, EUREKA_ETHEREUM_CHAIN_ID},
@@ -24,7 +23,6 @@ pub struct StrategyConfig {
     pub ethereum: EthereumStrategyConfig,
     pub neutron: NeutronStrategyConfig,
     pub gaia: GaiaStrategyConfig,
-    pub coprocessor: CoprocessorStrategyConfig,
     pub lombard: LombardStrategyConfig,
 }
 
@@ -148,7 +146,6 @@ impl Strategy {
         neutron_path: P,
         gaia_path: P,
         eth_path: P,
-        coprocessor_path: P,
         lombard_path: P,
     ) -> Result<Self, Box<dyn Error>> {
         let neutron_cfg = NeutronStrategyConfig::from_file(neutron_path)
@@ -157,8 +154,6 @@ impl Strategy {
             .map_err(|e| format!("invalid ethereum config: {:?}", e))?;
         let gaia_cfg = GaiaStrategyConfig::from_file(gaia_path)
             .map_err(|e| format!("invalid gaia config: {:?}", e))?;
-        let coprocessor_cfg = CoprocessorStrategyConfig::from_file(coprocessor_path)
-            .map_err(|e| format!("invalid coprocessor config: {:?}", e))?;
         let lombard_cfg = LombardStrategyConfig::from_file(lombard_path)
             .map_err(|e| format!("invalid lombard config: {:?}", e))?;
 
@@ -166,7 +161,6 @@ impl Strategy {
             ethereum: eth_cfg,
             neutron: neutron_cfg,
             gaia: gaia_cfg,
-            coprocessor: coprocessor_cfg,
             lombard: lombard_cfg,
         };
 
