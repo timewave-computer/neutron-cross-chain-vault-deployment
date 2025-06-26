@@ -6,3 +6,5 @@ strategies/*/deploy/src/ethereum_strategy_config.toml
 strategies/*/deploy/src/neutron_strategy_config.toml
 strategies/*/deploy/src/gaia_strategy_config.toml
 strategies/*/deploy/src/coprocessor_strategy_config.toml
+
+!strategies/lombard_btc/deploy/src/*.toml
