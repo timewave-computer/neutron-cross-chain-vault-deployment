@@ -3,6 +3,8 @@ use log::{info, warn};
 use std::{env, error::Error};
 use valence_strategist_utils::worker::ValenceWorker;
 use wbtc_test_strategist::strategy_config::Strategy;
+use packages::utils::logging::setup_logging;
+
 
 const RUNNER: &str = "runner";
 
@@ -11,9 +13,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // load environment variables
     dotenv().ok();
 
-    // initialize the logger
-    env_logger::init();
-
+    setup_logging().await?;
+        
     info!(target: RUNNER, "starting the strategist runner");
 
     // get configuration paths from environment variables
