@@ -7,6 +7,7 @@ use alloy::{
     primitives::{Bytes, U256},
     providers::Provider,
 };
+
 use cosmwasm_std::to_json_binary;
 use log::{info, trace, warn};
 use packages::{
@@ -15,7 +16,7 @@ use packages::{
     types::sol_types::{Authorization, BaseAccount, ERC20},
     utils::valence_core,
 };
-use serde_json::json;
+use serde_json::{Value, json};
 use valence_domain_clients::{
     coprocessor::base_client::CoprocessorBaseClient,
     cosmos::base_client::BaseClient,
@@ -179,10 +180,17 @@ impl Strategy {
             }
         };
 
-        let post_fee_amount_out = skip_api_response
+        let skip_response_clone = skip_api_response.clone();
+
+        let amount_out_str = skip_response_clone
             .get("amount_out")
-            .cloned()
-            .expect("failed to get amount_out from skip api response");
+            .and_then(Value::as_str)
+            .expect("amount_out not found or not a string");
+
+        let post_fee_amount_out_u128: u128 = amount_out_str
+            .parse()
+            .expect("failed to parse amount_out into u128");
+        info!(target: DEPOSIT_PHASE, "post_fee_amount_out_u128 = {:?}", post_fee_amount_out_u128);
 
         // 12 hours in secs, the timeout being used in skip ui
         let timeout_duration = Duration::from_secs(12 * 60 * 60);
@@ -235,7 +243,7 @@ impl Strategy {
                     "min_asset": {
                       "native": {
                         "denom": self.cfg.lombard.native_denom,
-                        "amount": post_fee_amount_out
+                        "amount": amount_out_str
                       }
                     },
                     "timeout_timestamp": timeout_timestamp_nanos,
@@ -296,21 +304,17 @@ impl Strategy {
 
         // sign and execute the tx & await its tx receipt before proceeding
         info!(target: DEPOSIT_PHASE, "posting skip-api zkp ethereum authorizations");
-        let zk_auth_exec_response = self
-            .eth_client
-            .sign_and_send(auth_eureka_transfer_zk_msg.into_transaction_request())
-            .await?;
-        eth_rp
-            .get_transaction_receipt(zk_auth_exec_response.transaction_hash)
-            .await?;
+        // let zk_auth_exec_response = self
+        //     .eth_client
+        //     .sign_and_send(auth_eureka_transfer_zk_msg.into_transaction_request())
+        //     .await?;
+        // eth_rp
+        //     .get_transaction_receipt(zk_auth_exec_response.transaction_hash)
+        //     .await?;
 
         // block execution until the funds arrive to the Cosmos Hub ICA owned
         // by the Valence Interchain Account on Neutron.
         // we poll
-        let post_fee_amount_out_u128: u128 = post_fee_amount_out
-            .to_string()
-            .parse()
-            .expect("Failed to parse u128");
         info!(target: DEPOSIT_PHASE, "gaia ica expected deposit token bal = {post_fee_amount_out_u128}; starting to poll");
 
         // poll for 15sec * 100 = 1500sec = 25min which should suffice for
