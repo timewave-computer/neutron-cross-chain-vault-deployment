@@ -25,4 +25,4 @@ timeout                    = 43200                                        # 12 h
 ibc_transfer_threshold_amt = 1000000
 
 [coprocessor_app]
-eureka_transfer_coprocessor_app_id = "fc619561f7b38c832544392860d1d516aafdd7a1eda54d92631a46caa8546906"
+eureka_transfer_coprocessor_app_id = "a60592195f33238d599e801bde41bf5d79edabb3a5cb57f7056d969c8e93c655"
