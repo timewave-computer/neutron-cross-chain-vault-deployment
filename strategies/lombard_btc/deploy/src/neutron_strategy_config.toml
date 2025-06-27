@@ -31,4 +31,4 @@ phase_shift_forwarder = "neutron1zjy2qkpf6kag9m76k9eekqu02vunjy3n475y5n2x5q2ctjf
 phase_shift_supervault_withdrawer = "neutron1rgdtqafn85nq3cusa7kll7rjpp0eshxk6c6rwf62rtrdar2rew9q53daa5"
 
 [coprocessor_app_ids]
-clearing_queue = "9677b137b3e9f84178497702a01c4700a0eea48acf491040867cab64ca75abf2"
+clearing_queue = "c52ff36ca1c6879939f1b5811642f7d9afeedb428d59b9cf03ae7f119fbcdfe9"

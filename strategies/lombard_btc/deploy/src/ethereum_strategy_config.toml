@@ -16,4 +16,4 @@ one_way_vault = "0x1c2d8f447167fa7d28b2ec869df9d320aa2e6a71"
 eureka_transfer = "0xc9e967dbfe888e3999697cb289a1212443928450"
 
 [coprocessor_app_ids]
-ibc_eureka = "fc619561f7b38c832544392860d1d516aafdd7a1eda54d92631a46caa8546906"
+ibc_eureka = "a60592195f33238d599e801bde41bf5d79edabb3a5cb57f7056d969c8e93c655"
