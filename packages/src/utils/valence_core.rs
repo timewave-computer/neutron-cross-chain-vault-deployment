@@ -2,12 +2,14 @@ use std::error::Error;
 
 use cosmwasm_std::Binary;
 
-use log::debug;
+use log::{debug, info};
 use valence_authorization_utils::msg::ProcessorMessage;
 use valence_domain_clients::{
     clients::neutron::NeutronClient,
     cosmos::{base_client::BaseClient, wasm_client::WasmClient},
 };
+
+use crate::{labels::REGISTER_OBLIGATION_LABEL, phases::REGISTRATION_PHASE};
 
 pub async fn enqueue_neutron(
     client: &NeutronClient,
@@ -63,6 +65,46 @@ pub async fn tick_neutron(
 
     debug!("tx hash: {}", tx_resp.hash);
 
+    client.poll_for_tx(&tx_resp.hash).await?;
+
+    Ok(())
+}
+
+/// constructs the zk authorization execution message and executes it.
+/// authorizations module will perform the zk verification and, if
+/// successful, push it to the processor for execution
+pub async fn post_zkp_on_chain(
+    client: &NeutronClient,
+    authorizations: &str,
+    (proof_program, inputs_program): (Vec<u8>, Vec<u8>),
+    (proof_domain, inputs_domain): (Vec<u8>, Vec<u8>),
+) -> Result<(), Box<dyn Error + Send + Sync>> {
+    // construct the zk authorization registration message
+    let execute_zk_authorization_msg =
+        valence_authorization_utils::msg::PermissionlessMsg::ExecuteZkAuthorization {
+            label: REGISTER_OBLIGATION_LABEL.to_string(),
+            message: Binary::from(inputs_program),
+            proof: Binary::from(proof_program),
+            domain_message: Binary::from(inputs_domain),
+            domain_proof: Binary::from(proof_domain),
+        };
+
+    // execute the zk authorization. this will perform the verification
+    // and, if successful, push the msg to the processor
+    info!(target: REGISTRATION_PHASE, "executing zk authorization");
+
+    let tx_resp = client
+        .execute_wasm(
+            authorizations,
+            valence_authorization_utils::msg::ExecuteMsg::PermissionlessAction(
+                execute_zk_authorization_msg,
+            ),
+            vec![],
+            None,
+        )
+        .await?;
+
+    // poll for inclusion to avoid account sequence mismatch errors
     client.poll_for_tx(&tx_resp.hash).await?;
 
     Ok(())
