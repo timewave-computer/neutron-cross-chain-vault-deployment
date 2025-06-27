@@ -171,7 +171,7 @@ impl Strategy {
         );
         info!(target: UPDATE_PHASE, "redemption rate decimal={redemption_rate_decimal}");
 
-        let redemption_rate_sol_u256 = U256::from(redemption_rate_decimal.atomics().u128());
+        let redemption_rate_sol_u256 = U256::try_from(redemption_rate_decimal.atomics().u128())?;
         info!(target: UPDATE_PHASE, "redemption_rate_sol_u256={redemption_rate_sol_u256}");
         let redemption_rate_u128 = u128::try_from(redemption_rate_sol_u256)?;
         let current_rate_u128 = u128::try_from(current_vault_rate)?;

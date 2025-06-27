@@ -35,7 +35,7 @@ pub fn flatten_obligation_queue_amounts(
 }
 
 /// batches a given vec of withdrawal obligation payouts into a vec of coins
-pub fn batch_obligation_queue_payout_coins(obligations: &[WithdrawalObligation]) -> Vec<Coin> {
+pub fn batch_obligation_queue_payouts(obligations: &[WithdrawalObligation]) -> Vec<Coin> {
     let mut totals: HashMap<String, u128> = HashMap::new();
 
     for ob in obligations {

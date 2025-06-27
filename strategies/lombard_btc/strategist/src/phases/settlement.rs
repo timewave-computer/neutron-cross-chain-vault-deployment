@@ -5,7 +5,7 @@ use log::{info, warn};
 use packages::{
     labels::{MARS_WITHDRAW_LABEL, SETTLE_OBLIGATION_LABEL},
     phases::SETTLEMENT_PHASE,
-    utils::{obligation::batch_obligation_queue_payout_coins, valence_core},
+    utils::{obligation::batch_obligation_queue_payouts, valence_core},
 };
 use valence_clearing_queue_supervaults::msg::ObligationsResponse;
 use valence_domain_clients::cosmos::{base_client::BaseClient, wasm_client::WasmClient};
@@ -66,8 +66,7 @@ impl Strategy {
         );
 
         // batch all active clearing queue obligations
-        let batched_obligation_coins =
-            batch_obligation_queue_payout_coins(&clearing_queue.obligations);
+        let batched_obligation_coins = batch_obligation_queue_payouts(&clearing_queue.obligations);
 
         for obligation_coin in batched_obligation_coins {
             if obligation_coin.denom == self.cfg.neutron.denoms.deposit_token {
