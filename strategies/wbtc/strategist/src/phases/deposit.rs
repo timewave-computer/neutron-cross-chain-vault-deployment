@@ -1,10 +1,10 @@
-use std::{error::Error, str::FromStr};
+use std::error::Error;
 
 use alloy::{
     primitives::{Bytes, U256},
     providers::Provider,
 };
-use cosmwasm_std::{Uint128, to_json_binary};
+use cosmwasm_std::to_json_binary;
 use log::{info, trace, warn};
 use packages::{
     labels::ICA_TRANSFER_LABEL,
@@ -224,7 +224,7 @@ impl Strategy {
         // block execution until the funds arrive to the Cosmos Hub ICA owned
         // by the Valence Interchain Account on Neutron.
         // we poll
-        let gaia_ica_balance = Uint128::from_str(&eth_deposit_acc_bal.to_string())?;
+        let gaia_ica_balance = u128::try_from(&eth_deposit_acc_bal)?;
         info!(target: DEPOSIT_PHASE, "gaia ica expected deposit token bal = {gaia_ica_balance}; starting to poll");
 
         // poll for 15sec * 100 = 1500sec = 25min which should suffice for
@@ -238,7 +238,7 @@ impl Strategy {
                 // from the ethereum strategy config.
                 // one thing to note on this is that eureka fees are dynamic, so tbd on what
                 // is the most efficient way of doing this.
-                gaia_ica_balance.u128() / 2,
+                gaia_ica_balance / 2,
                 15,  // every 15 sec
                 100, // for 100 times
             )
