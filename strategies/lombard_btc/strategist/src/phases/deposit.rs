@@ -184,8 +184,6 @@ impl Strategy {
             .cloned()
             .expect("failed to get amount_out from skip api response");
 
-        info!(target: DEPOSIT_PHASE, "skip api response: {}", &skip_api_response);
-
         // 12 hours in secs, the timeout being used in skip ui
         let timeout_duration = Duration::from_secs(12 * 60 * 60);
         let timeout_time = SystemTime::now()

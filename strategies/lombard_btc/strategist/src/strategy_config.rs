@@ -64,7 +64,6 @@ impl Strategy {
     /// to initialize the respective domain clients. prerequisite to starting
     /// the strategist.
     pub async fn new(cfg: StrategyConfig) -> Result<Self, Box<dyn Error>> {
-        // dotenv::dotenv().ok();
         let mnemonic = env::var("MNEMONIC").expect("mnemonic must be provided");
         let label = env::var("LABEL").expect("label must be provided");
         let indexer_api_key =
