@@ -1,12 +1,12 @@
 use log::{info, warn};
 use lombard_btc_strategist::strategy_config::Strategy;
-use std::{env, error::Error};
+use std::env;
 use valence_strategist_utils::worker::ValenceWorker;
 
 const RUNNER: &str = "runner";
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> anyhow::Result<()> {
     // load environment variables
     let env_path = env::current_dir()?.join("strategies/lombard_btc/strategist/lbtc.env");
     dotenv::from_path(env_path.as_path())?;

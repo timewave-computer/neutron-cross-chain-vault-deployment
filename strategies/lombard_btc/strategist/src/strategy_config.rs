@@ -1,5 +1,6 @@
-use std::{env, error::Error, path::Path};
+use std::{env, path::Path};
 
+use anyhow::anyhow;
 use lombard_btc_types::{
     ethereum_config::EthereumStrategyConfig, gaia_config::GaiaStrategyConfig,
     lombard_config::LombardStrategyConfig, neutron_config::NeutronStrategyConfig,
@@ -63,7 +64,7 @@ impl Strategy {
     /// strategy initializer that takes in a `StrategyConfig`, and uses it
     /// to initialize the respective domain clients. prerequisite to starting
     /// the strategist.
-    pub async fn new(cfg: StrategyConfig) -> Result<Self, Box<dyn Error>> {
+    pub async fn new(cfg: StrategyConfig) -> anyhow::Result<Self> {
         let mnemonic = env::var("MNEMONIC").expect("mnemonic must be provided");
         let label = env::var("LABEL").expect("label must be provided");
         let indexer_api_key =
@@ -146,15 +147,15 @@ impl Strategy {
         gaia_path: P,
         eth_path: P,
         lombard_path: P,
-    ) -> Result<Self, Box<dyn Error>> {
+    ) -> anyhow::Result<Self> {
         let neutron_cfg = NeutronStrategyConfig::from_file(neutron_path)
-            .map_err(|e| format!("invalid neutron config: {:?}", e))?;
+            .map_err(|e| anyhow!("invalid neutron config: {:?}", e))?;
         let eth_cfg = EthereumStrategyConfig::from_file(eth_path)
-            .map_err(|e| format!("invalid ethereum config: {:?}", e))?;
+            .map_err(|e| anyhow!("invalid ethereum config: {:?}", e))?;
         let gaia_cfg = GaiaStrategyConfig::from_file(gaia_path)
-            .map_err(|e| format!("invalid gaia config: {:?}", e))?;
+            .map_err(|e| anyhow!("invalid gaia config: {:?}", e))?;
         let lombard_cfg = LombardStrategyConfig::from_file(lombard_path)
-            .map_err(|e| format!("invalid lombard config: {:?}", e))?;
+            .map_err(|e| anyhow!("invalid lombard config: {:?}", e))?;
 
         let strategy_cfg = StrategyConfig {
             ethereum: eth_cfg,

@@ -4443,6 +4443,7 @@ name = "lombard_btc_strategist"
 version = "0.1.0"
 dependencies = [
  "alloy",
+ "anyhow",
  "async-trait",
  "cosmwasm-std",
  "dotenv",
