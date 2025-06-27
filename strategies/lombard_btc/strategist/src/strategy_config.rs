@@ -65,16 +65,17 @@ impl Strategy {
     /// to initialize the respective domain clients. prerequisite to starting
     /// the strategist.
     pub async fn new(cfg: StrategyConfig) -> anyhow::Result<Self> {
-        let mnemonic = env::var("MNEMONIC").expect("mnemonic must be provided");
-        let label = env::var("LABEL").expect("label must be provided");
-        let indexer_api_key =
-            env::var("INDEXER_API_KEY").expect("indexer api key must be provided");
-        let indexer_api_url =
-            env::var("INDEXER_API_URL").expect("indexer url key must be provided");
-        let eureka_api_url =
-            env::var("EUREKA_API_URL").expect("IBC Eureka route api url must be provided");
+        let mnemonic =
+            env::var("MNEMONIC").map_err(|e| anyhow!("mnemonic must be provided: {e}"))?;
+        let label = env::var("LABEL").map_err(|e| anyhow!("label must be provided: {e}"))?;
+        let indexer_api_key = env::var("INDEXER_API_KEY")
+            .map_err(|e| anyhow!("indexer api key must be provided: {e}"))?;
+        let indexer_api_url = env::var("INDEXER_API_URL")
+            .map_err(|e| anyhow!("indexer api url key must be provided: {e}"))?;
+        let eureka_api_url = env::var("EUREKA_API_URL")
+            .map_err(|e| anyhow!("IBC Eureka route api url must be provided: {e}"))?;
         let strategy_timeout: u64 = env::var("STRATEGY_TIMEOUT")
-            .expect("Strategy timeout must be provided")
+            .map_err(|e| anyhow!("Strategy timeout must be provided: {e}"))?
             .parse()?;
 
         let gaia_client = CosmosHubClient::new(
