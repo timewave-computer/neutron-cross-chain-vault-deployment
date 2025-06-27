@@ -266,6 +266,12 @@ impl Strategy {
             coprocessor_input,
         );
 
+        info!(
+            target: DEPOSIT_PHASE,
+            "co-processor ID: {}",
+            self.cfg.ethereum.coprocessor_app_ids.ibc_eureka,
+        );
+
         let skip_response_zkp = self
             .coprocessor_client
             .prove(

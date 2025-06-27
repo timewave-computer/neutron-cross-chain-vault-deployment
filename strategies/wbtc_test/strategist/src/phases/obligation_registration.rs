@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use alloy::primitives::U256;
-use cosmwasm_std::Binary;
+use cosmwasm_std::{Binary, Uint64};
 use log::info;
 use packages::{
     labels::REGISTER_OBLIGATION_LABEL, phases::REGISTRATION_PHASE, utils::valence_core,
@@ -38,19 +38,25 @@ impl Strategy {
             )
             .await?;
 
-        // get id of the latest obligation request that was registered on neutron
-        let latest_registered_obligation_id =
-            clearing_queue_cfg.latest_id.unwrap_or_default().u64();
         info!(
             target: REGISTRATION_PHASE,
-            "latest_registered_obligation_id={latest_registered_obligation_id}"
+            "latest_registered_obligation_id={:?}", clearing_queue_cfg.latest_id
         );
+
+        // get id of the latest obligation request that was registered on neutron
+        let latest_registered_obligation_id = match clearing_queue_cfg.latest_id {
+            // if there is a latest id, we increment it by 1 to only fetch the
+            // new withdraw requests
+            Some(id) => Some(id.checked_add(Uint64::one())?.u64()),
+            // if there is no latest id, we return the same to fetch everything
+            None => None,
+        };
 
         // query the OneWayVault indexer to fetch all obligations that were registered
         // on the vault but are not yet registered into the queue on Neutron
         let new_obligations: Vec<(u64, alloy::primitives::Address, String, U256)> = self
             .indexer_client
-            .query_vault_withdraw_requests(Some(latest_registered_obligation_id + 1))
+            .query_vault_withdraw_requests(latest_registered_obligation_id)
             .await
             .unwrap_or_default();
         info!(
