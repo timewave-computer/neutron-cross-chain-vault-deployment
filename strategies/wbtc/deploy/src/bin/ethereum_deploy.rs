@@ -38,7 +38,6 @@ struct General {
     rpc_url: String,
     owner: Address,
     valence_owner: Address,
-    coprocessor_root: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -186,11 +185,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let verification_gateway = SP1VerificationGateway::new(verification_gateway_address, &rp);
     let initialize_verification_gateway_tx = verification_gateway
-        .initialize(
-            parameters.general.coprocessor_root.parse().unwrap(),
-            SP1_VERIFIER.parse().unwrap(),
-            domain_vk,
-        )
+        .initialize(SP1_VERIFIER.parse().unwrap(), domain_vk)
         .into_transaction_request();
     eth_client
         .sign_and_send(initialize_verification_gateway_tx)
