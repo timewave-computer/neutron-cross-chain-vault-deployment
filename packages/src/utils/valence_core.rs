@@ -9,7 +9,10 @@ use valence_domain_clients::{
     cosmos::{base_client::BaseClient, wasm_client::WasmClient},
 };
 
-use crate::{labels::REGISTER_OBLIGATION_LABEL, phases::REGISTRATION_PHASE};
+use crate::{
+    labels::REGISTER_OBLIGATION_LABEL,
+    phases::{DEPOSIT_PHASE, REGISTRATION_PHASE},
+};
 
 pub async fn enqueue_neutron(
     client: &NeutronClient,
@@ -106,6 +109,23 @@ pub async fn post_zkp_on_chain(
 
     // poll for inclusion to avoid account sequence mismatch errors
     client.poll_for_tx(&tx_resp.hash).await?;
+
+    Ok(())
+}
+
+pub async fn ensure_neutron_account_fees_coverage(
+    client: &NeutronClient,
+    acc: &str,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let account_ntrn_balance = client.query_balance(acc, "untrn").await?;
+
+    if account_ntrn_balance < 10_000 {
+        let delta = 10_000 - account_ntrn_balance;
+
+        info!(target: DEPOSIT_PHASE, "Funding neutron account with {delta}untrn for ibc tx fees...");
+        let transfer_rx = client.transfer(acc, delta, "untrn", None).await.unwrap();
+        client.poll_for_tx(&transfer_rx.hash).await?;
+    }
 
     Ok(())
 }

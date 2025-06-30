@@ -22,6 +22,7 @@ use valence_domain_clients::{
     cosmos::base_client::BaseClient,
     evm::base_client::{CustomProvider, EvmBaseClient},
 };
+use valence_library_utils::OptionUpdate;
 
 use crate::strategy_config::Strategy;
 
@@ -304,13 +305,13 @@ impl Strategy {
 
         // sign and execute the tx & await its tx receipt before proceeding
         info!(target: DEPOSIT_PHASE, "posting skip-api zkp ethereum authorizations");
-        // let zk_auth_exec_response = self
-        //     .eth_client
-        //     .sign_and_send(auth_eureka_transfer_zk_msg.into_transaction_request())
-        //     .await?;
-        // eth_rp
-        //     .get_transaction_receipt(zk_auth_exec_response.transaction_hash)
-        //     .await?;
+        let zk_auth_exec_response = self
+            .eth_client
+            .sign_and_send(auth_eureka_transfer_zk_msg.into_transaction_request())
+            .await?;
+        eth_rp
+            .get_transaction_receipt(zk_auth_exec_response.transaction_hash)
+            .await?;
 
         // block execution until the funds arrive to the Cosmos Hub ICA owned
         // by the Valence Interchain Account on Neutron.
@@ -337,14 +338,21 @@ impl Strategy {
         &mut self,
         gaia_ica_bal: u128,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let ica_ibc_transfer_update_msg = json!({
-            "update_config": {
-                "new_config": {
-                    "amount": gaia_ica_bal.to_string(),
-                    "eureka_config": "none"
-                }
-            }
-        });
+        let ica_ibc_transfer_update_msg: valence_library_utils::msg::ExecuteMsg<
+            valence_ica_ibc_transfer::msg::FunctionMsgs,
+            valence_ica_ibc_transfer::msg::LibraryConfigUpdate,
+        > = valence_library_utils::msg::ExecuteMsg::UpdateConfig {
+            new_config: valence_ica_ibc_transfer::msg::LibraryConfigUpdate {
+                input_addr: None,
+                amount: Some(gaia_ica_bal.into()),
+                denom: None,
+                receiver: None,
+                memo: None,
+                remote_chain_info: None,
+                denom_to_pfm_map: None,
+                eureka_config: OptionUpdate::Set(None),
+            },
+        };
         let ica_ibc_transfer_exec_msg =
             valence_library_utils::msg::ExecuteMsg::<_, ()>::ProcessFunction(
                 valence_ica_ibc_transfer::msg::FunctionMsgs::Transfer {},
@@ -359,6 +367,12 @@ impl Strategy {
                 to_json_binary(&ica_ibc_transfer_update_msg)?,
                 to_json_binary(&ica_ibc_transfer_exec_msg)?,
             ],
+        )
+        .await?;
+
+        valence_core::ensure_neutron_account_fees_coverage(
+            &self.neutron_client,
+            &self.cfg.neutron.accounts.gaia_ica,
         )
         .await?;
 
