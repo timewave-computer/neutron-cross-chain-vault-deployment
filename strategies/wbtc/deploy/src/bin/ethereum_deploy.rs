@@ -87,8 +87,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let my_address = eth_client.signer().address();
     let rp = eth_client.get_request_provider().await?;
 
-    let deposit_account_tx =
-        BaseAccount::deploy_builder(&rp, my_address, vec![]).into_transaction_request();
+    let deposit_account_tx = BaseAccount::deploy_builder(&rp, parameters.general.owner, vec![])
+        .into_transaction_request();
 
     let deposit_account = eth_client
         .sign_and_send(deposit_account_tx)
