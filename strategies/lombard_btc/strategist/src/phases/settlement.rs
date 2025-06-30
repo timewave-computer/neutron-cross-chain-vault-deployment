@@ -61,9 +61,10 @@ impl Strategy {
                 },
             )
             .await?;
-        info!(
-            target: SETTLEMENT_PHASE, "clearing queue length = {}", clearing_queue.obligations.len()
-        );
+        clearing_queue
+            .obligations
+            .iter()
+            .for_each(|o| info!(target: SETTLEMENT_PHASE, "obligation #{} payouts: {:?}", o.id, o.payout_coins));
 
         // batch all active clearing queue obligations
         let batched_obligation_coins = batch_obligation_queue_payouts(&clearing_queue.obligations);

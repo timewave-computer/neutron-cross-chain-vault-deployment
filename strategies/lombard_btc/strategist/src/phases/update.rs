@@ -2,7 +2,7 @@ use std::{cmp::Ordering, error::Error};
 
 use alloy::{primitives::U256, providers::Provider};
 use cosmwasm_std::{Decimal, Uint128};
-use log::info;
+use log::{info, warn};
 use packages::{
     phases::UPDATE_PHASE,
     types::sol_types::{BaseAccount, ERC20, OneWayVault},
@@ -79,8 +79,6 @@ impl Strategy {
             info!(target: UPDATE_PHASE, "gaia_ica_balance={gaia_ica_balance}");
             deposit_token_balance_total += gaia_ica_balance;
 
-            // TODO: get a lombard grpc node or refactor this to query elsehow as
-            // domain clients only support grpc connections for now
             // this should always be zero, but just in case pfm from lombard to the hub fails, there
             // may be some funds pending to be recovered into the program.
             // let lombard_ica_bal = self
@@ -180,11 +178,16 @@ impl Strategy {
         // get the ratio of newly calculated redemption rate over the previous rate
         let rate_change_decimal =
             Decimal::checked_from_ratio(redemption_rate_u128, current_rate_u128)?;
+        let max_rate_change_threshold = Decimal::from_ratio(Uint128::one(), Uint128::new(10));
         match rate_change_decimal.cmp(&Decimal::one()) {
             // rate change is less than 1.0 -> redemption rate decreased
             Ordering::Less => {
                 let rate_delta = Decimal::one() - rate_change_decimal;
                 info!(target: UPDATE_PHASE, "redemption rate epoch delta = -{rate_delta}");
+                if rate_delta >= max_rate_change_threshold {
+                    warn!(target: UPDATE_PHASE, "rate delta exceeds the threshold of {max_rate_change_threshold}; skip");
+                    return Ok(());
+                }
             }
             // rate change is exactly 1.0 -> redemption rate did not change
             Ordering::Equal => {
@@ -196,6 +199,10 @@ impl Strategy {
             Ordering::Greater => {
                 let rate_delta = rate_change_decimal - Decimal::one();
                 info!(target: UPDATE_PHASE, "redemption rate epoch delta = +{rate_delta}");
+                if rate_delta >= max_rate_change_threshold {
+                    warn!(target: UPDATE_PHASE, "rate delta exceeds the threshold of {max_rate_change_threshold}; skip");
+                    return Ok(());
+                }
             }
         }
 

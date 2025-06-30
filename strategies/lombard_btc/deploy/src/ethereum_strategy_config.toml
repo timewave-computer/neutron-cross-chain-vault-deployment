@@ -12,7 +12,7 @@ deposit_token = "0x8236a87084f8b84306f72007f36f2618a5634494"
 deposit = "0x9dd47c91db182360e701760eff294593dac67013"
 
 [libraries]
-one_way_vault = "0x1c2d8f447167fa7d28b2ec869df9d320aa2e6a71"
+one_way_vault = "0x1c2d8F447167fA7d28B2ec869df9D320Aa2E6A71"
 eureka_transfer = "0xc9e967dbfe888e3999697cb289a1212443928450"
 
 [coprocessor_app_ids]

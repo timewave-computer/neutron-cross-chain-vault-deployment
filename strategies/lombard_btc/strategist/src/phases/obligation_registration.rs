@@ -45,8 +45,8 @@ impl Strategy {
             // if there is a latest id, we increment it by 1 to only fetch the
             // new withdraw requests
             Some(id) => Some(id.checked_add(Uint64::one())?.u64()),
-            // if there is no latest id, we return the same to fetch everything
-            None => None,
+            // if there is no latest id, we default to 0 to fetch everything
+            None => Some(Uint64::zero().u64()),
         };
 
         // query the OneWayVault indexer to fetch all obligations that were registered
@@ -78,6 +78,7 @@ impl Strategy {
                     &withdraw_id_json,
                 )
                 .await?;
+            info!(target: REGISTRATION_PHASE, "vault zkp resp: {:?}", vault_zkp_response);
 
             // extract the program and domain parameters by decoding the zkp
             let (proof_program, inputs_program) = vault_zkp_response.program.decode()?;
