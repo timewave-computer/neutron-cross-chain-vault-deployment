@@ -1,4 +1,4 @@
-use std::error::Error;
+use std::{cmp::Ordering, error::Error};
 
 use alloy::{primitives::U256, providers::Provider};
 use cosmwasm_std::{Decimal, Uint128};
@@ -35,13 +35,6 @@ impl Strategy {
             OneWayVault::new(self.cfg.ethereum.libraries.one_way_vault, &eth_rp);
         let eth_deposit_denom_contract =
             ERC20::new(self.cfg.ethereum.denoms.deposit_token, &eth_rp);
-
-        let current_vault_rate = self
-            .eth_client
-            .query(one_way_vault_contract.redemptionRate())
-            .await?
-            ._0;
-        info!(target: UPDATE_PHASE, "pre_update_rate = {current_vault_rate}");
 
         let eth_vault_issued_shares_u256 = self
             .eth_client
@@ -86,6 +79,8 @@ impl Strategy {
             info!(target: UPDATE_PHASE, "gaia_ica_balance={gaia_ica_balance}");
             deposit_token_balance_total += gaia_ica_balance;
 
+            // TODO: get a lombard grpc node or refactor this to query elsehow as
+            // domain clients only support grpc connections for now
             // this should always be zero, but just in case pfm from lombard to the hub fails, there
             // may be some funds pending to be recovered into the program.
             // let lombard_ica_bal = self
@@ -163,30 +158,46 @@ impl Strategy {
         }
 
         // rate =  effective_total_assets / (effective_vault_shares * scaling_factor)
-        let redemption_rate_decimal = Decimal::from_ratio(
-            deposit_token_balance_total,
-            // multiplying the denominator by the scaling factor
-            Uint128::from(eth_vault_issued_shares_u128)
-                .checked_mul(self.cfg.ethereum.rate_scaling_factor)?,
-        );
+        // multiplying the denominator by the scaling factor
+        let scaled_shares_amount = Uint128::from(eth_vault_issued_shares_u128)
+            .checked_mul(self.cfg.ethereum.rate_scaling_factor)?;
+        let redemption_rate_decimal =
+            Decimal::checked_from_ratio(deposit_token_balance_total, scaled_shares_amount)?;
         info!(target: UPDATE_PHASE, "redemption rate decimal={redemption_rate_decimal}");
 
         let redemption_rate_sol_u256 = U256::try_from(redemption_rate_decimal.atomics().u128())?;
         info!(target: UPDATE_PHASE, "redemption_rate_sol_u256={redemption_rate_sol_u256}");
         let redemption_rate_u128 = u128::try_from(redemption_rate_sol_u256)?;
+
+        let current_vault_rate = self
+            .eth_client
+            .query(one_way_vault_contract.redemptionRate())
+            .await?
+            ._0;
+        info!(target: UPDATE_PHASE, "pre_update_rate = {current_vault_rate}");
         let current_rate_u128 = u128::try_from(current_vault_rate)?;
 
-        if redemption_rate_sol_u256 > current_vault_rate {
-            let change_decimal = Decimal::from_ratio(redemption_rate_u128, current_rate_u128);
-
-            let rate_delta = change_decimal - Decimal::one();
-            info!(target: UPDATE_PHASE, "redemption rate epoch delta = +{rate_delta}");
-        } else {
-            let change_decimal = Decimal::from_ratio(redemption_rate_u128, current_rate_u128);
-            let rate_delta = Decimal::one() - change_decimal;
-
-            info!(target: UPDATE_PHASE, "redemption rate epoch delta = -{rate_delta}");
-        };
+        // get the ratio of newly calculated redemption rate over the previous rate
+        let rate_change_decimal =
+            Decimal::checked_from_ratio(redemption_rate_u128, current_rate_u128)?;
+        match rate_change_decimal.cmp(&Decimal::one()) {
+            // rate change is less than 1.0 -> redemption rate decreased
+            Ordering::Less => {
+                let rate_delta = Decimal::one() - rate_change_decimal;
+                info!(target: UPDATE_PHASE, "redemption rate epoch delta = -{rate_delta}");
+            }
+            // rate change is exactly 1.0 -> redemption rate did not change
+            Ordering::Equal => {
+                info!(target: UPDATE_PHASE, "redemption rate epoch delta = 0.0");
+                // TODO: consider removing this early return; for testing this just saves gas
+                return Ok(());
+            }
+            // rate change is greater than 1.0 -> redemption rate increased
+            Ordering::Greater => {
+                let rate_delta = rate_change_decimal - Decimal::one();
+                info!(target: UPDATE_PHASE, "redemption rate epoch delta = +{rate_delta}");
+            }
+        }
 
         info!(target: UPDATE_PHASE, "updating ethereum vault redemption rate");
         let update_request = one_way_vault_contract
