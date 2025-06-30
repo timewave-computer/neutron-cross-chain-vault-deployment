@@ -813,7 +813,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             code_id_clearing_queue,
             "clearing_queue".to_string(),
             instantiate_clearing_queue_msg,
-            None,
+            Some(params.general.owner.clone()),
         )
         .await?;
     println!(
