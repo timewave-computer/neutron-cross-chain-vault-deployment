@@ -79,6 +79,7 @@ impl Strategy {
             info!(target: UPDATE_PHASE, "gaia_ica_balance={gaia_ica_balance}");
             deposit_token_balance_total += gaia_ica_balance;
 
+            // TODO: enable the query below once a working grpc node is available
             // this should always be zero, but just in case pfm from lombard to the hub fails, there
             // may be some funds pending to be recovered into the program.
             // let lombard_ica_bal = self
