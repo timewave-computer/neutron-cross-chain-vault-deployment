@@ -178,14 +178,14 @@ impl Strategy {
         // get the ratio of newly calculated redemption rate over the previous rate
         let rate_change_decimal =
             Decimal::checked_from_ratio(redemption_rate_u128, current_rate_u128)?;
-        let max_rate_change_threshold = Decimal::from_ratio(Uint128::one(), Uint128::new(10));
+
         match rate_change_decimal.cmp(&Decimal::one()) {
             // rate change is less than 1.0 -> redemption rate decreased
             Ordering::Less => {
                 let rate_delta = Decimal::one() - rate_change_decimal;
                 info!(target: UPDATE_PHASE, "redemption rate epoch delta = -{rate_delta}");
-                if rate_delta >= max_rate_change_threshold {
-                    warn!(target: UPDATE_PHASE, "rate delta exceeds the threshold of {max_rate_change_threshold}; skip");
+                if rate_delta >= self.cfg.ethereum.rate_update_threshold {
+                    warn!(target: UPDATE_PHASE, "rate delta exceeds the threshold of {}; skip", self.cfg.ethereum.rate_update_threshold);
                     return Ok(());
                 }
             }
@@ -199,8 +199,8 @@ impl Strategy {
             Ordering::Greater => {
                 let rate_delta = rate_change_decimal - Decimal::one();
                 info!(target: UPDATE_PHASE, "redemption rate epoch delta = +{rate_delta}");
-                if rate_delta >= max_rate_change_threshold {
-                    warn!(target: UPDATE_PHASE, "rate delta exceeds the threshold of {max_rate_change_threshold}; skip");
+                if rate_delta >= self.cfg.ethereum.rate_update_threshold {
+                    warn!(target: UPDATE_PHASE, "rate delta exceeds the threshold of {}; skip", self.cfg.ethereum.rate_update_threshold);
                     return Ok(());
                 }
             }

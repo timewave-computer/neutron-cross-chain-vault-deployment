@@ -5,7 +5,7 @@ use alloy::{
     primitives::{Address, Bytes, FixedBytes, U256},
     sol_types::SolValue,
 };
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{Decimal, Uint128};
 use lombard_btc_deploy::{DIR, SP1_VERIFIER};
 use lombard_btc_types::ethereum_config::{
     EthereumAccounts, EthereumCoprocessorAppIds, EthereumDenoms, EthereumLibraries,
@@ -54,6 +54,7 @@ struct Vault {
     withdraw_rate_bps: u32,
     starting_rate: U256,
     max_rate_update_delay: u64,
+    rate_update_threshold: Decimal,
 }
 
 #[derive(Deserialize, Debug)]
@@ -307,6 +308,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         accounts,
         libraries,
         coprocessor_app_ids,
+        rate_update_threshold: parameters.vault.rate_update_threshold,
     };
 
     println!("Ethereum Strategy Config created successfully");

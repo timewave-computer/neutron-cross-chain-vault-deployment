@@ -16,6 +16,7 @@ deposit_fee_bps          = 100                                          # 1% dep
 withdraw_rate_bps        = 100                                          # 1% withdrawal rate
 starting_rate            = "100000000"                                  # 1e8 - LBTC Precision - 8 decimals
 max_rate_update_delay    = 345600                                       # 4 days in seconds - Maximum delay for rate updates before vault gets paused
+rate_update_threshold    = "0.2"                                        # 20% rate update threshold
 
 [eureka_transfer]
 handler                    = "0xfc2d0487a0ae42ae7329a80dc269916a9184cf7c"
