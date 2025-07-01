@@ -316,7 +316,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     ParamRestriction::MustBeIncluded(vec![
                         "update_config".to_string(),
                         "new_config".to_string(),
-                        "maxbtc_issuer".to_string(),
+                        "maxbtc_issuer_addr".to_string(),
                     ]),
                     ParamRestriction::CannotBeIncluded(vec![
                         "update_config".to_string(),
@@ -430,7 +430,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     ParamRestriction::MustBeIncluded(vec![
                         "update_config".to_string(),
                         "new_config".to_string(),
-                        "supervault_addr".to_string(),
+                        "supervaults_settlement_info".to_string(),
                     ]),
                     ParamRestriction::CannotBeIncluded(vec![
                         "update_config".to_string(),
@@ -453,12 +453,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     ParamRestriction::CannotBeIncluded(vec![
                         "update_config".to_string(),
                         "new_config".to_string(),
-                        "supervaults_sender".to_string(),
-                    ]),
-                    ParamRestriction::CannotBeIncluded(vec![
-                        "update_config".to_string(),
-                        "new_config".to_string(),
-                        "settlement_ratio".to_string(),
+                        "mars_settlement_ratio".to_string(),
                     ]),
                 ]),
             },

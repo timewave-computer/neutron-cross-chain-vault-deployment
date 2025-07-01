@@ -411,21 +411,30 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
     functions.push(update_maxbtc_issuer_function);
 
-    for supervault in [
-        ntrn_strategy_config.libraries.fbtc_supervault_lper.clone(),
-        ntrn_strategy_config.libraries.lbtc_supervault_lper.clone(),
+    for supervault_withdrawer in [
         ntrn_strategy_config
             .libraries
-            .solvbtc_supervault_lper
-            .clone(),
-        ntrn_strategy_config.libraries.ebtc_supervault_lper.clone(),
-        ntrn_strategy_config
-            .libraries
-            .pumpbtc_supervault_lper
+            .phase_shift_fbtc_supervault_withdrawer
             .clone(),
         ntrn_strategy_config
             .libraries
-            .bedrockbtc_supervault_lper
+            .phase_shift_lbtc_supervault_withdrawer
+            .clone(),
+        ntrn_strategy_config
+            .libraries
+            .phase_shift_solvbtc_supervault_withdrawer
+            .clone(),
+        ntrn_strategy_config
+            .libraries
+            .phase_shift_ebtc_supervault_withdrawer
+            .clone(),
+        ntrn_strategy_config
+            .libraries
+            .phase_shift_pumpbtc_supervault_withdrawer
+            .clone(),
+        ntrn_strategy_config
+            .libraries
+            .phase_shift_bedrockbtc_supervault_withdrawer
             .clone(),
     ] {
         let withdraw_function = AtomicFunction {
@@ -436,11 +445,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     name: "process_function".to_string(),
                     params_restrictions: Some(vec![ParamRestriction::MustBeIncluded(vec![
                         "process_function".to_string(),
-                        "withdraw".to_string(),
+                        "withdraw_liquidity".to_string(),
                     ])]),
                 },
             },
-            contract_address: LibraryAccountType::Addr(supervault.clone()),
+            contract_address: LibraryAccountType::Addr(supervault_withdrawer.clone()),
         };
         functions.push(withdraw_function);
     }
@@ -496,10 +505,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     authorizations.push(authorization_phase_shift_step1);
 
     // AUTHORIZATION 2 - STEPS:
-    // 1) Update all the supervaults to use the new maxBTC supervault pair
+    // 1) Update all the supervault lpers to use the new maxBTC supervault pair
     // 2) Trigger the deposit in all of them
     let mut functions = vec![];
-    for supervault in [
+    for supervault_lper in [
         ntrn_strategy_config.libraries.fbtc_supervault_lper.clone(),
         ntrn_strategy_config.libraries.lbtc_supervault_lper.clone(),
         ntrn_strategy_config
@@ -540,7 +549,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     ]),
                 },
             },
-            contract_address: LibraryAccountType::Addr(supervault.clone()),
+            contract_address: LibraryAccountType::Addr(supervault_lper.clone()),
         };
         let provide_liquidity_function = AtomicFunction {
             domain: Domain::Main,
@@ -554,7 +563,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     ])]),
                 },
             },
-            contract_address: LibraryAccountType::Addr(supervault.clone()),
+            contract_address: LibraryAccountType::Addr(supervault_lper.clone()),
         };
         functions.push(update_function);
         functions.push(provide_liquidity_function);
