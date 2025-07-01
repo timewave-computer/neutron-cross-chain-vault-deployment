@@ -25,7 +25,6 @@ valence-verification-gateway       = { workspace = true }
 valence-strategist-utils           = { workspace = true }
 valence-splitter-library           = { workspace = true }
 log                                = { workspace = true }
-env_logger                         = { workspace = true }
 async-trait                        = { workspace = true }
 valence-lending-utils              = { workspace = true }
 mmvault                            = { workspace = true }

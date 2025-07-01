@@ -30,6 +30,12 @@ bincode                              = "1.3.3"
 anyhow                               = "1"
 toml                                 = "0.8"
 log                                  = { version = "0.4.22" }
+multi_log                            = "0.1.2"
+opentelemetry_sdk                    = "0.30.0"
+opentelemetry-otlp                   = "0.30.0"
+opentelemetry-stdout                 = "0.30.0"
+opentelemetry-appender-log           = "0.30.0"
+
 
 # valence-protocol
 valence-domain-clients               = { git = "https://github.com/timewave-computer/valence-domain-clients.git", branch = "main" }
