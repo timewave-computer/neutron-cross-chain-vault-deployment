@@ -123,7 +123,7 @@ pub async fn ensure_neutron_account_fees_coverage(
         let delta = 10_000 - account_ntrn_balance;
 
         info!(target: DEPOSIT_PHASE, "Funding neutron account with {delta}untrn for ibc tx fees...");
-        let transfer_rx = client.transfer(acc, delta, "untrn", None).await.unwrap();
+        let transfer_rx = client.transfer(acc, delta, "untrn", None).await?;
         client.poll_for_tx(&transfer_rx.hash).await?;
     }
 

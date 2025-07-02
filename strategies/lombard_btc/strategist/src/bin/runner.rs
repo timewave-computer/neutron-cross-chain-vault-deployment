@@ -17,11 +17,14 @@ async fn main() -> anyhow::Result<()> {
     info!(target: RUNNER, "starting the strategist runner");
 
     // get configuration paths from environment variables
-    let neutron_cfg_path = env::var("NEUTRON_CFG_PATH").expect("neutron cfg not found");
-    let ethereum_cfg_path = env::var("ETHEREUM_CFG_PATH").expect("eth cfg not found");
-    let gaia_cfg_path = env::var("GAIA_CFG_PATH").expect("gaia cfg not found");
-    let lombard_cfg_path = env::var("LOMBARD_CFG_PATH").expect("lombard cfg not found");
-
+    let neutron_cfg_path = env::var("NEUTRON_CFG_PATH")
+        .map_err(|e| anyhow::Error::msg(format!("neutron cfg path not found: {e}")))?;
+    let ethereum_cfg_path = env::var("ETHEREUM_CFG_PATH")
+        .map_err(|e| anyhow::Error::msg(format!("eth cfg path not found: {e}")))?;
+    let gaia_cfg_path = env::var("GAIA_CFG_PATH")
+        .map_err(|e| anyhow::Error::msg(format!("gaia cfg path not found: {e}")))?;
+    let lombard_cfg_path = env::var("LOMBARD_CFG_PATH")
+        .map_err(|e| anyhow::Error::msg(format!("lombard cfg path not found: {e}")))?;
     info!(target: RUNNER, "Using configuration files:");
     info!(target: RUNNER, "  Neutron: {}", neutron_cfg_path);
     info!(target: RUNNER, "  Ethereum: {}", ethereum_cfg_path);

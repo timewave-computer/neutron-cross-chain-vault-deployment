@@ -186,11 +186,9 @@ impl Strategy {
         let amount_out_str = skip_response_clone
             .get("amount_out")
             .and_then(Value::as_str)
-            .expect("amount_out not found or not a string");
+            .ok_or("skip_api response amount_out not found or not a string")?;
 
-        let post_fee_amount_out_u128: u128 = amount_out_str
-            .parse()
-            .expect("failed to parse amount_out into u128");
+        let post_fee_amount_out_u128: u128 = amount_out_str.parse()?;
         info!(target: DEPOSIT_PHASE, "post_fee_amount_out_u128 = {:?}", post_fee_amount_out_u128);
 
         // 12 hours in secs, the timeout being used in skip ui
@@ -201,7 +199,7 @@ impl Strategy {
 
         let timeout_timestamp_nanos = timeout_time
             .duration_since(UNIX_EPOCH)
-            .expect("bad times")
+            .map_err(|e| anyhow::anyhow!("bad times: {e}"))?
             .as_nanos();
 
         let skip_response_operations = skip_api_response
