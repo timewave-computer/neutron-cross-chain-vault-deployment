@@ -1,4 +1,4 @@
-grpc_url = "https://rpc.neutron.quokkastake.io"
+grpc_url = "http://rpc.neutron.quokkastake.io"
 grpc_port = "9090"
 chain_id = "neutron-1"
 min_ibc_fee = "1"
