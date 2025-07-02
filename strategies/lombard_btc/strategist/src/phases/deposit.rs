@@ -8,6 +8,7 @@ use alloy::{
     providers::Provider,
 };
 
+use anyhow::anyhow;
 use cosmwasm_std::to_json_binary;
 use log::{info, trace, warn};
 use packages::{
@@ -39,7 +40,7 @@ impl Strategy {
     pub async fn deposit(
         &mut self,
         eth_rp: &CustomProvider,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+    ) -> anyhow::Result<()> {
         trace!(target: DEPOSIT_PHASE, "starting deposit phase");
 
         // Stage 1: deposit token routing from Ethereum to Cosmos hub
@@ -163,7 +164,7 @@ impl Strategy {
         &mut self,
         eth_rp: &CustomProvider,
         eth_deposit_acc_bal: U256,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+    ) -> anyhow::Result<()> {
         let eth_auth_contract = Authorization::new(self.cfg.ethereum.authorizations, &eth_rp);
 
         // fetch the IBC-Eureka route from eureka client
@@ -186,7 +187,7 @@ impl Strategy {
         let amount_out_str = skip_response_clone
             .get("amount_out")
             .and_then(Value::as_str)
-            .ok_or("skip_api response amount_out not found or not a string")?;
+            .ok_or(anyhow!("skip_api response amount_out not found or not a string"))?;
 
         let post_fee_amount_out_u128: u128 = amount_out_str.parse()?;
         info!(target: DEPOSIT_PHASE, "post_fee_amount_out_u128 = {:?}", post_fee_amount_out_u128);
@@ -195,7 +196,7 @@ impl Strategy {
         let timeout_duration = Duration::from_secs(12 * 60 * 60);
         let timeout_time = SystemTime::now()
             .checked_add(timeout_duration)
-            .ok_or("failed to extend current time by 12h")?;
+            .ok_or(anyhow!("failed to extend current time by 12h"))?;
 
         let timeout_timestamp_nanos = timeout_time
             .duration_since(UNIX_EPOCH)
@@ -205,14 +206,14 @@ impl Strategy {
         let skip_response_operations = skip_api_response
             .get("operations")
             .cloned()
-            .ok_or("failed to get operations")?
+            .ok_or(anyhow!("failed to get operations"))?
             .as_array()
             .cloned()
-            .ok_or("operations not an array")?;
+            .ok_or(anyhow!("operations not an array"))?;
         let skip_response_eureka_operation = skip_response_operations
             .iter()
             .find(|op| op.get("eureka_transfer").cloned().is_some())
-            .ok_or("no eureka transfer operation in skip response")?;
+            .ok_or(anyhow!("no eureka transfer operation in skip response"))?;
 
         // current circuit expects array with a single element so we override
         // the existing array
@@ -335,7 +336,7 @@ impl Strategy {
     async fn gaia_to_neutron_routing(
         &mut self,
         gaia_ica_bal: u128,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+    ) -> anyhow::Result<()> {
         let ica_ibc_transfer_update_msg: valence_library_utils::msg::ExecuteMsg<
             valence_ica_ibc_transfer::msg::FunctionMsgs,
             valence_ica_ibc_transfer::msg::LibraryConfigUpdate,

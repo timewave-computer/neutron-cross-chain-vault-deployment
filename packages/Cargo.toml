@@ -21,3 +21,4 @@ opentelemetry_sdk                   = { workspace = true }
 opentelemetry-otlp                  = { workspace = true }
 opentelemetry-stdout                = { workspace = true }
 opentelemetry-appender-log          = { workspace = true }
+anyhow                              = { workspace = true }

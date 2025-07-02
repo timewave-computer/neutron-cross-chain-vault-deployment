@@ -18,7 +18,7 @@ pub trait Supervaults {
         deposit_acc: &str,
         settlement_acc: &str,
         deposit_denom: &str,
-    ) -> Result<u128, Box<dyn Error + Send + Sync>> {
+    ) -> anyhow::Result<u128> {
         // query the supervault config to get the pair denom ordering
         let supervault_cfg = Self::query_supervault_cfg(client, supervault).await?;
 
@@ -96,7 +96,7 @@ pub trait Supervaults {
     async fn query_supervault_cfg(
         client: &NeutronClient,
         supervault: &str,
-    ) -> Result<Config, Box<dyn Error + Send + Sync>> {
+    ) -> anyhow::Result<Config> {
         let supervault_cfg: Config = client
             .query_contract_state(supervault, mmvault::msg::QueryMsg::GetConfig {})
             .await?;
@@ -108,7 +108,7 @@ pub trait Supervaults {
         client: &NeutronClient,
         supervault: &str,
         shares: Uint128,
-    ) -> Result<(Uint128, Uint128), Box<dyn Error + Send + Sync>> {
+    ) -> anyhow::Result<(Uint128, Uint128)> {
         // simulate the liquidation of all LP shares owned by the settlement account.
         // this simulation returns a tuple of expected asset amounts, in order.
         let resp: (Uint128, Uint128) = client
@@ -127,7 +127,7 @@ pub trait Supervaults {
         depositor: &str,
         amount_0: Uint128,
         amount_1: Uint128,
-    ) -> Result<Uint128, Box<dyn Error + Send + Sync>> {
+    ) -> anyhow::Result<Uint128> {
         // simulate LP with the deposit token. amount here does not really matter,
         // but to avoid some rounding errors with small amounts we pass the expected
         // withdraw amount to get a reasonable value.
