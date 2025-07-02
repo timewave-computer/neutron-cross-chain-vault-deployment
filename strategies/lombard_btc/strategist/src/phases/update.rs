@@ -9,7 +9,7 @@ use packages::{
     utils::{mars::MarsLending, supervaults::Supervaults},
 };
 use valence_domain_clients::{
-    cosmos::base_client::BaseClient,
+    cosmos::{base_client::BaseClient},
     evm::base_client::{CustomProvider, EvmBaseClient},
 };
 
@@ -78,15 +78,14 @@ impl Strategy {
             info!(target: UPDATE_PHASE, "gaia_ica_balance={gaia_ica_balance}");
             deposit_token_balance_total += gaia_ica_balance;
 
-            // TODO: enable the query below once a working grpc node is available
             // this should always be zero, but just in case pfm from lombard to the hub fails, there
             // may be some funds pending to be recovered into the program.
-            // let lombard_ica_bal = self
-            //     ._lombard_client
-            //     .query_balance(&self.cfg.lombard.ica, &self.cfg.lombard.deposit_denom)
-            //     .await?;
-            // info!(target: UPDATE_PHASE, "Lombard ICA balance = {lombard_ica_bal}");
-            // deposit_token_balance_total += lombard_ica_bal;
+            let lombard_ica_bal = self
+                .lombard_client
+                .query_balance(&self.cfg.lombard.ica, &self.cfg.lombard.deposit_denom)
+                .await?;
+            info!(target: UPDATE_PHASE, "Lombard ICA balance = {lombard_ica_bal}");
+            deposit_token_balance_total += lombard_ica_bal;
 
             let neutron_deposit_acc_balance = self
                 .neutron_client

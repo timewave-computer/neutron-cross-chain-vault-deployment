@@ -46,7 +46,7 @@ pub struct Strategy {
     /// active neutron client
     pub(crate) neutron_client: NeutronClient,
     /// active lombard client
-    pub(crate) _lombard_client: LombardClient,
+    pub(crate) lombard_client: LombardClient,
     /// active one way vault indexer client
     pub(crate) indexer_client: OneWayVaultIndexerClient,
     /// skip route client for IBC eureka
@@ -131,7 +131,7 @@ impl Strategy {
             indexer_client,
             coprocessor_client,
             ibc_eureka_client,
-            _lombard_client: lombard_client,
+            lombard_client,
         })
     }
 

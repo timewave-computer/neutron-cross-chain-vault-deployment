@@ -1,4 +1,4 @@
-grpc_url = "https://cosmos-grpc.polkachu.com"
+grpc_url = "http://cosmos-grpc.polkachu.com"
 grpc_port = "14990"
 chain_id = "cosmoshub-4"
 chain_denom = "uatom"
