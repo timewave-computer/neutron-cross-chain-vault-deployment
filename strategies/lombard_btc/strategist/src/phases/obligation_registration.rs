@@ -1,15 +1,12 @@
 use std::error::Error;
 
 use alloy::primitives::U256;
-use cosmwasm_std::Binary;
+use cosmwasm_std::Uint64;
 use log::info;
-use packages::{
-    labels::REGISTER_OBLIGATION_LABEL, phases::REGISTRATION_PHASE, utils::valence_core,
-};
+use packages::{phases::REGISTRATION_PHASE, utils::valence_core};
 use serde_json::json;
 use valence_domain_clients::{
-    coprocessor::base_client::CoprocessorBaseClient,
-    cosmos::{base_client::BaseClient, wasm_client::WasmClient},
+    coprocessor::base_client::CoprocessorBaseClient, cosmos::wasm_client::WasmClient,
     indexer::one_way_vault::OneWayVaultIndexer,
 };
 
@@ -38,19 +35,25 @@ impl Strategy {
             )
             .await?;
 
-        // get id of the latest obligation request that was registered on neutron
-        let latest_registered_obligation_id =
-            clearing_queue_cfg.latest_id.unwrap_or_default().u64();
         info!(
             target: REGISTRATION_PHASE,
-            "latest_registered_obligation_id={latest_registered_obligation_id}"
+            "latest_registered_obligation_id={:?}", clearing_queue_cfg.latest_id
         );
+
+        // get id of the latest obligation request that was registered on neutron
+        let latest_registered_obligation_id = match clearing_queue_cfg.latest_id {
+            // if there is a latest id, we increment it by 1 to only fetch the
+            // new withdraw requests
+            Some(id) => Some(id.checked_add(Uint64::one())?.u64()),
+            // if there is no latest id, we default to 0 to fetch everything
+            None => Some(Uint64::zero().u64()),
+        };
 
         // query the OneWayVault indexer to fetch all obligations that were registered
         // on the vault but are not yet registered into the queue on Neutron
         let new_obligations: Vec<(u64, alloy::primitives::Address, String, U256)> = self
             .indexer_client
-            .query_vault_withdraw_requests(Some(latest_registered_obligation_id + 1))
+            .query_vault_withdraw_requests(latest_registered_obligation_id)
             .await
             .unwrap_or_default();
         info!(
@@ -70,15 +73,21 @@ impl Strategy {
             info!(target: REGISTRATION_PHASE, "posting proof request to coprocessor client: {withdraw_id_json}");
             let vault_zkp_response = self
                 .coprocessor_client
-                .prove(&self.cfg.coprocessor.vault_circuit_id, &withdraw_id_json)
+                .prove(
+                    &self.cfg.neutron.coprocessor_app_ids.clearing_queue,
+                    &withdraw_id_json,
+                )
                 .await?;
+            info!(target: REGISTRATION_PHASE, "vault zkp resp: {:?}", vault_zkp_response);
 
             // extract the program and domain parameters by decoding the zkp
             let (proof_program, inputs_program) = vault_zkp_response.program.decode()?;
             let (proof_domain, inputs_domain) = vault_zkp_response.domain.decode()?;
 
             // submits the decoded zkp parameters to the program authorizations module
-            self.post_zkp_on_chain(
+            valence_core::post_zkp_on_chain(
+                &self.neutron_client,
+                &self.cfg.neutron.authorizations,
                 (proof_program, inputs_program),
                 (proof_domain, inputs_domain),
             )
@@ -89,46 +98,6 @@ impl Strategy {
         }
 
         info!(target: REGISTRATION_PHASE, "finished processing withdraw requests; concluding obligation registration phase...");
-
-        Ok(())
-    }
-
-    /// constructs the zk authorization execution message and executes it.
-    /// authorizations module will perform the zk verification and, if
-    /// successful, push it to the processor for execution
-    async fn post_zkp_on_chain(
-        &mut self,
-        (proof_program, inputs_program): (Vec<u8>, Vec<u8>),
-        (proof_domain, inputs_domain): (Vec<u8>, Vec<u8>),
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        // construct the zk authorization registration message
-        let execute_zk_authorization_msg =
-            valence_authorization_utils::msg::PermissionlessMsg::ExecuteZkAuthorization {
-                label: REGISTER_OBLIGATION_LABEL.to_string(),
-                message: Binary::from(inputs_program),
-                proof: Binary::from(proof_program),
-                domain_message: Binary::from(inputs_domain),
-                domain_proof: Binary::from(proof_domain),
-            };
-
-        // execute the zk authorization. this will perform the verification
-        // and, if successful, push the msg to the processor
-        info!(target: REGISTRATION_PHASE, "executing zk authorization");
-
-        let tx_resp = self
-            .neutron_client
-            .execute_wasm(
-                &self.cfg.neutron.authorizations,
-                valence_authorization_utils::msg::ExecuteMsg::PermissionlessAction(
-                    execute_zk_authorization_msg,
-                ),
-                vec![],
-                None,
-            )
-            .await?;
-
-        // poll for inclusion to avoid account sequence mismatch errors
-        self.neutron_client.poll_for_tx(&tx_resp.hash).await?;
 
         Ok(())
     }

@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+anyhow                             = { workspace = true }
 lombard_btc_types                  = { path = "../types" }
 packages                           = { path = "../../../packages" }
 dotenv                             = { workspace = true }

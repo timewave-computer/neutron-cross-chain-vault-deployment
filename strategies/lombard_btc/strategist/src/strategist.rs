@@ -2,6 +2,7 @@ use std::{error::Error, time::Duration};
 
 use async_trait::async_trait;
 use log::info;
+use packages::phases::VALENCE_WORKER;
 use tokio::time::sleep;
 use valence_domain_clients::evm::{
     base_client::CustomProvider, request_provider_client::RequestProviderClient,
@@ -9,9 +10,6 @@ use valence_domain_clients::evm::{
 use valence_strategist_utils::worker::ValenceWorker;
 
 use crate::strategy_config::Strategy;
-
-// logging targets
-pub const VALENCE_WORKER: &str = "valence_worker";
 
 // implement the ValenceWorker trait for the Strategy struct.
 // This trait defines the main loop of the strategy and inherits

@@ -4443,6 +4443,7 @@ name = "lombard_btc_strategist"
 version = "0.1.0"
 dependencies = [
  "alloy",
+ "anyhow",
  "async-trait",
  "cosmwasm-std",
  "dotenv",
@@ -8666,7 +8667,7 @@ dependencies = [
 [[package]]
 name = "valence-domain-clients"
 version = "0.1.0"
-source = "git+https://github.com/timewave-computer/valence-domain-clients.git?branch=main#49c29586f4c9d9444c4acba7ca24b6d3642a12db"
+source = "git+https://github.com/timewave-computer/valence-domain-clients.git?branch=main#3fd60a6a43c9017c612e9feff6bd13f4465d6344"
 dependencies = [
  "alloy",
  "alloy-primitives 0.7.7",

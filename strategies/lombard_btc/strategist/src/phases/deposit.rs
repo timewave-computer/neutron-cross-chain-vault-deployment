@@ -1,10 +1,14 @@
-use std::{error::Error, str::FromStr};
+use std::{
+    error::Error,
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
 
 use alloy::{
     primitives::{Bytes, U256},
     providers::Provider,
 };
-use cosmwasm_std::{Uint128, to_json_binary};
+
+use cosmwasm_std::to_json_binary;
 use log::{info, trace, warn};
 use packages::{
     labels::{ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_LABEL},
@@ -12,12 +16,13 @@ use packages::{
     types::sol_types::{Authorization, BaseAccount, ERC20},
     utils::valence_core,
 };
-use serde_json::json;
+use serde_json::{Value, json};
 use valence_domain_clients::{
     coprocessor::base_client::CoprocessorBaseClient,
     cosmos::base_client::BaseClient,
     evm::base_client::{CustomProvider, EvmBaseClient},
 };
+use valence_library_utils::OptionUpdate;
 
 use crate::strategy_config::Strategy;
 
@@ -162,7 +167,7 @@ impl Strategy {
         let eth_auth_contract = Authorization::new(self.cfg.ethereum.authorizations, &eth_rp);
 
         // fetch the IBC-Eureka route from eureka client
-        let skip_api_response = match self
+        let mut skip_api_response = match self
             .ibc_eureka_client
             .query_skip_eureka_route(eth_deposit_acc_bal.to_string())
             .await
@@ -176,16 +181,110 @@ impl Strategy {
             }
         };
 
-        // TODO: process the skip api response in the format expected for IBC-Eureka
-        // Lombard mode transfer
+        let skip_response_clone = skip_api_response.clone();
+
+        let amount_out_str = skip_response_clone
+            .get("amount_out")
+            .and_then(Value::as_str)
+            .ok_or("skip_api response amount_out not found or not a string")?;
+
+        let post_fee_amount_out_u128: u128 = amount_out_str.parse()?;
+        info!(target: DEPOSIT_PHASE, "post_fee_amount_out_u128 = {:?}", post_fee_amount_out_u128);
+
+        // 12 hours in secs, the timeout being used in skip ui
+        let timeout_duration = Duration::from_secs(12 * 60 * 60);
+        let timeout_time = SystemTime::now()
+            .checked_add(timeout_duration)
+            .ok_or("failed to extend current time by 12h")?;
+
+        let timeout_timestamp_nanos = timeout_time
+            .duration_since(UNIX_EPOCH)
+            .map_err(|e| anyhow::anyhow!("bad times: {e}"))?
+            .as_nanos();
+
+        let skip_response_operations = skip_api_response
+            .get("operations")
+            .cloned()
+            .ok_or("failed to get operations")?
+            .as_array()
+            .cloned()
+            .ok_or("operations not an array")?;
+        let skip_response_eureka_operation = skip_response_operations
+            .iter()
+            .find(|op| op.get("eureka_transfer").cloned().is_some())
+            .ok_or("no eureka transfer operation in skip response")?;
+
+        // current circuit expects array with a single element so we override
+        // the existing array
+        skip_api_response["operations"] = json!([skip_response_eureka_operation]);
+
+        let temp_memo = json!(
+            {
+              "dest_callback": {
+                "address": self.cfg.lombard.callback_contract
+              },
+              "wasm": {
+                "contract": self.cfg.lombard.entry_contract,
+                "msg": {
+                  "swap_and_action": {
+                    "user_swap": {
+                      "swap_exact_asset_in": {
+                        "swap_venue_name": "ledger-lbtc-convert",
+                        "operations": [
+                          {
+                            "pool": "",
+                            "denom_in": self.cfg.lombard.eureka_denom,
+                            "denom_out": self.cfg.lombard.native_denom
+                          }
+                        ]
+                      }
+                    },
+                    "min_asset": {
+                      "native": {
+                        "denom": self.cfg.lombard.native_denom,
+                        "amount": amount_out_str
+                      }
+                    },
+                    "timeout_timestamp": timeout_timestamp_nanos,
+                    "post_swap_action": {
+                      "ibc_transfer": {
+                        "ibc_info": {
+                          "source_channel": "channel-0",
+                          "receiver": self.cfg.gaia.ica_address,
+                          "memo": "",
+                          "recover_address": self.cfg.lombard.ica
+                        }
+                      }
+                    },
+                    "affiliates": []
+                  }
+                }
+              }
+            }
+        );
 
         // format the response in format expected by the coprocessor and post it
         // there for proof
-        let coprocessor_input = json!({"skip_response": skip_api_response});
-        info!(target: DEPOSIT_PHASE, "posting skip-api response to co-processor app id: {}", &self.cfg.coprocessor.eureka_circuit_id);
+        let coprocessor_input = json!({"skip_response": skip_api_response, "memo": temp_memo});
+
+        info!(
+            target: DEPOSIT_PHASE,
+            "co-processor input: {}",
+            coprocessor_input,
+        );
+
+        info!(
+            target: DEPOSIT_PHASE,
+            "co-processor ID: {}",
+            self.cfg.ethereum.coprocessor_app_ids.ibc_eureka,
+        );
+
         let skip_response_zkp = self
             .coprocessor_client
-            .prove(&self.cfg.coprocessor.eureka_circuit_id, &coprocessor_input)
+            .prove(
+                &self.cfg.ethereum.coprocessor_app_ids.ibc_eureka,
+                &coprocessor_input,
+            )
             .await?;
 
         info!(target: DEPOSIT_PHASE, "co_processor zkp post response: {:?}", skip_response_zkp);
@@ -215,8 +314,7 @@ impl Strategy {
         // block execution until the funds arrive to the Cosmos Hub ICA owned
         // by the Valence Interchain Account on Neutron.
         // we poll
-        let gaia_ica_balance = Uint128::from_str(&eth_deposit_acc_bal.to_string())?;
-        info!(target: DEPOSIT_PHASE, "gaia ica expected deposit token bal = {gaia_ica_balance}; starting to poll");
+        info!(target: DEPOSIT_PHASE, "gaia ica expected deposit token bal = {post_fee_amount_out_u128}; starting to poll");
 
         // poll for 15sec * 100 = 1500sec = 25min which should suffice for
         // IBC Eureka routing time of 15min
@@ -224,12 +322,9 @@ impl Strategy {
             .poll_until_expected_balance(
                 &self.cfg.gaia.ica_address,
                 &self.cfg.gaia.deposit_denom,
-                // divide by 2 because eureka will take part of the funds for transfer fees.
-                // this parameter can be tuned more precisely based on `ibc_transfer_threshold_amt`
-                // from the ethereum strategy config.
-                // one thing to note on this is that eureka fees are dynamic, so tbd on what
-                // is the most efficient way of doing this.
-                gaia_ica_balance.u128() / 2,
+                // TODO: think about querying the current ica balance and adding
+                // this amount on top
+                post_fee_amount_out_u128,
                 15,  // every 15 sec
                 100, // for 100 times
             )
@@ -241,14 +336,21 @@ impl Strategy {
         &mut self,
         gaia_ica_bal: u128,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let ica_ibc_transfer_update_msg = json!({
-            "update_config": {
-                "new_config": {
-                    "amount": gaia_ica_bal.to_string(),
-                    "eureka_config": "none"
-                }
-            }
-        });
+        let ica_ibc_transfer_update_msg: valence_library_utils::msg::ExecuteMsg<
+            valence_ica_ibc_transfer::msg::FunctionMsgs,
+            valence_ica_ibc_transfer::msg::LibraryConfigUpdate,
+        > = valence_library_utils::msg::ExecuteMsg::UpdateConfig {
+            new_config: valence_ica_ibc_transfer::msg::LibraryConfigUpdate {
+                input_addr: None,
+                amount: Some(gaia_ica_bal.into()),
+                denom: None,
+                receiver: None,
+                memo: None,
+                remote_chain_info: None,
+                denom_to_pfm_map: None,
+                eureka_config: OptionUpdate::Set(None),
+            },
+        };
         let ica_ibc_transfer_exec_msg =
             valence_library_utils::msg::ExecuteMsg::<_, ()>::ProcessFunction(
                 valence_ica_ibc_transfer::msg::FunctionMsgs::Transfer {},
@@ -263,6 +365,12 @@ impl Strategy {
                 to_json_binary(&ica_ibc_transfer_update_msg)?,
                 to_json_binary(&ica_ibc_transfer_exec_msg)?,
             ],
+        )
+        .await?;
+
+        valence_core::ensure_neutron_account_fees_coverage(
+            &self.neutron_client,
+            &self.cfg.neutron.accounts.gaia_ica,
         )
         .await?;
 

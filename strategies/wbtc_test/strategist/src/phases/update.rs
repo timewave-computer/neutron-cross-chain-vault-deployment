@@ -1,4 +1,4 @@
-use std::{error::Error, str::FromStr};
+use std::error::Error;
 
 use alloy::{primitives::U256, providers::Provider};
 use cosmwasm_std::{Decimal, Uint128};
@@ -156,22 +156,18 @@ impl Strategy {
         );
         info!(target: UPDATE_PHASE, "redemption rate decimal={redemption_rate_decimal}");
 
-        let redemption_rate_sol_u256 = U256::from(redemption_rate_decimal.atomics().u128());
+        let redemption_rate_sol_u256 = U256::try_from(redemption_rate_decimal.atomics().u128())?;
         info!(target: UPDATE_PHASE, "redemption_rate_sol_u256={redemption_rate_sol_u256}");
+        let redemption_rate_u128 = u128::try_from(redemption_rate_sol_u256)?;
+        let current_rate_u128 = u128::try_from(current_vault_rate)?;
 
         if redemption_rate_sol_u256 > current_vault_rate {
-            let change_decimal = Decimal::from_ratio(
-                Uint128::from_str(&redemption_rate_sol_u256.to_string())?,
-                Uint128::from_str(&current_vault_rate.to_string())?,
-            );
+            let change_decimal = Decimal::from_ratio(redemption_rate_u128, current_rate_u128);
 
             let rate_delta = change_decimal - Decimal::one();
             info!(target: UPDATE_PHASE, "redemption rate epoch delta = +{rate_delta}");
         } else {
-            let change_decimal = Decimal::from_ratio(
-                Uint128::from_str(&redemption_rate_sol_u256.to_string())?,
-                Uint128::from_str(&current_vault_rate.to_string())?,
-            );
+            let change_decimal = Decimal::from_ratio(redemption_rate_u128, current_rate_u128);
             let rate_delta = Decimal::one() - change_decimal;
 
             info!(target: UPDATE_PHASE, "redemption rate epoch delta = -{rate_delta}");

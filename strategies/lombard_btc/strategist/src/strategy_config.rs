@@ -1,9 +1,9 @@
-use std::{env, error::Error, path::Path};
+use std::{env, path::Path};
 
+use anyhow::anyhow;
 use lombard_btc_types::{
-    coprocessor_config::CoprocessorStrategyConfig, ethereum_config::EthereumStrategyConfig,
-    gaia_config::GaiaStrategyConfig, lombard_config::LombardStrategyConfig,
-    neutron_config::NeutronStrategyConfig,
+    ethereum_config::EthereumStrategyConfig, gaia_config::GaiaStrategyConfig,
+    lombard_config::LombardStrategyConfig, neutron_config::NeutronStrategyConfig,
 };
 use packages::{
     ibc_eureka_chain_ids::{EUREKA_COSMOS_HUB_CHAIN_ID, EUREKA_ETHEREUM_CHAIN_ID},
@@ -24,7 +24,6 @@ pub struct StrategyConfig {
     pub ethereum: EthereumStrategyConfig,
     pub neutron: NeutronStrategyConfig,
     pub gaia: GaiaStrategyConfig,
-    pub coprocessor: CoprocessorStrategyConfig,
     pub lombard: LombardStrategyConfig,
 }
 
@@ -47,7 +46,7 @@ pub struct Strategy {
     /// active neutron client
     pub(crate) neutron_client: NeutronClient,
     /// active lombard client
-    pub(crate) lombard_client: LombardClient,
+    pub(crate) _lombard_client: LombardClient,
     /// active one way vault indexer client
     pub(crate) indexer_client: OneWayVaultIndexerClient,
     /// skip route client for IBC eureka
@@ -65,18 +64,18 @@ impl Strategy {
     /// strategy initializer that takes in a `StrategyConfig`, and uses it
     /// to initialize the respective domain clients. prerequisite to starting
     /// the strategist.
-    pub async fn new(cfg: StrategyConfig) -> Result<Self, Box<dyn Error>> {
-        dotenv::dotenv().ok();
-        let mnemonic = env::var("MNEMONIC").expect("mnemonic must be provided");
-        let label = env::var("LABEL").expect("label must be provided");
-        let indexer_api_key =
-            env::var("INDEXER_API_KEY").expect("indexer api key must be provided");
-        let indexer_api_url =
-            env::var("INDEXER_API_URL").expect("indexer url key must be provided");
-        let eureka_api_url =
-            env::var("EUREKA_API_URL").expect("IBC Eureka route api url must be provided");
+    pub async fn new(cfg: StrategyConfig) -> anyhow::Result<Self> {
+        let mnemonic =
+            env::var("MNEMONIC").map_err(|e| anyhow!("mnemonic must be provided: {e}"))?;
+        let label = env::var("LABEL").map_err(|e| anyhow!("label must be provided: {e}"))?;
+        let indexer_api_key = env::var("INDEXER_API_KEY")
+            .map_err(|e| anyhow!("indexer api key must be provided: {e}"))?;
+        let indexer_api_url = env::var("INDEXER_API_URL")
+            .map_err(|e| anyhow!("indexer api url key must be provided: {e}"))?;
+        let eureka_api_url = env::var("EUREKA_API_URL")
+            .map_err(|e| anyhow!("IBC Eureka route api url must be provided: {e}"))?;
         let strategy_timeout: u64 = env::var("STRATEGY_TIMEOUT")
-            .expect("Strategy timeout must be provided")
+            .map_err(|e| anyhow!("Strategy timeout must be provided: {e}"))?
             .parse()?;
 
         let gaia_client = CosmosHubClient::new(
@@ -132,7 +131,7 @@ impl Strategy {
             indexer_client,
             coprocessor_client,
             ibc_eureka_client,
-            lombard_client,
+            _lombard_client: lombard_client,
         })
     }
 
@@ -148,25 +147,21 @@ impl Strategy {
         neutron_path: P,
         gaia_path: P,
         eth_path: P,
-        coprocessor_path: P,
         lombard_path: P,
-    ) -> Result<Self, Box<dyn Error>> {
+    ) -> anyhow::Result<Self> {
         let neutron_cfg = NeutronStrategyConfig::from_file(neutron_path)
-            .map_err(|e| format!("invalid neutron config: {:?}", e))?;
+            .map_err(|e| anyhow!("invalid neutron config: {:?}", e))?;
         let eth_cfg = EthereumStrategyConfig::from_file(eth_path)
-            .map_err(|e| format!("invalid ethereum config: {:?}", e))?;
+            .map_err(|e| anyhow!("invalid ethereum config: {:?}", e))?;
         let gaia_cfg = GaiaStrategyConfig::from_file(gaia_path)
-            .map_err(|e| format!("invalid gaia config: {:?}", e))?;
-        let coprocessor_cfg = CoprocessorStrategyConfig::from_file(coprocessor_path)
-            .map_err(|e| format!("invalid coprocessor config: {:?}", e))?;
+            .map_err(|e| anyhow!("invalid gaia config: {:?}", e))?;
         let lombard_cfg = LombardStrategyConfig::from_file(lombard_path)
-            .map_err(|e| format!("invalid lombard config: {:?}", e))?;
+            .map_err(|e| anyhow!("invalid lombard config: {:?}", e))?;
 
         let strategy_cfg = StrategyConfig {
             ethereum: eth_cfg,
             neutron: neutron_cfg,
             gaia: gaia_cfg,
-            coprocessor: coprocessor_cfg,
             lombard: lombard_cfg,
         };
 

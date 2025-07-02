@@ -1,5 +1,5 @@
 use alloy::primitives::{Address, U256};
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{Decimal, Uint128};
 use serde::{Deserialize, Serialize};
 use valence_strategist_utils::worker::ValenceWorkerTomlSerde;
 
@@ -7,6 +7,12 @@ use valence_strategist_utils::worker::ValenceWorkerTomlSerde;
 pub struct EthereumStrategyConfig {
     /// ethereum node rpc url
     pub rpc_url: String,
+
+    /// rate update threshold. if newly calculated rate
+    /// would result in an increase or decrease relative
+    /// to the current rate that would exceed this value,
+    /// vault does not get updated.
+    pub rate_update_threshold: Decimal,
 
     /// minimum eureka-transfer input account balance
     /// to perform IBC transfer (taking fees into account)
