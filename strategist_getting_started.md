@@ -14,6 +14,7 @@ The strategist requires access to:
 - **Cosmos Hub gRPC**: For IBC and Interchain Account operations
 - **Valence Coprocessor RPC**: For generating zero-knowledge proofs for cross-chain state verification
 - **Indexer API**: For efficient event querying and transaction tracking
+- **Lombard gRPC**: (only applicable for LBTC vault) For Lombard recovery address accounting
 
 ## Configuration
 
@@ -338,7 +339,7 @@ curl -s https://rpc.neutron.quokkastake.io/status
 # Check Neutron gRPC connectivity
 curl -s https://rpc.neutron.quokkastake.io:9090 || echo "gRPC port not reachable via HTTP"
 
-# Check Cosmos Hub RPC connectivity  
+# Check Cosmos Hub RPC connectivity
 curl -s https://cosmos-rpc.polkachu.com/status
 
 # Check Cosmos Hub gRPC connectivity
