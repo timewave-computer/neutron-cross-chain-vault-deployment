@@ -48,6 +48,12 @@ sol!(
 
 sol!(
     #[sol(rpc)]
+    CCTPTransfer,
+    "src/contracts/evm/CCTPTransfer.sol/CCTPTransfer.json",
+);
+
+sol!(
+    #[sol(rpc)]
     SP1VerificationGateway,
     "src/contracts/evm/SP1VerificationGateway.sol/SP1VerificationGateway.json",
 );
@@ -62,5 +68,14 @@ sol!(
         string sourceClient;
         uint64 timeout;
         address eurekaHandler;
+    }
+
+    struct CCTPTransferConfig {
+        uint256 amount;
+        bytes32 mintRecipient;
+        address inputAccount;
+        uint32 destinationDomain;
+        address cctpTokenMessenger;
+        address transferToken;
     }
 );

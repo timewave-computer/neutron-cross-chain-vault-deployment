@@ -8532,6 +8532,46 @@ dependencies = [
 ]
 
 [[package]]
+name = "usdc_deploy"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "anyhow",
+ "bech32 0.11.0",
+ "bincode",
+ "cosmrs",
+ "cosmwasm-std",
+ "dotenv",
+ "hex",
+ "packages",
+ "serde",
+ "sp1-sdk",
+ "tokio",
+ "toml",
+ "usdc_types",
+ "valence-account-utils",
+ "valence-authorization-utils",
+ "valence-clearing-queue-supervaults",
+ "valence-domain-clients",
+ "valence-ica-ibc-transfer",
+ "valence-library-utils",
+ "valence-processor-utils",
+ "valence-supervaults-lper",
+ "valence-supervaults-withdrawer",
+ "valence-verification-gateway",
+]
+
+[[package]]
+name = "usdc_types"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "cosmwasm-std",
+ "serde",
+ "valence-strategist-utils",
+]
+
+[[package]]
 name = "utf-8"
 version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8668,7 +8708,7 @@ dependencies = [
 [[package]]
 name = "valence-domain-clients"
 version = "0.1.0"
-source = "git+https://github.com/timewave-computer/valence-domain-clients.git?branch=main#3fd60a6a43c9017c612e9feff6bd13f4465d6344"
+source = "git+https://github.com/timewave-computer/valence-domain-clients.git?branch=main#49c29586f4c9d9444c4acba7ca24b6d3642a12db"
 dependencies = [
  "alloy",
  "alloy-primitives 0.7.7",
