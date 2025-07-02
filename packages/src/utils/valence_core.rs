@@ -14,6 +14,8 @@ use crate::{
     phases::{DEPOSIT_PHASE, REGISTRATION_PHASE},
 };
 
+const ICA_CONTRACT_FUNDING_AMT: u128 = 10_000;
+
 pub async fn enqueue_neutron(
     client: &NeutronClient,
     authorizations: &str,
@@ -119,8 +121,8 @@ pub async fn ensure_neutron_account_fees_coverage(
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
     let account_ntrn_balance = client.query_balance(acc, "untrn").await?;
 
-    if account_ntrn_balance < 10_000 {
-        let delta = 10_000 - account_ntrn_balance;
+    if account_ntrn_balance < ICA_CONTRACT_FUNDING_AMT {
+        let delta = ICA_CONTRACT_FUNDING_AMT - account_ntrn_balance;
 
         info!(target: DEPOSIT_PHASE, "Funding neutron account with {delta}untrn for ibc tx fees...");
         let transfer_rx = client.transfer(acc, delta, "untrn", None).await?;
