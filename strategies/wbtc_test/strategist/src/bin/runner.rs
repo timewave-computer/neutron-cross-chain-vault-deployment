@@ -1,20 +1,19 @@
 use dotenv::dotenv;
 use log::{info, warn};
-use std::{env, error::Error};
+use packages::utils::logging::setup_logging;
+use std::env;
 use valence_strategist_utils::worker::ValenceWorker;
 use wbtc_test_strategist::strategy_config::Strategy;
-use packages::utils::logging::setup_logging;
-
 
 const RUNNER: &str = "runner";
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> anyhow::Result<()> {
     // load environment variables
     dotenv().ok();
 
     setup_logging().await?;
-        
+
     info!(target: RUNNER, "starting the strategist runner");
 
     // get configuration paths from environment variables

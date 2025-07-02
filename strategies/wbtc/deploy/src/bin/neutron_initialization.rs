@@ -1,4 +1,4 @@
-use std::{env, error::Error, fs};
+use std::{env, fs};
 
 use cosmwasm_std::Binary;
 use serde::Deserialize;
@@ -46,7 +46,7 @@ struct CoprocessorApp {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> anyhow::Result<()> {
     dotenv::dotenv().ok();
     let mnemonic = env::var("MNEMONIC").expect("mnemonic must be provided");
 

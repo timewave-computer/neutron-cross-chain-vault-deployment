@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use alloy::primitives::U256;
 use cosmwasm_std::Uint64;
 use log::info;
@@ -21,9 +19,7 @@ impl Strategy {
     /// 2. generating ZKP for each of the newly fetched obligations
     /// 3. posting ZKPs to the neutron authorizations module before
     ///    attempting to enqueue them
-    pub async fn register_withdraw_obligations(
-        &mut self,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+    pub async fn register_withdraw_obligations(&mut self) -> anyhow::Result<()> {
         info!(target: REGISTRATION_PHASE, "starting withdraw obligation registration phase");
 
         // query the Clearing Queue library for the latest posted withdraw request ID

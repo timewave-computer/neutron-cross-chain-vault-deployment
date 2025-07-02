@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use async_trait::async_trait;
 use valence_domain_clients::{clients::neutron::NeutronClient, cosmos::wasm_client::WasmClient};
 use valence_lending_utils::mars::{Account, Positions, QueryMsg};
@@ -11,7 +9,7 @@ pub trait MarsLending {
         credit_manager: &str,
         acc_owner: &str,
         denom: &str,
-    ) -> Result<u128, Box<dyn Error + Send + Sync>> {
+    ) -> anyhow::Result<u128> {
         let credit_accounts =
             Self::query_mars_credit_accounts(client, credit_manager, acc_owner).await?;
 
@@ -20,7 +18,11 @@ pub trait MarsLending {
         // for all LP actions, so we get the [0]
         let first_credit_account = match credit_accounts.first() {
             Some(acc) => acc,
-            None => return Err(format!("no credit account found for owner {acc_owner}").into()),
+            None => {
+                return Err(anyhow::anyhow!(
+                    "no credit account found for owner {acc_owner}"
+                ))
+            }
         };
 
         let active_positions = Self::query_mars_credit_account_positions(
@@ -45,7 +47,7 @@ pub trait MarsLending {
         client: &NeutronClient,
         credit_manager: &str,
         acc_owner: &str,
-    ) -> Result<Vec<Account>, Box<dyn Error + Send + Sync>> {
+    ) -> anyhow::Result<Vec<Account>> {
         // query the mars credit account created and owned by the mars input account
         let mars_input_acc_credit_accounts: Vec<Account> = client
             .query_contract_state(
@@ -65,7 +67,7 @@ pub trait MarsLending {
         client: &NeutronClient,
         credit_manager: &str,
         account_id: String,
-    ) -> Result<Positions, Box<dyn Error + Send + Sync>> {
+    ) -> anyhow::Result<Positions> {
         // query mars positions owned by the credit account id
         let mars_positions_response: Positions = client
             .query_contract_state(credit_manager, QueryMsg::Positions { account_id })
