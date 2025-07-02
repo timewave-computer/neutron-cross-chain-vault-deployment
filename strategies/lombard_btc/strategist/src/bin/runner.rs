@@ -1,8 +1,8 @@
 use log::{info, warn};
 use lombard_btc_strategist::strategy_config::Strategy;
+use packages::utils::logging::setup_logging;
 use std::env;
 use valence_strategist_utils::worker::ValenceWorker;
-use packages::utils::logging::setup_logging;
 
 const RUNNER: &str = "runner";
 
