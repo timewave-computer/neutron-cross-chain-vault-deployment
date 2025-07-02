@@ -1,5 +1,5 @@
 [general]
-rpc_url       = "http://0.0.0.0:8545"
+rpc_url       = "https://eth-mainnet.public.blastapi.io"
 owner         = "0xd9A23b58e684B985F661Ce7005AA8E10630150c1" # Neutron multisig address
 
 [vault]
