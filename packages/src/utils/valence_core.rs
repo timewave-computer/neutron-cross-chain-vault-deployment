@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use cosmwasm_std::Binary;
 
 use log::{debug, info};
@@ -53,10 +51,7 @@ pub async fn enqueue_neutron(
 }
 
 /// ticks the processor on neutron
-pub async fn tick_neutron(
-    client: &NeutronClient,
-    processor: &str,
-) -> anyhow::Result<()> {
+pub async fn tick_neutron(client: &NeutronClient, processor: &str) -> anyhow::Result<()> {
     let tx_resp = client
         .execute_wasm(
             processor,

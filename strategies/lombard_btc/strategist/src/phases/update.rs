@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, error::Error};
+use std::cmp::Ordering;
 
 use alloy::{primitives::U256, providers::Provider};
 use cosmwasm_std::{Decimal, Uint128};
@@ -23,10 +23,7 @@ impl Strategy {
     /// 3. calculating the new redemption rate by dividing the total deposit token
     ///    amount by the total shares
     /// 4. posting the updated rate to the Ethereum vault
-    pub async fn update(
-        &mut self,
-        eth_rp: &CustomProvider,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+    pub async fn update(&mut self, eth_rp: &CustomProvider) -> anyhow::Result<()> {
         info!(target: UPDATE_PHASE, "starting vault update phase");
 
         let eth_deposit_acc_contract =
@@ -45,7 +42,9 @@ impl Strategy {
         // if there are no shares issued, update cannot be performed because it's impossible to
         // calculate the redemption rate
         if eth_vault_issued_shares_u256.is_zero() {
-            return Err("cannot calculate redemption rate with zero issued vault shares".into());
+            return Err(anyhow::anyhow!(
+                "cannot calculate redemption rate with zero issued vault shares"
+            ));
         }
 
         info!(target: UPDATE_PHASE, "eth_vault_issued_shares_u256={eth_vault_issued_shares_u256}");

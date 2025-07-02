@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use async_trait::async_trait;
 use cosmwasm_std::{Addr, Decimal, Uint128};
 use mmvault::state::Config;

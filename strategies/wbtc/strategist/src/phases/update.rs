@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use alloy::{primitives::U256, providers::Provider};
 use cosmwasm_std::{Decimal, Uint128};
 use log::{info, trace};
@@ -17,10 +15,7 @@ use crate::strategy_config::Strategy;
 
 impl Strategy {
     /// performs the vault rate update
-    pub async fn update(
-        &mut self,
-        eth_rp: &CustomProvider,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+    pub async fn update(&mut self, eth_rp: &CustomProvider) -> anyhow::Result<()> {
         trace!(target: UPDATE_PHASE, "starting vault update phase");
 
         let mut total_deposit_assets = 0;
@@ -61,7 +56,9 @@ impl Strategy {
         // if there are no shares issued, update cannot be performed because it's impossible to
         // calculate the redemption rate
         if eth_vault_issued_shares.is_zero() {
-            return Err("cannot calculate redemption rate with zero issued vault shares".into());
+            return Err(anyhow::anyhow!(
+                "cannot calculate redemption rate with zero issued vault shares"
+            ));
         }
 
         // perform u256 -> u128 conversion

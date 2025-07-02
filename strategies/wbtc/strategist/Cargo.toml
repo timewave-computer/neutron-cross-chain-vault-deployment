@@ -31,3 +31,4 @@ valence-lending-utils              = { workspace = true }
 mmvault                            = { workspace = true }
 serde_json                         = { workspace = true }
 tokio                              = { workspace = true }
+anyhow                             = { workspace = true }

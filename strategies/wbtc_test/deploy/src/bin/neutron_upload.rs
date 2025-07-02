@@ -1,4 +1,4 @@
-use std::{collections::HashMap, env, error::Error, fs};
+use std::{collections::HashMap, env, fs};
 
 use serde::{Deserialize, Serialize};
 use valence_domain_clients::{clients::neutron::NeutronClient, cosmos::wasm_client::WasmClient};
@@ -14,7 +14,7 @@ struct UploadedContracts {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> anyhow::Result<()> {
     dotenv::dotenv().ok();
     let mnemonic = env::var("MNEMONIC").expect("mnemonic must be provided");
 

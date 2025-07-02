@@ -1,7 +1,4 @@
-use std::{
-    error::Error,
-    time::{Duration, SystemTime, UNIX_EPOCH},
-};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use alloy::{
     primitives::{Bytes, U256},
@@ -37,10 +34,7 @@ impl Strategy {
     /// 1. Ethereum -> Hub routing
     /// 2. Hub -> Neutron routing
     /// 3. Supervaults & Mars position entry
-    pub async fn deposit(
-        &mut self,
-        eth_rp: &CustomProvider,
-    ) -> anyhow::Result<()> {
+    pub async fn deposit(&mut self, eth_rp: &CustomProvider) -> anyhow::Result<()> {
         trace!(target: DEPOSIT_PHASE, "starting deposit phase");
 
         // Stage 1: deposit token routing from Ethereum to Cosmos hub
@@ -187,7 +181,9 @@ impl Strategy {
         let amount_out_str = skip_response_clone
             .get("amount_out")
             .and_then(Value::as_str)
-            .ok_or(anyhow!("skip_api response amount_out not found or not a string"))?;
+            .ok_or(anyhow!(
+                "skip_api response amount_out not found or not a string"
+            ))?;
 
         let post_fee_amount_out_u128: u128 = amount_out_str.parse()?;
         info!(target: DEPOSIT_PHASE, "post_fee_amount_out_u128 = {:?}", post_fee_amount_out_u128);
@@ -333,10 +329,7 @@ impl Strategy {
         Ok(())
     }
 
-    async fn gaia_to_neutron_routing(
-        &mut self,
-        gaia_ica_bal: u128,
-    ) -> anyhow::Result<()> {
+    async fn gaia_to_neutron_routing(&mut self, gaia_ica_bal: u128) -> anyhow::Result<()> {
         let ica_ibc_transfer_update_msg: valence_library_utils::msg::ExecuteMsg<
             valence_ica_ibc_transfer::msg::FunctionMsgs,
             valence_ica_ibc_transfer::msg::LibraryConfigUpdate,

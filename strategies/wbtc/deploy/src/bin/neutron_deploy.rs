@@ -1,8 +1,6 @@
 use std::{
     collections::{BTreeMap, HashMap},
-    env,
-    error::Error,
-    fs,
+    env, fs,
     str::FromStr,
     time::SystemTime,
 };
@@ -118,7 +116,7 @@ struct CoprocessorApp {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> anyhow::Result<()> {
     dotenv::dotenv().ok();
     let mnemonic = env::var("MNEMONIC").expect("mnemonic must be provided");
 

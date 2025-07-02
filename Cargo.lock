@@ -5380,6 +5380,7 @@ name = "packages"
 version = "0.1.0"
 dependencies = [
  "alloy",
+ "anyhow",
  "async-trait",
  "cosmwasm-std",
  "env_logger",
@@ -9165,6 +9166,7 @@ name = "wbtc_strategist"
 version = "0.1.0"
 dependencies = [
  "alloy",
+ "anyhow",
  "async-trait",
  "cosmwasm-std",
  "dotenv",
@@ -9232,6 +9234,7 @@ name = "wbtc_test_strategist"
 version = "0.1.0"
 dependencies = [
  "alloy",
+ "anyhow",
  "async-trait",
  "cosmwasm-std",
  "dotenv",

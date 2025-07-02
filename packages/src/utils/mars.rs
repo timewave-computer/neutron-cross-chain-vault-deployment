@@ -18,7 +18,11 @@ pub trait MarsLending {
         // for all LP actions, so we get the [0]
         let first_credit_account = match credit_accounts.first() {
             Some(acc) => acc,
-            None => return Err(anyhow::anyhow!("no credit account found for owner {acc_owner}")),
+            None => {
+                return Err(anyhow::anyhow!(
+                    "no credit account found for owner {acc_owner}"
+                ))
+            }
         };
 
         let active_positions = Self::query_mars_credit_account_positions(

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, error::Error};
+use std::collections::HashMap;
 
 use cosmwasm_std::to_json_binary;
 use log::{info, warn};
@@ -26,7 +26,7 @@ impl Strategy {
     ///      the entire queue, log a warning message (this should not happen
     ///      with correct configuration)
     /// 3. clear the queue in a FIFO manner
-    pub async fn settlement(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
+    pub async fn settlement(&mut self) -> anyhow::Result<()> {
         info!(target: SETTLEMENT_PHASE, "starting settlement phase");
 
         let mut settlement_acc_balances = HashMap::new();
