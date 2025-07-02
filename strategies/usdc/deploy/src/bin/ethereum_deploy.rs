@@ -8,7 +8,6 @@ use cosmwasm_std::{Decimal, Uint128};
 use packages::types::sol_types::{
     Authorization, BaseAccount, CCTPTransfer, CCTPTransferConfig, ERC1967Proxy,
     OneWayVault::{self, FeeDistributionConfig, OneWayVaultConfig},
-    SP1VerificationGateway,
     processor_contract::LiteProcessor,
 };
 use serde::Deserialize;
@@ -145,24 +144,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .contract_address
         .unwrap();
     println!("Processor deployed at: {processor_address}");
-
-    let verification_gateway =
-        SP1VerificationGateway::deploy_builder(&rp).into_transaction_request();
-    let verification_gateway_implementation = eth_client
-        .sign_and_send(verification_gateway)
-        .await?
-        .contract_address
-        .unwrap();
-
-    let proxy_tx =
-        ERC1967Proxy::deploy_builder(&rp, verification_gateway_implementation, Bytes::new())
-            .into_transaction_request();
-    let verification_gateway_address = eth_client
-        .sign_and_send(proxy_tx)
-        .await?
-        .contract_address
-        .unwrap();
-    println!("Verification Gateway deployed at: {verification_gateway_address}");
 
     let authorization = Authorization::deploy_builder(
         &rp,
