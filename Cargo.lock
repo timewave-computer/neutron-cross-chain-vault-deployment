@@ -8756,7 +8756,7 @@ dependencies = [
 [[package]]
 name = "valence-domain-clients"
 version = "0.1.0"
-source = "git+https://github.com/timewave-computer/valence-domain-clients.git?branch=benskey%2Fdebugging-tls-continued#5218392019cd164008037731bf0aa99d0312b927"
+source = "git+https://github.com/timewave-computer/valence-domain-clients.git?branch=main#2f8d0bb1a99000206f69f6c069ceb2e54385f79b"
 dependencies = [
  "alloy",
  "alloy-primitives 0.7.7",

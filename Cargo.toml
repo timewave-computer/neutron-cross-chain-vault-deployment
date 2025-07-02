@@ -40,7 +40,7 @@ opentelemetry-appender-log           = "0.30.0"
 
 
 # valence-protocol
-valence-domain-clients               = { git = "https://github.com/timewave-computer/valence-domain-clients.git", branch = "benskey/debugging-tls-continued" }
+valence-domain-clients               = { git = "https://github.com/timewave-computer/valence-domain-clients.git", branch = "main" }
 valence-authorization-utils          = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
 valence-processor-utils              = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
 valence-library-utils                = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
