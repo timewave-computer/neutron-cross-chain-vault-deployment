@@ -1,5 +1,5 @@
 [general]
-rpc_url       = "https://eth-mainnet.public.blastapi.io"
+rpc_url       = "http://0.0.0.0:8545"
 owner         = "0xd9A23b58e684B985F661Ce7005AA8E10630150c1" # Neutron multisig address
 
 [vault]
@@ -19,5 +19,5 @@ rate_update_threshold    = "0.2"                                        # 20% ra
 [cctp_transfer]
 cctp_token_messenger        = "0xBd3fa81B58Ba92a82136038B25aDec7066af3155" # CCTP Token Messenger contract address
 recipient                   = "0x0000000000000000000000000000000000000000000000000000000000000001" # Once ICA is created, we'll put the recipient here.
-destination_domain          = "4"                                          # Noble
+destination_domain          = 4                                          # Noble
 cctp_transfer_threshold_amt = 1000000
