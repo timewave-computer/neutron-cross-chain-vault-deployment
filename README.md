@@ -6,7 +6,7 @@ A production-ready cross-chain Bitcoin vault system built on the Valence Protoco
 
 The system operates across three blockchain networks:
 - **Ethereum**: User-facing ERC-4626 vault where users deposit collateral
-- **Neutron**: CosmWasm-based liquidity provision via Mars Protocol + Supervaults  
+- **Neutron**: CosmWasm-based liquidity provision via Mars Protocol + Supervaults
 - **Cosmos Hub**: IBC/ICA bridging/messaging between Ethereum and Neutron
 - **IBC Eureka**: Ethereum ↔ Cosmos Hub bridging
 
@@ -35,20 +35,7 @@ The system operates across three blockchain networks:
 
 The co-processor and light client services are trustless services managed by Valence.
 
-## Quick Start
-
-```bash
-# Build the project
-cargo build --release
-
-# Deploy contracts (requires configuration)
-cargo run -p deploy --bin main
-
-# Run strategist (requires .env configuration)
-cargo run -p strategist --bin main
-```
-
 ## Documentation
 
-- [Strategist Getting Started Guide](strategist/strategist_getting_started.md)
-- [Deployment Guide](deploy/README.md)
+- [Strategist Getting Started Guide](./docs/strategist_getting_started.md)
+- [Deployment Guide](./docs/deploy_getting_started.md)
