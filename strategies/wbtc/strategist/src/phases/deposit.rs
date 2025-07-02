@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use alloy::{
     primitives::{Bytes, U256},
     providers::Provider,
@@ -34,10 +32,7 @@ impl Strategy {
     /// 1. Ethereum -> Cosmos Hub routing
     /// 2. Cosmos Hub -> Neutron routing
     /// 3. Supervaults & Mars position entry
-    pub async fn deposit(
-        &mut self,
-        eth_rp: &CustomProvider,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+    pub async fn deposit(&mut self, eth_rp: &CustomProvider) -> anyhow::Result<()> {
         trace!(target: DEPOSIT_PHASE, "starting deposit phase");
 
         // Stage 1: deposit token routing from Ethereum to Cosmos Hub
@@ -170,7 +165,7 @@ impl Strategy {
         &mut self,
         eth_rp: &CustomProvider,
         eth_deposit_acc_bal: U256,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+    ) -> anyhow::Result<()> {
         let eth_auth_contract = Authorization::new(self.cfg.ethereum.authorizations, &eth_rp);
 
         // fetch the IBC-Eureka route from eureka client
@@ -246,10 +241,7 @@ impl Strategy {
         Ok(())
     }
 
-    async fn gaia_to_neutron_routing(
-        &mut self,
-        gaia_ica_bal: u128,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+    async fn gaia_to_neutron_routing(&mut self, gaia_ica_bal: u128) -> anyhow::Result<()> {
         // let ica_ibc_transfer_update_msg: valence_library_utils::msg::ExecuteMsg<
         //     valence_ica_ibc_transfer::msg::FunctionMsgs,
         //     valence_ica_ibc_transfer::msg::LibraryConfigUpdate,

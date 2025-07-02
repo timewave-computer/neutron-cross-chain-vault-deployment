@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use cosmwasm_std::Binary;
 
 use log::{debug, info};
@@ -21,7 +19,7 @@ pub async fn enqueue_neutron(
     authorizations: &str,
     label: &str,
     messages: Vec<Binary>,
-) -> Result<(), Box<dyn Error + Send + Sync>> {
+) -> anyhow::Result<()> {
     let mut encoded_messages = vec![];
 
     for message in messages {
@@ -53,10 +51,7 @@ pub async fn enqueue_neutron(
 }
 
 /// ticks the processor on neutron
-pub async fn tick_neutron(
-    client: &NeutronClient,
-    processor: &str,
-) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn tick_neutron(client: &NeutronClient, processor: &str) -> anyhow::Result<()> {
     let tx_resp = client
         .execute_wasm(
             processor,
@@ -83,7 +78,7 @@ pub async fn post_zkp_on_chain(
     authorizations: &str,
     (proof_program, inputs_program): (Vec<u8>, Vec<u8>),
     (proof_domain, inputs_domain): (Vec<u8>, Vec<u8>),
-) -> Result<(), Box<dyn Error + Send + Sync>> {
+) -> anyhow::Result<()> {
     // construct the zk authorization registration message
     let execute_zk_authorization_msg =
         valence_authorization_utils::msg::PermissionlessMsg::ExecuteZkAuthorization {
@@ -118,7 +113,7 @@ pub async fn post_zkp_on_chain(
 pub async fn ensure_neutron_account_fees_coverage(
     client: &NeutronClient,
     acc: &str,
-) -> Result<(), Box<dyn Error + Send + Sync>> {
+) -> anyhow::Result<()> {
     let account_ntrn_balance = client.query_balance(acc, "untrn").await?;
 
     if account_ntrn_balance < ICA_CONTRACT_FUNDING_AMT {

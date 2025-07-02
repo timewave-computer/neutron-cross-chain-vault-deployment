@@ -1,4 +1,4 @@
-use std::{env, error::Error, path::Path};
+use std::{env, path::Path};
 
 use packages::{
     ibc_eureka_chain_ids::{EUREKA_COSMOS_HUB_CHAIN_ID, EUREKA_ETHEREUM_CHAIN_ID},
@@ -61,7 +61,7 @@ impl Strategy {
     /// strategy initializer that takes in a `StrategyConfig`, and uses it
     /// to initialize the respective domain clients. prerequisite to starting
     /// the strategist.
-    pub async fn new(cfg: StrategyConfig) -> Result<Self, Box<dyn Error>> {
+    pub async fn new(cfg: StrategyConfig) -> anyhow::Result<Self> {
         dotenv::dotenv().ok();
         let mnemonic = env::var("MNEMONIC").expect("mnemonic must be provided");
         let label = env::var("LABEL").expect("label must be provided");
@@ -135,15 +135,15 @@ impl Strategy {
         gaia_path: P,
         eth_path: P,
         coprocessor_path: P,
-    ) -> Result<Self, Box<dyn Error>> {
+    ) -> anyhow::Result<Self> {
         let neutron_cfg = NeutronStrategyConfig::from_file(neutron_path)
-            .map_err(|e| format!("invalid neutron config: {:?}", e))?;
+            .map_err(|e| anyhow::anyhow!("invalid neutron config: {:?}", e))?;
         let eth_cfg = EthereumStrategyConfig::from_file(eth_path)
-            .map_err(|e| format!("invalid ethereum config: {:?}", e))?;
+            .map_err(|e| anyhow::anyhow!("invalid ethereum config: {:?}", e))?;
         let gaia_cfg = GaiaStrategyConfig::from_file(gaia_path)
-            .map_err(|e| format!("invalid gaia config: {:?}", e))?;
+            .map_err(|e| anyhow::anyhow!("invalid gaia config: {:?}", e))?;
         let coprocessor_cfg = CoprocessorStrategyConfig::from_file(coprocessor_path)
-            .map_err(|e| format!("invalid coprocessor config: {:?}", e))?;
+            .map_err(|e| anyhow::anyhow!("invalid coprocessor config: {:?}", e))?;
 
         let strategy_cfg = StrategyConfig {
             ethereum: eth_cfg,

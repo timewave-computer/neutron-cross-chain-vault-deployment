@@ -1,4 +1,4 @@
-use std::{collections::HashMap, env, error::Error, fs};
+use std::{collections::HashMap, env, fs};
 
 use lombard_btc_deploy::DIR;
 use serde::{Deserialize, Serialize};
@@ -14,7 +14,7 @@ struct UploadedContracts {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> anyhow::Result<()> {
     dotenv::dotenv().ok();
     let mnemonic = env::var("MNEMONIC").expect("mnemonic must be provided");
 

@@ -1,14 +1,14 @@
 use dotenv::dotenv;
 use log::{info, warn};
 use packages::utils::logging::setup_logging;
-use std::{env, error::Error};
+use std::env;
 use valence_strategist_utils::worker::ValenceWorker;
 use wbtc_test_strategist::strategy_config::Strategy;
 
 const RUNNER: &str = "runner";
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> anyhow::Result<()> {
     // load environment variables
     dotenv().ok();
 

@@ -7,7 +7,7 @@ use opentelemetry_sdk::Resource;
 use std::env;
 
 const LOGGING: &str = "logging";
-pub async fn setup_logging() -> Result<(), Box<dyn std::error::Error>> {
+pub async fn setup_logging() -> anyhow::Result<()> {
     match env::var("OTLP_ENDPOINT") {
         Ok(otlp_endpoint) => {
             let otlp_exporter = opentelemetry_otlp::LogExporter::builder()
