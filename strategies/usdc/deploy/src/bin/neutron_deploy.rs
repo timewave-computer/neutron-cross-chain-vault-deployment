@@ -304,7 +304,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Finally instantiate the clearing queue library
     let clearing_config = valence_clearing_queue_supervaults::msg::LibraryConfig {
-        settlement_acc_addr: LibraryAccountType::Addr(predicted_base_accounts[3].clone()),
+        settlement_acc_addr: LibraryAccountType::Addr(predicted_base_accounts[1].clone()),
         denom: params.program.deposit_token_on_neutron_denom.clone(),
         latest_id: None,
         mars_settlement_ratio: Decimal::zero(), // 0% because there is no mars lending being done
@@ -487,8 +487,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         grpc_url: "grpc_url".to_string(),
         grpc_port: "grpc_port".to_string(),
         chain_id: "chain_id".to_string(),
-        chain_denom: "uatom".to_string(),
-        uusdc_denom: UUSDC_DENOM.to_string(),
+        chain_denom: UUSDC_DENOM.to_string(),
         ica_address,
     };
 

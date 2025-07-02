@@ -8,7 +8,6 @@ pub struct NobleStrategyConfig {
     pub chain_id: String,
     // native chain denom
     pub chain_denom: String,
-    pub uusdc_denom: String,
     // ICA address
     pub ica_address: String,
 }

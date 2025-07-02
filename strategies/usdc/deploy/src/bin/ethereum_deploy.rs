@@ -218,7 +218,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .approveLibrary(cctp_transfer)
         .into_transaction_request();
     eth_client.sign_and_send(approve_library_tx).await?;
-    println!("Eureka Transfer library approved from deposit account");
+    println!("CCTP Transfer library approved from deposit account");
 
     // Transfer ownership of the deposit account to the owner
     let transfer_ownership_tx = base_account
