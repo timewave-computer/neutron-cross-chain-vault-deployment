@@ -71,22 +71,32 @@ impl Strategy {
         let batched_obligation_coins = batch_obligation_queue_payouts(&obligations);
 
         for obligation_coin in batched_obligation_coins {
-            if obligation_coin.denom == self.cfg.neutron.denoms.deposit_token {
-                info!(target: SETTLEMENT_PHASE, "batched deposit_token obligation = {obligation_coin}");
-                // if there is insufficient amount of deposit token denom in the settlement account,
-                // we need to withdraw the delta from Mars lending position
-                if settlement_bal_deposit < obligation_coin.amount.u128() {
-                    self.handle_deposit_denom_obligation(obligation_coin, settlement_bal_deposit)
+            match obligation_coin.denom.as_str() {
+                d if d == self.cfg.neutron.denoms.deposit_token => {
+                    info!(target: SETTLEMENT_PHASE, "batched deposit_token obligation = {obligation_coin}");
+                    // if there is insufficient amount of deposit token denom in the settlement account,
+                    // we need to withdraw the delta from Mars lending position
+                    if settlement_bal_deposit < obligation_coin.amount.u128() {
+                        self.handle_deposit_denom_obligation(
+                            obligation_coin,
+                            settlement_bal_deposit,
+                        )
                         .await?;
+                    }
                 }
-            } else if obligation_coin.denom == self.cfg.neutron.denoms.supervault_lp {
-                info!(target: SETTLEMENT_PHASE, "batched supervaults_lp obligation = {obligation_coin}");
-                if settlement_bal_lp < obligation_coin.amount.u128() {
-                    warn!(target: SETTLEMENT_PHASE, "insufficient supervault LP share balance!
-                        available: {settlement_bal_lp}, obligation: {obligation_coin}");
+                d if d == self.cfg.neutron.denoms.supervault_lp => {
+                    info!(target: SETTLEMENT_PHASE, "batched supervaults_lp obligation = {obligation_coin}");
+                    if settlement_bal_lp < obligation_coin.amount.u128() {
+                        warn!(target: SETTLEMENT_PHASE, "insufficient supervault LP share balance!");
+                        warn!(
+                            target: SETTLEMENT_PHASE,
+                            "available: {settlement_bal_lp}, obligation: {obligation_coin}"
+                        );
+                    }
                 }
-            } else {
-                warn!(target: SETTLEMENT_PHASE, "unexpected coin among obligations: {obligation_coin}");
+                _ => {
+                    warn!(target: SETTLEMENT_PHASE, "unexpected coin among obligations: {obligation_coin}")
+                }
             }
         }
 
