@@ -186,7 +186,7 @@ impl Strategy {
             ))?;
 
         let post_fee_amount_out_u128: u128 = amount_out_str.parse()?;
-        info!(target: DEPOSIT_PHASE, "post_fee_amount_out_u128 = {:?}", post_fee_amount_out_u128);
+        info!(target: DEPOSIT_PHASE, "post_fee_amount_out_u128 = {post_fee_amount_out_u128:?}" );
 
         // 12 hours in secs, the timeout being used in skip ui
         let timeout_duration = Duration::from_secs(12 * 60 * 60);
@@ -266,8 +266,8 @@ impl Strategy {
 
         info!(
             target: DEPOSIT_PHASE,
-            "co-processor input: {}",
-            coprocessor_input,
+            "co-processor input: {coprocessor_input}"
+            ,
         );
 
         info!(
@@ -284,7 +284,7 @@ impl Strategy {
             )
             .await?;
 
-        info!(target: DEPOSIT_PHASE, "co_processor zkp post response: {:?}", skip_response_zkp);
+        info!(target: DEPOSIT_PHASE, "co_processor zkp post response: {skip_response_zkp:?}");
 
         // extract the program and domain parameters by decoding the zkp
         let (proof_program, inputs_program) = skip_response_zkp.program.decode()?;
