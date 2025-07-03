@@ -46,7 +46,7 @@ For Strategist operations, an environment file needs to be made available at the
 
 ```bash
 cd strategies/lombard_btc/strategist
-cp lbtc.env.example lbtc.env
+cp lbtc.example.env lbtc.env
 ```
 
 After that, modify the env file values:
