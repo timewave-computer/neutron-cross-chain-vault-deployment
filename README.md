@@ -6,7 +6,7 @@ A production-ready cross-chain vault system built on the Valence Protocol that e
 
 The system operates across three blockchain networks:
 - **Ethereum**: User-facing ERC-4626 vault where users deposit collateral
-- **Neutron**: CosmWasm-based liquidity provision via Mars Protocol + Supervaults
+- **Neutron**: CosmWasm-based liquidity provision via Mars Protocol, Supervaults, and MaxBTC strategy vaults
 - **Cosmos Hub**: IBC/ICA bridging/messaging between Ethereum and Neutron
 - **IBC Eureka**: Ethereum ↔ Cosmos Hub bridging
 - **ZK Co-processor**: Generating proofs for IBC Eureka route queries and withdrawal obligations
