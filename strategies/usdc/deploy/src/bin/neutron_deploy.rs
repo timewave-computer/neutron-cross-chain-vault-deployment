@@ -152,7 +152,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             salt.clone(),
         )
         .await?;
-    println!("Authorization instantiated: {}", authorization_address);
+    println!("Authorization instantiated: {authorization_address}");
 
     let processor_instantiate_msg = valence_processor_utils::msg::InstantiateMsg {
         authorization_contract: authorization_address.clone(),
@@ -168,7 +168,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             salt.clone(),
         )
         .await?;
-    println!("Processor instantiated: {}", processor_address);
+    println!("Processor instantiated: {processor_address}");
 
     // Instantiate the verification gateway
     // Get the domain verification key from coprocessor
@@ -211,16 +211,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut salts = vec![];
     let mut predicted_base_accounts = vec![];
     for i in 0..2 {
-        let salt = hex::encode(format!("{}{}", salt_raw, i).as_bytes());
+        let salt = hex::encode(format!("{salt_raw}{i}").as_bytes());
         salts.push(salt.clone());
         let predicted_base_account_address = neutron_client
             .predict_instantiate2_addr(code_id_base_account, salt.clone(), my_address.clone())
             .await?
             .address;
-        println!(
-            "Predicted base account address {}: {}",
-            i, predicted_base_account_address
-        );
+        println!("Predicted base account address {i}: {predicted_base_account_address}");
         predicted_base_accounts.push(predicted_base_account_address);
     }
 
@@ -263,10 +260,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             None,
         )
         .await?;
-    println!(
-        "ICA IBC Transfer library instantiated: {}",
-        ica_ibc_transfer_library_address
-    );
+    println!("ICA IBC Transfer library instantiated: {ica_ibc_transfer_library_address}");
 
     // Instantiate supervaults lper library
     let supervaults_lper_config = valence_supervaults_lper::msg::LibraryConfig {
@@ -297,10 +291,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             None,
         )
         .await?;
-    println!(
-        "Supervaults lper library instantiated: {}",
-        supervaults_lper_library_address
-    );
+    println!("Supervaults lper library instantiated: {supervaults_lper_library_address}");
 
     // Finally instantiate the clearing queue library
     let clearing_config = valence_clearing_queue_supervaults::msg::LibraryConfig {
@@ -330,10 +321,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             Some(params.general.owner.clone()),
         )
         .await?;
-    println!(
-        "Clearing queue library instantiated: {}",
-        clearing_queue_library_address
-    );
+    println!("Clearing queue library instantiated: {clearing_queue_library_address}");
 
     // Instantiate all acounts now
     // First the ICA
@@ -354,7 +342,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             salt.clone(),
         )
         .await?;
-    println!("Valence ICA instantiated: {}", valence_ica_address);
+    println!("Valence ICA instantiated: {valence_ica_address}");
 
     // Now the rest
     let ica_deposit_account = valence_account_utils::msg::InstantiateMsg {
@@ -370,10 +358,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             salts[0].clone(),
         )
         .await?;
-    println!(
-        "ICA deposit account instantiated: {}",
-        ica_deposit_account_address
-    );
+    println!("ICA deposit account instantiated: {ica_deposit_account_address}");
 
     let settlement_account = valence_account_utils::msg::InstantiateMsg {
         admin: params.general.owner.clone(),
@@ -391,10 +376,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             salts[1].clone(),
         )
         .await?;
-    println!(
-        "Settlement account instantiated: {}",
-        settlement_account_address
-    );
+    println!("Settlement account instantiated: {settlement_account_address}");
 
     let denoms = NeutronDenoms {
         deposit_token: params.program.deposit_token_on_neutron_denom,
@@ -468,20 +450,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let ica_address = match ica_state {
         valence_account_utils::ica::IcaState::Created(ica_information) => ica_information.address,
         _ => {
-            panic!("ICA creation failed!, state: {:?}", ica_state);
+            panic!("ICA creation failed!, state: {ica_state:?}");
         }
     };
-    println!("ICA address: {}", ica_address);
+    println!("ICA address: {ica_address}");
 
     // Convert the ICA bech32 address to a bytes32 representation for the CCTP Transfer library
     let (_, data) = bech32::decode(&ica_address)?;
     // Convert to hex
     let address_hex = hex::encode(data);
     // Pad with zeroes to 32 bytes
-    let padded_hex = format!("{:0>64}", address_hex);
+    let padded_hex = format!("{address_hex:0>64}");
     // Convert to FixedBytes
     let address_in_bytes32 = FixedBytes::<32>::from_hex(padded_hex)?;
-    println!("ICA address in bytes32: {}", address_in_bytes32);
+    println!("ICA address in bytes32: {address_in_bytes32}");
 
     let noble_cfg = NobleStrategyConfig {
         grpc_url: "grpc_url".to_string(),
