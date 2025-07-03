@@ -53,20 +53,17 @@ impl Strategy {
 
             // validate that the deposit account balance exceeds the eureka routing
             // threshold amount
-            match eth_deposit_acc_bal < self.cfg.ethereum.ibc_transfer_threshold_amt {
+            if eth_deposit_acc_bal < self.cfg.ethereum.ibc_transfer_threshold_amt {
                 // if balance does not exceed the transfer threshold, we skip the eureka transfer steps
                 // and proceed to gaia ica -> neutron routing
-                true => {
-                    info!(target: DEPOSIT_PHASE, "IBC-Eureka transfer threshold not met! Proceeding to ICA routing.");
-                }
+                info!(target: DEPOSIT_PHASE, "IBC-Eureka transfer threshold not met! Proceeding to ICA routing.");
+            } else {
                 // if balance meets the transfer threshold, we carry out the eureka transfer steps
                 // prior to proceeding to gaia ica -> neutron routing
-                false => {
-                    info!(target: DEPOSIT_PHASE, "IBC-Eureka transfer threshold met!");
+                info!(target: DEPOSIT_PHASE, "IBC-Eureka transfer threshold met!");
 
-                    self.eth_to_gaia_routing(eth_rp, eth_deposit_acc_bal)
-                        .await?;
-                }
+                self.eth_to_gaia_routing(eth_rp, eth_deposit_acc_bal)
+                    .await?;
             }
         }
 
@@ -80,14 +77,11 @@ impl Strategy {
 
             // depending on the gaia ICA deposit token balance, we either perform the ICA IBC routing
             // of the balances to Neutron, or proceed to the next stage
-            match gaia_ica_bal == 0 {
-                true => {
-                    info!(target: DEPOSIT_PHASE, "nothing to bridge; proceeding to position entry");
-                }
-                false => {
-                    info!(target: DEPOSIT_PHASE, "pulling funds to Neutron...");
-                    self.gaia_to_neutron_routing(gaia_ica_bal).await?;
-                }
+            if gaia_ica_bal == 0 {
+                info!(target: DEPOSIT_PHASE, "nothing to bridge; proceeding to position entry");
+            } else {
+                info!(target: DEPOSIT_PHASE, "pulling funds to Neutron...");
+                self.gaia_to_neutron_routing(gaia_ica_bal).await?;
             }
         }
 
@@ -104,14 +98,11 @@ impl Strategy {
 
             // depending on the neutron deposit account balance, we either conclude the deposit phase
             // or perform the configured split before entering into Mars and Supervault positions.
-            match neutron_deposit_bal < MIN_SPLIT_BALANCE {
-                true => {
-                    info!(target: DEPOSIT_PHASE, "Neutron deposit account balance is insufficient for entry! concluding the deposit phase...");
-                }
-                false => {
-                    info!(target: DEPOSIT_PHASE, "Neutron deposit account balance = {neutron_deposit_bal}; lending & LPing...");
-                    self.enter_mars_supervaults_positions().await?;
-                }
+            if neutron_deposit_bal < MIN_SPLIT_BALANCE {
+                info!(target: DEPOSIT_PHASE, "Neutron deposit account balance is insufficient for entry! concluding the deposit phase...");
+            } else {
+                info!(target: DEPOSIT_PHASE, "Neutron deposit account balance = {neutron_deposit_bal}; lending & LPing...");
+                self.enter_mars_supervaults_positions().await?;
             }
         }
 
