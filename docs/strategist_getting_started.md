@@ -7,6 +7,10 @@ The Strategist is an automated off-chain solver that orchestrates the cross-chai
 The strategist is designed to be operationally stateless, meaning it does not rely on a local database to function. Instead, it uses the state of the underlying Valence programs as its single source of truth.
 
 Strategist operations are idempotent; if the strategist is stopped at any point during its runtime and resumed afterwards, it will not lead to any duplicate transaction execution. Instead, it will run its cycle, eventually reaching the point at which it was previously stopped and continuing from thereon.
+> There is one slight exception to strategist being fully idempotent. If strategist is stopped right after
+  an IBC Eureka transfer is initiated on Ethereum and restarted before the funds arrive on the destination chain, there is a chance that the newly posted update would not take the funds in transit into account.
+  If this still ends up happening, for one epoch the rate will be slightly reduced. During the next strategist cycle, however, the funds will be taken into account and the rate will be accurate again.
+  We recommend making sure not to restart the strategist with an active Eureka transfer being in progress.
 
 ## Dependencies
 
