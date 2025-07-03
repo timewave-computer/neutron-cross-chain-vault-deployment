@@ -9,7 +9,7 @@ use packages::{
     utils::{mars::MarsLending, supervaults::Supervaults},
 };
 use valence_domain_clients::{
-    cosmos::{base_client::BaseClient},
+    cosmos::base_client::BaseClient,
     evm::base_client::{CustomProvider, EvmBaseClient},
 };
 
@@ -132,7 +132,7 @@ impl Strategy {
             // fetch the tvl expressed in the underlying deposit token.
             let mars_tvl = Strategy::query_mars_lending_denom_amount(
                 &self.neutron_client,
-                &self.cfg.neutron.mars_pool,
+                &self.cfg.neutron.mars_credit_manager,
                 &self.cfg.neutron.accounts.mars_deposit,
                 &self.cfg.neutron.denoms.deposit_token,
             )

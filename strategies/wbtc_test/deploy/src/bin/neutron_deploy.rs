@@ -381,7 +381,7 @@ async fn main() -> anyhow::Result<()> {
     let mars_lending_config = valence_mars_lending::msg::LibraryConfig {
         input_addr: LibraryAccountType::Addr(predicted_base_accounts[1].clone()),
         output_addr: LibraryAccountType::Addr(predicted_base_accounts[3].clone()),
-        credit_manager_addr: params.program.mars_credit_manager,
+        credit_manager_addr: params.program.mars_credit_manager.clone(),
         denom: params.program.deposit_token_on_neutron_denom.clone(),
     };
 
@@ -713,7 +713,7 @@ async fn main() -> anyhow::Result<()> {
         grpc_url: params.general.grpc_url.clone(),
         grpc_port: params.general.grpc_port.clone(),
         chain_id: params.general.chain_id.clone(),
-        mars_pool: "mars pool".to_string(),
+        mars_credit_manager: params.program.mars_credit_manager.clone(),
         supervault: params.program.supervault.clone(),
         denoms,
         accounts,
