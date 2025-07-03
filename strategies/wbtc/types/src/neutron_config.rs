@@ -13,8 +13,8 @@ pub struct NeutronStrategyConfig {
     /// total amount of untrn required to initiate an ibc transfer from neutron
     pub min_ibc_fee: Uint128,
 
-    /// Mars protocol wbtc contract
-    pub mars_pool: String,
+    /// Mars protocol credit manager
+    pub mars_credit_manager: String,
     /// Supervaults vault addresses
     pub fbtc_supervault: String,
     pub lbtc_supervault: String,

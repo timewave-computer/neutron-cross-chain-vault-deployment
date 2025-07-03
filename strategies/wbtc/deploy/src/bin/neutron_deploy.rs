@@ -1422,7 +1422,7 @@ async fn main() -> anyhow::Result<()> {
         grpc_url: params.general.grpc_url.clone(),
         grpc_port: params.general.grpc_port.clone(),
         chain_id: params.general.chain_id.clone(),
-        mars_pool: "mars pool".to_string(),
+        mars_credit_manager: params.program.mars_credit_manager.clone(),
         fbtc_supervault: params.program.fbtc_supervault.clone(),
         lbtc_supervault: params.program.lbtc_supervault.clone(),
         solvbtc_supervault: params.program.solvbtc_supervault.clone(),

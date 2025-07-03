@@ -12,9 +12,14 @@ strategist_fee_ratio_bps = 5000                                         # Strate
 scaling_factor           = "1000000000000"                              # scaling factor for rate updates
 deposit_cap              = "10000000000000"                             # e.g. 10K BTC
 deposit_fee_bps          = 100                                          # 1% deposit fee
-withdraw_rate_bps        = 100                                          # 1% withdrawal rate
+withdraw_fee_bps         = 100                                          # 1% withdraw fee
+max_rate_increment_bps   = 2000                                         # 20% maximum rate increment per update
+max_rate_decrement_bps   = 2000                                         # 20% maximum rate decrement per update
 starting_rate            = "100000000"                                  # 1e8 - LBTC Precision - 8 decimals
+min_rate_update_delay    = 300                                          # 5 minutes - Minimum delay for rate updates - for testing purposes      
 max_rate_update_delay    = 345600                                       # 4 days in seconds - Maximum delay for rate updates before vault gets paused
+
+# TODO(bekauz) - Leaving this here for now so that you can remove it without me having to fix the strategist code
 rate_update_threshold    = "0.2"                                        # 20% rate update threshold
 
 [eureka_transfer]
@@ -25,4 +30,4 @@ timeout                    = 43200                                        # 12 h
 ibc_transfer_threshold_amt = 1000000
 
 [coprocessor_app]
-eureka_transfer_coprocessor_app_id = "a60592195f33238d599e801bde41bf5d79edabb3a5cb57f7056d969c8e93c655"
+eureka_transfer_coprocessor_app_id = "931b43a14973627db421088d74276790eabc4630e628bc18fec0808bd1125f36"
