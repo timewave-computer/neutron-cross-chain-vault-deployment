@@ -66,7 +66,7 @@ chain_id = "neutron-1"
 min_ibc_fee = "1000"
 
 # Protocol addresses
-mars_pool = "neutron1..."
+mars_credit_manager = "neutron1..."
 supervault = "neutron1..."
 
 # Contract addresses

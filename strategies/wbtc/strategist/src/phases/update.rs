@@ -171,7 +171,7 @@ impl Strategy {
         {
             let mars_tvl = Strategy::query_mars_lending_denom_amount(
                 &self.neutron_client,
-                &self.cfg.neutron.mars_pool,
+                &self.cfg.neutron.mars_credit_manager,
                 &self.cfg.neutron.accounts.mars_deposit,
                 &self.cfg.neutron.denoms.deposit_token,
             )

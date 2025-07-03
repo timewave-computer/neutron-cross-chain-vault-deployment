@@ -1,5 +1,5 @@
 [general]
-grpc_url   = "https://rpc.neutron.quokkastake.io"
+grpc_url   = "http://rpc.neutron.quokkastake.io"
 grpc_port  = "9090"
 chain_id   = "neutron-1"
 owner      = "neutron14mlpd48k5vkeset4x7f78myz3m47jcax3ysjkp" # Should be Neutron multisig
@@ -27,4 +27,4 @@ initial_split_percentage_to_supervault = 20
 initial_settlement_ratio_percentage = 80
 
 [coprocessor_app]
-clearing_queue_coprocessor_app_id = "c52ff36ca1c6879939f1b5811642f7d9afeedb428d59b9cf03ae7f119fbcdfe9"
+clearing_queue_coprocessor_app_id = "17ce01c71c687c7599901b2f0a37bf3d8188c7d1bcde03abe7382b3824a6dfc8"
