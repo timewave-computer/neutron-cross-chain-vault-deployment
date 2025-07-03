@@ -26,6 +26,8 @@ use crate::strategy_config::Strategy;
 
 /// minimum Valence account balance to perform a split
 const MIN_SPLIT_BALANCE: u128 = 2;
+/// the timeout being used in skip ui
+const TWELVE_HOURS_IN_SECS: u64 = 43200;
 
 impl Strategy {
     /// carries out the steps needed to bring the new deposits from Ethereum to
@@ -189,8 +191,7 @@ impl Strategy {
         let post_fee_amount_out_u128: u128 = amount_out_str.parse()?;
         info!(target: DEPOSIT_PHASE, "post_fee_amount_out_u128 = {:?}", post_fee_amount_out_u128);
 
-        // 12 hours in secs, the timeout being used in skip ui
-        let timeout_duration = Duration::from_secs(12 * 60 * 60);
+        let timeout_duration = Duration::from_secs(TWELVE_HOURS_IN_SECS);
         let timeout_time = SystemTime::now()
             .checked_add(timeout_duration)
             .ok_or(anyhow!("failed to extend current time by 12h"))?;
@@ -265,11 +266,7 @@ impl Strategy {
         // there for proof
         let coprocessor_input = json!({"skip_response": skip_api_response, "memo": temp_memo});
 
-        info!(
-            target: DEPOSIT_PHASE,
-            "co-processor input: {}",
-            coprocessor_input,
-        );
+        info!(target: DEPOSIT_PHASE, "co-processor input: {coprocessor_input}");
 
         info!(
             target: DEPOSIT_PHASE,
