@@ -1,360 +1,95 @@
 # Strategist Getting Started Guide
 
-This guide covers how to configure, run, monitor, and recover the Neutron Cross-Chain Vault Strategist.
-
 ## Overview
 
-The Strategist is an automated off-chain solver that orchestrates cross-chain operations for the Neutron Cross-Chain Vault. It implements the `ValenceWorker` trait and performs periodic cycles of operations including deposit processing, withdrawal registration, settlement, and vault updates.
+The Strategist is an automated off-chain solver that orchestrates the cross-chain operations for the Neutron Cross-Chain Vault. It implements the `ValenceWorker` trait, performing periodic cycles of operations including deposit processing, withdrawal registration and settlement, and vault rate updates. Its primary responsibility is to monitor on-chain events and execute the necessary transactions to manage the vault's liquidity and maintain its health.
+
+The strategist is designed to be operationally stateless, meaning it does not rely on a local database to function. Instead, it uses the state of the underlying Valence programs as its single source of truth.
+
+Strategist operations are idempotent; if the strategist is stopped at any point during its runtime and resumed afterwards, it will not lead to any duplicate transaction execution. Instead, it will run its cycle, eventually reaching the point at which it was previously stopped and continuing from thereon.
 
 ## Dependencies
 
-The strategist requires access to:
-- **Ethereum RPC**: For monitoring vault events and executing transactions
-- **Neutron gRPC**: For CosmWasm contract interactions
-- **Cosmos Hub gRPC**: For IBC and Interchain Account operations
-- **Valence Coprocessor RPC**: For generating zero-knowledge proofs for cross-chain state verification
-- **Indexer API**: For efficient event querying and transaction tracking
-- **Lombard gRPC**: (only applicable for LBTC vault) For Lombard recovery address accounting
+The strategist requires network access to the following services:
+
+- **Ethereum RPC**: For monitoring vault events and executing transactions on Ethereum.
+- **Neutron gRPC**: For all CosmWasm contract interactions on Neutron.
+- **Cosmos Hub gRPC**: For IBC and Interchain Account (ICA) operations on the Cosmos Hub.
+- **Valence Coprocessor**: For generating zero-knowledge proofs for cross-chain state verification.
+- **Valence Indexer API**: For efficiently querying on-chain events and vault state.
+- **IBC Eureka API**: For finding cross-chain routes from Ethereum.
+- **Lombard gRPC**: (For `lombard_btc` strategy only) For interacting with the Lombard protocol.
+- **Noble gRPC**: (For `usdc` strategy only) For interacting with the Noble protocol.
+- **OTLP API**: For posting the execution logs to a Grafana dashboard for easier debugging.
 
 ## Configuration
 
-#### Environment Variables
+The strategist is configured through a combination of environment variables and TOML files.
 
-Create a `.env` file in the project root with the following required variables:
+### Configuration Files
 
-```bash
-# Required environment variables
-MNEMONIC="your 24-word mnemonic phrase here"
-LABEL="strategist-production"  # or "strategist-testnet", etc.
-INDEXER_API_KEY="neutron_team_api_key"
-INDEXER_API_URL="https://indexer.valence.zone"
+The strategist requires four `.toml` files that contain the on-chain addresses and parameters generated during the [deployment process](./deploy_getting_started.md).
 
-# Optional logging configuration
-RUST_LOG="info,strategist=debug"
-```
+-   **`neutron_strategy_config.toml`**: Contains all contract addresses, account addresses, asset denoms, and relevant co-processor IDs for the Neutron network.
+-   **`ethereum_strategy_config.toml`**: Contains all contract addresses, account addresses, asset denoms, and relevant co-processor IDs for the Ethereum network.
+-   **`gaia_strategy_config.toml`**: Contains the gRPC endpoints and chain parameters for the Cosmos Hub, including the ICA address.
+-   **`lombard_strategy_config.toml`**: (For `lombard_btc` strategy only) Contains the gRPC endpoints and chain parameters for the Lombard protocol.
+-   **`noble_strategy_config.toml`**: (For `usdc` strategy only) Contains the gRPC endpoints and chain parameters for the Noble protocol.
 
-#### Configuration Files
+### Environment Variables
 
-The strategist requires four TOML configuration files:
-
-**1. Ethereum Configuration (`ethereum_config.toml`)**
-
-```toml
-rpc_url = "https://mainnet.infura.io/v3/YOUR_API_KEY"
-ibc_transfer_threshold_amt = "1000000"  # Minimum amount for transfers (in wei)
-
-# Contract addresses (replace with actual deployed addresses)
-authorizations = "0x..."
-processor = "0x..."
-
-[denoms]
-deposit_token = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"  # WBTC
-
-[accounts]
-deposit = "0x..."
-
-[libraries]
-one_way_vault = "0x..."
-eureka_transfer = "0x..."
-```
-
-**2. Neutron Configuration (`neutron_config.toml`)**
-
-```toml
-grpc_url = "https://rpc.neutron.quokkastake.io"
-grpc_port = "9090"
-chain_id = "neutron-1"
-min_ibc_fee = "1000"
-
-# Protocol addresses
-mars_pool = "neutron1..."
-supervault = "neutron1..."
-
-# Contract addresses
-authorizations = "neutron1..."
-processor = "neutron1..."
-
-[denoms]
-deposit_token = "ibc/D742E8566B0B8CC8F569D950051C09CF57988A88F0E45574BFB3079D41DE6462"
-ntrn = "untrn"
-supervault_lp = "factory/..."
-
-[accounts]
-deposit = "neutron1..."
-mars_deposit = "neutron1..."
-supervault_deposit = "neutron1..."
-settlement = "neutron1..."
-
-[libraries]
-deposit_forwarder = "neutron1..."
-mars_lending = "neutron1..."
-supervault_lper = "neutron1..."
-clearing_queue = "neutron1..."
-```
-
-**3. Cosmos Hub Configuration (`gaia_config.toml`)**
-
-```toml
-grpc_url = "https://cosmos-rpc.polkachu.com"
-grpc_port = "9090"
-chain_id = "cosmoshub-4"
-chain_denom = "uatom"
-btc_denom = "ibc/D742E8566B0B8CC8F569D950051C09CF57988A88F0E45574BFB3079D41DE6462"
-
-# Note: mnemonic is read from MNEMONIC environment variable, not stored in config
-```
-
-### Valence Coprocessor Configuration (`coprocessor_config.toml`)
-
-```toml
-# Replace with actual Valence Coprocessor endpoint when available
-rpc_url = "https://api.valence.so/coprocessor"  # or internal endpoint
-rpc_port = "443"
-api_version = "v1"
-
-# ZK proof generation settings
-proof_timeout_seconds = 300
-max_retries = 3
-batch_size = 10
-
-# Optional authentication (if required)
-# api_key = "your_api_key_here"  # Read from environment if needed
-
-[proof_types]
-ethereum_state_proof = "ethereum_state_v1"
-withdrawal_verification = "withdrawal_v1"
-
-# Note: The actual coprocessor endpoint may be internal/private
-# Contact Valence team for the correct production endpoint
-```
-
-## Building and Running
-
-### Build Commands
+For Strategist operations, an environment file needs to be made available at the desired strategy `strategist` directory. For lombard_btc strategy, this can be done as follows:
 
 ```bash
-# Build in development mode
-cargo build
-
-# Build optimized release version
-cargo build --release
-
-# Build only the strategist
-cargo build -p strategist --release
+cd strategies/lombard_btc/strategist
+cp lbtc.env.example lbtc.env
 ```
 
-## Starting the Strategist
+After that, modify the env file values:
 
-### Manual Start
+-   `ETHEREUM_CFG_PATH`: Path to the `ethereum_strategy_config.toml`.
+-   `GAIA_CFG_PATH`: Path to the `gaia_strategy_config.toml`.
+-   `LOMBARD_CFG_PATH`: Path to the `lombard_strategy_config.toml`.
+-   `MNEMONIC`: The 24-word mnemonic phrase for the strategist's wallet.
+-   `LABEL`: A unique identifier for the strategist instance (e.g., "X_LBTC_PROD").
+-   `STRATEGY_TIMEOUT`: The delay in seconds between each operational cycle.
+-   `INDEXER_API_KEY`: Your API key for the Valence Indexer.
+-   `INDEXER_API_URL`: The endpoint for the Valence Indexer.
+-   `EUREKA_API_URL`: The endpoint for the IBC Eureka API.
+-   `OTLP_ENDPOINT`: (optional) The endpoint for an OpenTelemetry collector to send structured logs.
+
+## Running the Strategist
+
+Once your environment is configured, you can start the strategist from the project's root directory:
 
 ```bash
-# Start with default configuration
-cargo run --bin main --release
-
-# Start with custom configuration files
-CONFIG_DIR=/path/to/configs cargo run --bin main --release
-
-# Start with increased logging
-RUST_LOG=debug cargo run --bin main --release
+# Replace <strategy-name> with 'lombard_btc', 'wbtc', etc.
+just start <strategy-name>
 ```
 
-### Production Start (using systemd)
+## How It Works
 
-Create a systemd service file `/etc/systemd/system/neutron-strategist.service`:
+The strategist operates in a continuous cycle, executing a series of phases to manage the vault's funds and state. The `strategist.rs` file defines the main cycle, which calls the different phases in a specific order.
 
-```ini
-[Unit]
-Description=Neutron Cross-Chain Vault Strategist
-After=network.target
+### The Strategist Cycle
 
-[Service]
-Type=simple
-User=strategist
-WorkingDirectory=/opt/neutron-strategist
-Environment=RUST_LOG=info
-Environment=LABEL=strategist-production
-EnvironmentFile=/etc/strategist/environment
-ExecStart=/opt/neutron-strategist/target/release/main
-Restart=always
-RestartSec=10
+1.  **Deposit:** Manages new user deposit flows.
+2.  **Register Withdraw Obligations:** Processes new withdrawal requests, generates their ZKPs, and posts them to the Neutron Authorizations contract.
+3.  **Settlement:** Settles the withdrawal obligations.
+4.  **Update:** Calculates and updates the vault's redemption rate.
 
-[Install]
-WantedBy=multi-user.target
-```
+## Monitoring and Operations
 
-Create the environment file `/etc/strategist/environment` containing your mnemonic:
+### Logging
 
-```bash
-MNEMONIC=your_24_word_mnemonic_phrase_here
-```
+**OpenTelemetry Logging (`OTLP`)**: If you provide an `OTLP_ENDPOINT` environment variable, the strategist will send structured, machine-readable logs to that endpoint. This is highly recommended for production environments to integrate with monitoring and alerting platforms (e.g., DataDog, Grafana, etc.). The service name is hardcoded to `neutron-strategist`.
 
-Enable and start the service:
+### Recovery
 
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable neutron-strategist
-sudo systemctl start neutron-strategist
-```
+If the strategist crashes or enters a bad state, follow these general steps to recover:
 
-## Stopping the Strategist
-
-#### Manual Stop
-
-```bash
-# Stop the strategist
-pkill -f "strategist"
-```
-
-#### Systemd Stop
-
-```bash
-# Stop the service
-sudo systemctl stop neutron-strategist
-
-# Stop and disable
-sudo systemctl stop neutron-strategist
-sudo systemctl disable neutron-strategist
-```
-
-## Restarting the Strategist
-
-#### Manual Restart
-
-```bash
-# Restart
-pkill -f "strategist"
-cargo run --bin main --release
-
-```
-
-#### Systemd Restart
-
-```bash
-# Restart service
-sudo systemctl restart neutron-strategist
-
-# Reload configuration and restart
-sudo systemctl reload-or-restart neutron-strategist
-```
-
-## Monitoring and Logging
-
-#### Log Configuration
-
-The strategist uses the `log` crate with the following levels:
-
-```bash
-# Environment variable options
-export RUST_LOG="info"                    # Basic logging
-export RUST_LOG="debug"                   # Detailed logging
-export RUST_LOG="strategist=debug,info"   # Debug strategist, info others
-export RUST_LOG="trace"                   # Maximum verbosity
-```
-
-#### Log Locations
-
-**Development:**
-Logs output to console when running with `cargo run`
-
-**Production (systemd):**
-```bash
-# View logs
-sudo journalctl -u neutron-strategist -f
-
-# View recent logs
-sudo journalctl -u neutron-strategist --since "1 hour ago"
-
-# View logs with specific priority
-sudo journalctl -u neutron-strategist -p err
-```
-
-#### Local Strategist Process Monitoring
-
-All logs can be found at `/var/log/strategist.log`
-
-It's a good idea to keep track of these log messages:
-
-1. **Cycle Execution**: Successful completion of deposit, withdrawal, and settlement cycles
-2. **RPC Connectivity**: Connection status to all three chains and Coprocessor
-3. **Transaction Success**: Success rate of submitted transactions
-4. **Error Rates**: Frequency and types of errors encountered
-
-
-#### On-Chain Monitoring
-
-**Valence Program Explorer**: [https://app.valence.zone/programs](https://app.valence.zone/programs)
-- View account balances for program accounts
-- Monitor on-chain contract state and configurations
-- Debug Neutron-side transactions and contract interactions
-- Track program execution history and state changes
-
-*Note: Currently Neutron only*
-
-## Operational Commands
-
-#### Status Checks
-
-```bash
-# Check if strategist is running
-ps aux | grep strategist
-
-# Check systemd status
-sudo systemctl status neutron-strategist
-```
-
-#### Configuration Updates
-
-```bash
-# 1. Stop strategist
-sudo systemctl stop neutron-strategist
-
-# 2. Update configuration files
-vim /etc/strategist/neutron_config.toml
-
-# 3. Validate configuration (if validation tool exists)
-cargo run --bin validate-config
-
-# 4. Restart strategist
-sudo systemctl start neutron-strategist
-```
-
-#### Read-only Mode
-
-- Set `ibc_transfer_threshold_amt` to a very high value
-- This prevents actual fund transfers while maintaining monitoring
-
-#### Recovery
-
-1. Stop strategist
-2. Check chain synchronization status
-3. Verify account balances
-4. Review recent transaction history
-5. Restart with appropriate configuration
-
-## Health Checks
-```bash
-# Check Neutron RPC connectivity
-curl -s https://rpc.neutron.quokkastake.io/status
-
-# Check Neutron gRPC connectivity
-curl -s https://rpc.neutron.quokkastake.io:9090 || echo "gRPC port not reachable via HTTP"
-
-# Check Cosmos Hub RPC connectivity
-curl -s https://cosmos-rpc.polkachu.com/status
-
-# Check Cosmos Hub gRPC connectivity
-curl -s https://cosmos-rpc.polkachu.com:9090 || echo "Cosmos Hub gRPC port not reachable via HTTP"
-
-# Check Ethereum latest block (via Timewave prover)
-curl -s http://prover.timewave.computer:37281/api/registry/domain/ethereum-alpha/latest | jq '.number'
-
-# Check coprocessor status
-curl -s http://prover.timewave.computer:37281/api/stats
-
-# Check indexer API connectivity
-curl -s "https://indexer.valence.zone/health" --header "X-Api-Key: ${INDEXER_API_KEY}"
-
-# Example indexer query for vault withdraw requests
-curl -s "https://indexer.valence.zone/v1/vault/0xf2B85C389A771035a9Bd147D4BF87987A7F9cf98/withdrawRequests?from=0" \
-  --header "X-Api-Key: ${INDEXER_API_KEY}"
-```
+1.  **Stop the Process**: Ensure any running instance of the strategist is stopped to prevent further actions.
+2.  **Analyze Logs**: Review the logs (both console and OpenTelemetry, if configured) to identify the root cause of the failure.
+3.  **Check Dependencies**: Verify that all external services (RPC nodes, APIs) are online and reachable.
+4.  **Verify On-Chain State**: Check block explorers for the relevant chains to understand the state of the contracts. Verify account balances and look for any stuck or pending transactions.
+5.  **Restart**: Once the issue has been identified and resolved (e.g., a dependency is back online, a configuration has been fixed), restart the strategist. It is designed to be stateless (other than the domain configs) and should be able to pick up where it left off.

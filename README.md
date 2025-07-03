@@ -1,6 +1,6 @@
 # Neutron Cross-Chain Vault Deployment
 
-A production-ready cross-chain Bitcoin vault system built on the Valence Protocol that enables users to deposit WBTC on Ethereum while generating yield on Neutron through Mars Protocol lending and Supervaults.
+A production-ready cross-chain vault system built on the Valence Protocol that enables users to deposit selected denoms on Ethereum while generating yield on Neutron through Mars Protocol lending and Supervaults.
 
 ## Architecture
 
@@ -9,21 +9,30 @@ The system operates across three blockchain networks:
 - **Neutron**: CosmWasm-based liquidity provision via Mars Protocol + Supervaults
 - **Cosmos Hub**: IBC/ICA bridging/messaging between Ethereum and Neutron
 - **IBC Eureka**: Ethereum ↔ Cosmos Hub bridging
+- **ZK Co-processor**: Generating proofs for IBC Eureka route queries and withdrawal obligations
 
 ## Components
 
-- **`strategist/`**: Automated off-chain solver orchestrating cross-chain operations
-- **`deploy/`**: Deployment automation for Neutron (CosmWasm) and Ethereum (Solidity) contracts
-- **`types/`**: Shared type definitions and configuration management
+- **`packages/`**: Common utility types and functions used across different vaults
+- **`strategies/`**: Directory for storing different strategies, each of which contain:
+  - **`deploy/`**: Deployment automation for Neutron (CosmWasm) and Ethereum (Solidity) contracts
+  - **`strategist/`**: Automated off-chain solver orchestrating cross-chain operations
+  - **`types/`**: Shared type definitions and configuration management
 
 ## How It Works
 
 1. Users deposit collateral tokens into Ethereum ERC-4626 vault, receive vault shares
-2. Strategist monitors deposits and bridges funds: Ethereum → Cosmos Hub → Neutron
-3. In Phase 1 funds deployed to Mars Protocol
-4. In Phase 2 funds are deployed to the Neutron Supervaults
-5. Withdrawal requests use ZK proofs for cross-chain state verification
-6. The Strategist orchestrates the cross-chain program and updates the redemption rate on Ethereum
+2. Strategist monitors user deposits and bridges the funds: Ethereum → Cosmos Hub/Noble → Neutron
+   The IBC Eureka route fetched from the Skip api is validated by the co-processor
+3. Strategist deploys bridged assets into Mars Protocol and Neutron Supervaults
+4. Users issue withdraw requests into Ethereum ERC-4626 vault, immediately burning their shares
+5. Strategist picks up user withdraw requests from the indexer and posts them to the co-processor
+   for validation
+6. Strategist posts co-processor withdraw request proofs to the Neutron Authorizations contract
+   which turns them into withdraw obligations that get enqueued into the Clearing Queue contract
+7. Strategist withdraws the funds necessary to cover the outstanding withdraw obligations and clears them
+8. The Strategist calculates the new redemption rate and posts it to the ERC-4626 vault, concluding
+   the cycle
 
 ## Roles and Permissions
 
