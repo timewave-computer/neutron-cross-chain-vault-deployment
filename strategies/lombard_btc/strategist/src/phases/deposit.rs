@@ -7,7 +7,7 @@ use alloy::{
 
 use anyhow::anyhow;
 use cosmwasm_std::to_json_binary;
-use log::{info, trace, warn};
+use log::{info, warn};
 use packages::{
     labels::{ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_LABEL},
     phases::DEPOSIT_PHASE,
@@ -35,7 +35,7 @@ impl Strategy {
     /// 2. Hub -> Neutron routing
     /// 3. Supervaults & Mars position entry
     pub async fn deposit(&mut self, eth_rp: &CustomProvider) -> anyhow::Result<()> {
-        trace!(target: DEPOSIT_PHASE, "starting deposit phase");
+        info!(target: DEPOSIT_PHASE, "starting deposit phase");
 
         // Stage 1: deposit token routing from Ethereum to Cosmos hub
         {

@@ -89,7 +89,41 @@ The strategist operates in a continuous cycle, executing a series of phases to m
 
 ### Logging
 
-**OpenTelemetry Logging (`OTLP`)**: If you provide an `OTLP_ENDPOINT` environment variable, the strategist will send structured, machine-readable logs to that endpoint. This is highly recommended for production environments to integrate with monitoring and alerting platforms (e.g., DataDog, Grafana, etc.). The service name is hardcoded to `neutron-strategist`.
+**OpenTelemetry Logging (`OTLP`)** can be enabled if you provide an `OTLP_ENDPOINT` environment variable.
+With it, the strategist will send structured, machine-readable logs to that endpoint. The service name is hardcoded to `neutron-strategist`.
+
+Strategist logging is done with the following logging targets:
+
+- **`settlement`**: for logs emitted from the obligation settlement phase
+- **`deposit`**: for logs emitted from the deposit processing phase
+- **`update`**: for logs emitted from the vault update phase
+- **`registration`**: for logs emitted from the obligation registration phase
+- **`valence_worker`**: for logs emitted from the Valence Worker (underlying) infrastructure
+
+Currently the only types of logs emitted are `info` and `warn`; both of them are visible with
+`RUST_LOG=info` flag which is enabled by default in the `just` strategist runner recipe.
+
+Because strategist processes each phase in a predetermined sequence, you should expect the logs
+to arrive in the same sequential manner. Below you can see an example log output of a single strategist cycle executed on a freshly created LBTC Vault with no funds deposited yet. With no funds deposited there are no issued shares and therefore nothing to update, which is clearly indicated in the second log from the end. After that the strategist goes back to sleep until the next cycle:
+
+```
+[2025-07-03T15:33:23Z INFO  runner] starting the strategist runner
+<runner_related_logs>
+[2025-07-03T15:33:23Z INFO  runner] starting the strategist
+[2025-07-03T15:33:23Z INFO  valence_strategist_utils::worker] starting worker: Valence X-Vault: X_LBTC
+[2025-07-03T15:33:23Z INFO  valence_strategist_utils::worker] Valence X-Vault: X_LBTC: worker started in new runtime
+[2025-07-03T15:33:23Z INFO  valence_worker] sleeping for 30sec
+[2025-07-03T15:33:53Z INFO  valence_worker] Valence X-Vault: X_LBTC: Starting cycle...
+[2025-07-03T15:33:54Z INFO  deposit] eth deposit acc balance = 0
+<deposit_phase_logs>
+[2025-07-03T15:33:54Z INFO  registration] starting withdraw obligation registration phase
+<obligation_registration_logs>
+[2025-07-03T15:33:55Z INFO  settlement] starting settlement phase
+<obligation_settlement_logs>
+[2025-07-03T15:33:56Z INFO  update] starting vault update phase
+[2025-07-03T15:33:56Z ERROR valence_strategist_utils::worker] Valence X-Vault: X_LBTC: error in cycle: cannot calculate redemption rate with zero issued vault shares
+[2025-07-03T15:33:57Z INFO  valence_worker] sleeping for 30sec
+```
 
 ### Recovery
 
