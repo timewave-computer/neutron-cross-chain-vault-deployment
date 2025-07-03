@@ -1,29 +1,53 @@
 # Neutron Cross-Chain Vault Deployment
 
-A production-ready cross-chain Bitcoin vault system built on the Valence Protocol that enables users to deposit WBTC on Ethereum while generating yield on Neutron through Mars Protocol lending and Supervaults.
+A production-ready cross-chain vault system built on the Valence Protocol that enables users to deposit selected denoms on Ethereum while generating yield on Neutron through Mars Protocol lending and Supervaults.
 
 ## Architecture
 
 The system operates across three blockchain networks:
 - **Ethereum**: User-facing ERC-4626 vault where users deposit collateral
-- **Neutron**: CosmWasm-based liquidity provision via Mars Protocol + Supervaults  
+- **Neutron**: CosmWasm-based liquidity provision via Mars Protocol, Supervaults, and MaxBTC strategy vaults
 - **Cosmos Hub**: IBC/ICA bridging/messaging between Ethereum and Neutron
 - **IBC Eureka**: Ethereum ↔ Cosmos Hub bridging
+- **ZK Co-processor**: Generating proofs for IBC Eureka route queries and withdrawal obligations
 
 ## Components
 
-- **`strategist/`**: Automated off-chain solver orchestrating cross-chain operations
-- **`deploy/`**: Deployment automation for Neutron (CosmWasm) and Ethereum (Solidity) contracts
-- **`types/`**: Shared type definitions and configuration management
+- **`packages/`**: Common utility types and functions used across different vaults
+- **`strategies/`**: Directory for storing different strategies, each of which contain:
+  - **`deploy/`**: Deployment automation for Neutron (CosmWasm) and Ethereum (Solidity) contracts
+  - **`strategist/`**: Automated off-chain solver orchestrating cross-chain operations
+  - **`types/`**: Shared type definitions and configuration management
+
+## Available Strategies
+
+The following strategies are currently implemented:
+
+- **Lombard BTC**: `lbtc` strategy that deploys user deposits into a Mars lending position and a Supervault
+- **USDC**: `usdc` strategy that deploys user deposits into a Supervault
+- **WBTC**: `wbtc` strategy that deploys user deposits into a Mars lending position and multiple Supervaults
+
+## Phase shifts
+
+Strategies below allow the Vault owner to perform a phase shift. This means that any `wBTC` held by the strategy will be migrated into `maxBTC`, and the assets will get redeployed according to the Neutron authorizations:
+
+- **Lombard BTC**
+- **WBTC**
 
 ## How It Works
 
 1. Users deposit collateral tokens into Ethereum ERC-4626 vault, receive vault shares
-2. Strategist monitors deposits and bridges funds: Ethereum → Cosmos Hub → Neutron
-3. In Phase 1 funds deployed to Mars Protocol
-4. In Phase 2 funds are deployed to the Neutron Supervaults
-5. Withdrawal requests use ZK proofs for cross-chain state verification
-6. The Strategist orchestrates the cross-chain program and updates the redemption rate on Ethereum
+2. Strategist monitors user deposits and bridges the funds: Ethereum → Cosmos Hub/Noble → Neutron
+   The IBC Eureka route fetched from the Skip API is validated by the co-processor
+3. Strategist deploys bridged assets into Mars Protocol and Neutron Supervaults
+4. Users issue withdraw requests into Ethereum ERC-4626 vault, immediately burning their shares
+5. Strategist picks up user withdraw requests from the indexer and posts them to the co-processor
+   for validation
+6. Strategist posts co-processor withdraw request proofs to the Neutron Authorizations contract
+   which turns them into withdrawal obligations that get enqueued into the Clearing Queue contract
+7. Strategist withdraws the funds necessary to cover the outstanding withdraw obligations and clears them
+8. The Strategist calculates the new redemption rate and posts it to the ERC-4626 vault, concluding
+   the cycle
 
 ## Roles and Permissions
 
@@ -35,20 +59,7 @@ The system operates across three blockchain networks:
 
 The co-processor and light client services are trustless services managed by Valence.
 
-## Quick Start
-
-```bash
-# Build the project
-cargo build --release
-
-# Deploy contracts (requires configuration)
-cargo run -p deploy --bin main
-
-# Run strategist (requires .env configuration)
-cargo run -p strategist --bin main
-```
-
 ## Documentation
 
-- [Strategist Getting Started Guide](strategist/strategist_getting_started.md)
-- [Deployment Guide](deploy/README.md)
+- [Strategist Getting Started Guide](./docs/strategist_getting_started.md)
+- [Deployment Guide](./docs/deploy_getting_started.md)

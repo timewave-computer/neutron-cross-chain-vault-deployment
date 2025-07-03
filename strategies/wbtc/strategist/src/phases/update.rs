@@ -1,6 +1,6 @@
 use alloy::{primitives::U256, providers::Provider};
 use cosmwasm_std::{Decimal, Uint128};
-use log::{info, trace};
+use log::info;
 use packages::{
     phases::UPDATE_PHASE,
     types::sol_types::{BaseAccount, ERC20, OneWayVault},
@@ -16,7 +16,7 @@ use crate::strategy_config::Strategy;
 impl Strategy {
     /// performs the vault rate update
     pub async fn update(&mut self, eth_rp: &CustomProvider) -> anyhow::Result<()> {
-        trace!(target: UPDATE_PHASE, "starting vault update phase");
+        info!(target: UPDATE_PHASE, "starting vault update phase");
 
         let mut total_deposit_assets = 0;
 
