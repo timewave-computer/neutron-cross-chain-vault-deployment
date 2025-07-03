@@ -19,6 +19,21 @@ The system operates across three blockchain networks:
   - **`strategist/`**: Automated off-chain solver orchestrating cross-chain operations
   - **`types/`**: Shared type definitions and configuration management
 
+## Available Strategies
+
+The following strategies are currently implemented:
+
+- **Lombard BTC**: `lbtc` strategy that deploys user deposits into a Mars lending position and a Supervault
+- **USDC**: `usdc` strategy that deploys user deposits into a Supervault
+- **WBTC**: `wbtc` strategy that deploys user deposits into a Mars lending position and multiple Supervaults
+
+## Phase shifts
+
+Strategies below allow the Vault owner to perform a phase shift. This means that any `wBTC` held by the strategy will be migrated into `maxBTC`, and the assets will get redeployed according to the Neutron authorizations:
+
+- **Lombard BTC**
+- **WBTC**
+
 ## How It Works
 
 1. Users deposit collateral tokens into Ethereum ERC-4626 vault, receive vault shares
