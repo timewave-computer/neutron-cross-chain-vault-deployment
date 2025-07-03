@@ -1,6 +1,6 @@
 use alloy::{primitives::U256, providers::Provider};
 use cosmwasm_std::{Decimal, Uint128};
-use log::{info};
+use log::info;
 use packages::{
     phases::UPDATE_PHASE,
     types::sol_types::{BaseAccount, ERC20, OneWayVault},
