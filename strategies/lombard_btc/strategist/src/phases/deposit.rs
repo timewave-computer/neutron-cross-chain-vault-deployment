@@ -7,7 +7,7 @@ use alloy::{
 
 use anyhow::anyhow;
 use cosmwasm_std::to_json_binary;
-use log::{info, trace, warn};
+use log::{info, warn};
 use packages::{
     labels::{ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_LABEL},
     phases::DEPOSIT_PHASE,
@@ -35,7 +35,7 @@ impl Strategy {
     /// 2. Hub -> Neutron routing
     /// 3. Supervaults & Mars position entry
     pub async fn deposit(&mut self, eth_rp: &CustomProvider) -> anyhow::Result<()> {
-        trace!(target: DEPOSIT_PHASE, "starting deposit phase");
+        info!(target: DEPOSIT_PHASE, "starting deposit phase");
 
         // Stage 1: deposit token routing from Ethereum to Cosmos hub
         {
@@ -75,15 +75,16 @@ impl Strategy {
                 .gaia_client
                 .query_balance(&self.cfg.gaia.ica_address, &self.cfg.gaia.deposit_denom)
                 .await?;
+            info!(target: DEPOSIT_PHASE, "Cosmos Hub ICA balance = {gaia_ica_bal}");
 
             // depending on the gaia ICA deposit token balance, we either perform the ICA IBC routing
             // of the balances to Neutron, or proceed to the next stage
             match gaia_ica_bal == 0 {
                 true => {
-                    info!(target: DEPOSIT_PHASE, "Cosmos Hub ICA balance is zero! proceeding to position entry");
+                    info!(target: DEPOSIT_PHASE, "nothing to bridge; proceeding to position entry");
                 }
                 false => {
-                    info!(target: DEPOSIT_PHASE, "Cosmos Hub ICA deposit token balance is {gaia_ica_bal}; pulling funds to Neutron");
+                    info!(target: DEPOSIT_PHASE, "pulling funds to Neutron...");
                     self.gaia_to_neutron_routing(gaia_ica_bal).await?;
                 }
             }
@@ -98,6 +99,7 @@ impl Strategy {
                     &self.cfg.neutron.denoms.deposit_token,
                 )
                 .await?;
+            info!(target: DEPOSIT_PHASE, "Neutron deposit account balance = {neutron_deposit_bal}");
 
             // depending on the neutron deposit account balance, we either conclude the deposit phase
             // or perform the configured split before entering into Mars and Supervault positions.
@@ -107,47 +109,56 @@ impl Strategy {
                 }
                 false => {
                     info!(target: DEPOSIT_PHASE, "Neutron deposit account balance = {neutron_deposit_bal}; lending & LPing...");
-                    // use Splitter to route funds from the Neutron program deposit
-                    // account to the Mars and Supervaults deposit accounts
-                    let splitter_exec_msg =
-                        valence_library_utils::msg::ExecuteMsg::<_, ()>::ProcessFunction(
-                            valence_splitter_library::msg::FunctionMsgs::Split {},
-                        );
-
-                    // use Mars Lending library to lend funds from Mars deposit account
-                    // into Mars protocol
-                    let mars_lending_exec_msg =
-                        valence_library_utils::msg::ExecuteMsg::<_, ()>::ProcessFunction(
-                            valence_mars_lending::msg::FunctionMsgs::Lend {},
-                        );
-
-                    // use Supervaults lper library to deposit funds from Supervaults deposit account
-                    // into the configured supervault
-                    let supervaults_lper_execute_msg =
-                        valence_library_utils::msg::ExecuteMsg::<_, ()>::ProcessFunction(
-                            valence_supervaults_lper::msg::FunctionMsgs::ProvideLiquidity {
-                                expected_vault_ratio_range: None,
-                            },
-                        );
-
-                    // enqueue all three actions under a single label as its an atomic subroutine
-                    valence_core::enqueue_neutron(
-                        &self.neutron_client,
-                        &self.cfg.neutron.authorizations,
-                        LEND_AND_PROVIDE_LIQUIDITY_LABEL,
-                        vec![
-                            to_json_binary(&splitter_exec_msg)?,
-                            to_json_binary(&mars_lending_exec_msg)?,
-                            to_json_binary(&supervaults_lper_execute_msg)?,
-                        ],
-                    )
-                    .await?;
-
-                    valence_core::tick_neutron(&self.neutron_client, &self.cfg.neutron.processor)
-                        .await?;
+                    self.enter_mars_supervaults_positions().await?;
                 }
             }
         }
+
+        Ok(())
+    }
+
+    /// performs three function calls atomically:
+    /// 1. split the deposit account balance between Mars and Supervaults
+    ///    input accounts at the preconfigured rate
+    /// 2. lend funds on Mars
+    /// 3. provide liquidity on Supervaults
+    async fn enter_mars_supervaults_positions(&mut self) -> anyhow::Result<()> {
+        // use Splitter to route funds from the Neutron program deposit
+        // account to the Mars and Supervaults deposit accounts
+        let splitter_exec_msg = valence_library_utils::msg::ExecuteMsg::<_, ()>::ProcessFunction(
+            valence_splitter_library::msg::FunctionMsgs::Split {},
+        );
+
+        // use Mars Lending library to lend funds from Mars deposit account
+        // into Mars protocol
+        let mars_lending_exec_msg =
+            valence_library_utils::msg::ExecuteMsg::<_, ()>::ProcessFunction(
+                valence_mars_lending::msg::FunctionMsgs::Lend {},
+            );
+
+        // use Supervaults lper library to deposit funds from Supervaults deposit account
+        // into the configured supervault
+        let supervaults_lper_execute_msg =
+            valence_library_utils::msg::ExecuteMsg::<_, ()>::ProcessFunction(
+                valence_supervaults_lper::msg::FunctionMsgs::ProvideLiquidity {
+                    expected_vault_ratio_range: None,
+                },
+            );
+
+        // enqueue all three actions under a single label as its an atomic subroutine
+        valence_core::enqueue_neutron(
+            &self.neutron_client,
+            &self.cfg.neutron.authorizations,
+            LEND_AND_PROVIDE_LIQUIDITY_LABEL,
+            vec![
+                to_json_binary(&splitter_exec_msg)?,
+                to_json_binary(&mars_lending_exec_msg)?,
+                to_json_binary(&supervaults_lper_execute_msg)?,
+            ],
+        )
+        .await?;
+
+        valence_core::tick_neutron(&self.neutron_client, &self.cfg.neutron.processor).await?;
 
         Ok(())
     }
@@ -167,8 +178,6 @@ impl Strategy {
             .query_skip_eureka_route(eth_deposit_acc_bal.to_string())
             .await
         {
-            // TODO: consider more thorough checks on this response as even in case of an error this
-            // may return something seemingly legit (json-value wise)
             Ok(r) => r,
             Err(e) => {
                 warn!(target: DEPOSIT_PHASE, "skip route error: {e}");
@@ -196,7 +205,7 @@ impl Strategy {
 
         let timeout_timestamp_nanos = timeout_time
             .duration_since(UNIX_EPOCH)
-            .map_err(|e| anyhow::anyhow!("bad times: {e}"))?
+            .map_err(|e| anyhow!("bad times: {e}"))?
             .as_nanos();
 
         let skip_response_operations = skip_api_response

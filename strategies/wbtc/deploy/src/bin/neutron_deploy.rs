@@ -491,7 +491,7 @@ async fn main() -> anyhow::Result<()> {
     let mars_lending_config = valence_mars_lending::msg::LibraryConfig {
         input_addr: LibraryAccountType::Addr(predicted_base_accounts[1].clone()),
         output_addr: LibraryAccountType::Addr(predicted_base_accounts[9].clone()),
-        credit_manager_addr: params.program.mars_credit_manager,
+        credit_manager_addr: params.program.mars_credit_manager.to_string(),
         denom: params.program.deposit_token_on_neutron_denom.clone(),
     };
 
