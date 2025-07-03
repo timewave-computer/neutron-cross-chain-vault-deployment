@@ -63,6 +63,7 @@ impl Strategy {
                 // prior to proceeding to gaia ica -> neutron routing
                 false => {
                     info!(target: DEPOSIT_PHASE, "IBC-Eureka transfer threshold met!");
+
                     self.eth_to_gaia_routing(eth_rp, eth_deposit_acc_bal)
                         .await?;
                 }
@@ -317,20 +318,27 @@ impl Strategy {
             .get_transaction_receipt(zk_auth_exec_response.transaction_hash)
             .await?;
 
+        // transfer can be considered complete when the current ica balance increases
+        // by the expected post_fee ibc eureka transfer amount out
+        let pre_routing_gaia_ica_bal = self
+            .gaia_client
+            .query_balance(&self.cfg.gaia.ica_address, &self.cfg.gaia.deposit_denom)
+            .await?;
+        let gaia_ica_expected_balance = pre_routing_gaia_ica_bal + post_fee_amount_out_u128;
+        info!(
+            target: DEPOSIT_PHASE,
+            "gaia ica expected bal = {gaia_ica_expected_balance}; polling..."
+        );
+
         // block execution until the funds arrive to the Cosmos Hub ICA owned
         // by the Valence Interchain Account on Neutron.
-        // we poll
-        info!(target: DEPOSIT_PHASE, "gaia ica expected deposit token bal = {post_fee_amount_out_u128}; starting to poll");
-
         // poll for 15sec * 100 = 1500sec = 25min which should suffice for
         // IBC Eureka routing time of 15min
         self.gaia_client
             .poll_until_expected_balance(
                 &self.cfg.gaia.ica_address,
                 &self.cfg.gaia.deposit_denom,
-                // TODO: think about querying the current ica balance and adding
-                // this amount on top
-                post_fee_amount_out_u128,
+                gaia_ica_expected_balance,
                 15,  // every 15 sec
                 100, // for 100 times
             )
@@ -338,6 +346,11 @@ impl Strategy {
         Ok(())
     }
 
+    /// carries out the steps needed to route the deposits from cosmos hub ICA to the
+    /// Neutron deposit account.
+    /// two messages are enqueued:
+    /// 1. update the ica ibc transfer library transfer amount
+    /// 2. trigger the ica ibc transfer
     async fn gaia_to_neutron_routing(&mut self, gaia_ica_bal: u128) -> anyhow::Result<()> {
         let ica_ibc_transfer_update_msg: valence_library_utils::msg::ExecuteMsg<
             valence_ica_ibc_transfer::msg::FunctionMsgs,
@@ -377,6 +390,22 @@ impl Strategy {
         )
         .await?;
 
+        // transfer can be considered complete when the current ica balance increases
+        // by the expected post_fee ibc eureka transfer amount out
+        let pre_routing_neutron_deposit_acc_bal = self
+            .neutron_client
+            .query_balance(
+                &self.cfg.neutron.accounts.deposit,
+                &self.cfg.neutron.denoms.deposit_token,
+            )
+            .await?;
+
+        let neutron_deposit_acc_expected_bal = pre_routing_neutron_deposit_acc_bal + gaia_ica_bal;
+        info!(
+            target: DEPOSIT_PHASE,
+            "neutron deposit acc expected bal = {neutron_deposit_acc_expected_bal}; polling..."
+        );
+
         info!(target: DEPOSIT_PHASE, "tick: update & transfer");
         valence_core::tick_neutron(&self.neutron_client, &self.cfg.neutron.processor).await?;
 
@@ -388,7 +417,7 @@ impl Strategy {
             .poll_until_expected_balance(
                 &self.cfg.neutron.accounts.deposit,
                 &self.cfg.neutron.denoms.deposit_token,
-                gaia_ica_bal,
+                neutron_deposit_acc_expected_bal,
                 5,
                 30,
             )
