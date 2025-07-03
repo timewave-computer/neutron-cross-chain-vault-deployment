@@ -52,9 +52,13 @@ impl Strategy {
         info!(target: UPDATE_PHASE, "redemption_rate_sol_u256={redemption_rate_sol_u256}");
 
         // validate that the newly calculated redemption rate does not exceed
-        // the max rate update thresholds
-        self.validate_new_redemption_rate(eth_rp, redemption_rate_sol_u256)
-            .await?;
+        // the max rate update thresholds relative to the current rate
+        let current_vault_rate = self
+            .eth_client
+            .query(one_way_vault_contract.redemptionRate())
+            .await?
+            ._0;
+        self.validate_new_redemption_rate(current_vault_rate, redemption_rate_sol_u256)?;
 
         info!(target: UPDATE_PHASE, "updating ethereum vault redemption rate");
         let update_request = one_way_vault_contract
@@ -73,19 +77,11 @@ impl Strategy {
     /// checks that the newly calculated redemption rate is within the acceptable
     /// rate update bounds relative to the current rate.
     // todo: pause the vault if thresholds are exceeded
-    async fn validate_new_redemption_rate(
+    fn validate_new_redemption_rate(
         &self,
-        eth_rp: &CustomProvider,
+        current_vault_rate: U256,
         new_redemption_rate: U256,
     ) -> anyhow::Result<()> {
-        let one_way_vault_contract =
-            OneWayVault::new(self.cfg.ethereum.libraries.one_way_vault, &eth_rp);
-
-        let current_vault_rate = self
-            .eth_client
-            .query(one_way_vault_contract.redemptionRate())
-            .await?
-            ._0;
         info!(target: UPDATE_PHASE, "pre_update_rate = {current_vault_rate}");
         let current_rate_u128 = u128::try_from(current_vault_rate)?;
 
