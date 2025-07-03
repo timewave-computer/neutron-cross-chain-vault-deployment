@@ -1,10 +1,10 @@
 use std::{collections::HashMap, env, fs};
 
-use lombard_btc_deploy::DIR;
+use lombard_btc_deploy::OUTPUTS_DIR;
 use serde::{Deserialize, Serialize};
 use valence_domain_clients::{clients::neutron::NeutronClient, cosmos::wasm_client::WasmClient};
 
-const GRPC_URL: &str = "https://rpc.neutron.quokkastake.io";
+const GRPC_URL: &str = "http://rpc.neutron.quokkastake.io";
 const GRPC_PORT: &str = "9090";
 const CHAIN_ID: &str = "neutron-1";
 
@@ -50,7 +50,7 @@ async fn main() -> anyhow::Result<()> {
     let toml_content = toml::to_string_pretty(&uploaded_contracts)?;
     let current_dir = env::current_dir()?;
     fs::write(
-        current_dir.join(format!("{DIR}/neutron_code_ids.toml")),
+        current_dir.join(format!("{OUTPUTS_DIR}/neutron_code_ids.toml")),
         toml_content.clone(),
     )?;
 

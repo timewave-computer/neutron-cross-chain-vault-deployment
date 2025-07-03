@@ -5,7 +5,7 @@ use std::{
 };
 
 use cosmwasm_std::{Binary, Decimal, Uint64, Uint128};
-use lombard_btc_deploy::{DIR, LOMBARD_RECOVERY_ADDRESS};
+use lombard_btc_deploy::{INPUTS_DIR, LOMBARD_RECOVERY_ADDRESS, OUTPUTS_DIR};
 use lombard_btc_types::{
     gaia_config::GaiaStrategyConfig,
     neutron_config::{
@@ -84,14 +84,14 @@ async fn main() -> anyhow::Result<()> {
 
     let current_dir = env::current_dir()?;
 
-    let parameters = fs::read_to_string(current_dir.join(format!("{DIR}/neutron.toml")))
+    let parameters = fs::read_to_string(current_dir.join(format!("{INPUTS_DIR}/neutron.toml")))
         .expect("Failed to read file");
 
     let params: Parameters = toml::from_str(&parameters).expect("Failed to parse TOML");
 
     // Read code IDS from the code ids file
     let code_ids_content =
-        fs::read_to_string(current_dir.join(format!("{DIR}/neutron_code_ids.toml")))
+        fs::read_to_string(current_dir.join(format!("{OUTPUTS_DIR}/neutron_code_ids.toml")))
             .expect("Failed to read code ids file");
     let uploaded_contracts: UploadedContracts =
         toml::from_str(&code_ids_content).expect("Failed to parse code ids");
@@ -693,7 +693,7 @@ async fn main() -> anyhow::Result<()> {
     let neutron_cfg_toml =
         toml::to_string(&neutron_cfg).expect("Failed to serialize Neutron Strategy Config");
     fs::write(
-        current_dir.join(format!("{DIR}/neutron_strategy_config.toml")),
+        current_dir.join(format!("{OUTPUTS_DIR}/neutron_strategy_config.toml")),
         neutron_cfg_toml,
     )
     .expect("Failed to write Neutron Strategy Config to file");
@@ -738,7 +738,7 @@ async fn main() -> anyhow::Result<()> {
     };
 
     // Write the Gaia strategy config to a file
-    let gaia_cfg_path = current_dir.join(format!("{DIR}/gaia_strategy_config.toml"));
+    let gaia_cfg_path = current_dir.join(format!("{OUTPUTS_DIR}/gaia_strategy_config.toml"));
     fs::write(
         gaia_cfg_path,
         toml::to_string(&gaia_cfg).expect("Failed to serialize Gaia strategy config"),
