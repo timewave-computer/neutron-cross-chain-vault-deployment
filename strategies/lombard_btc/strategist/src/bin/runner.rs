@@ -26,10 +26,10 @@ async fn main() -> anyhow::Result<()> {
     let lombard_cfg_path = env::var("LOMBARD_CFG_PATH")
         .map_err(|e| anyhow::Error::msg(format!("lombard cfg path not found: {e}")))?;
     info!(target: RUNNER, "Using configuration files:");
-    info!(target: RUNNER, "  Neutron: {}", neutron_cfg_path);
-    info!(target: RUNNER, "  Ethereum: {}", ethereum_cfg_path);
-    info!(target: RUNNER, "  Gaia: {}", gaia_cfg_path);
-    info!(target: RUNNER, "  Lombard: {}", lombard_cfg_path);
+    info!(target: RUNNER, "  Neutron: {neutron_cfg_path}");
+    info!(target: RUNNER, "  Ethereum: {ethereum_cfg_path}");
+    info!(target: RUNNER, "  Gaia: {gaia_cfg_path}");
+    info!(target: RUNNER, "  Lombard: {lombard_cfg_path}");
 
     // initialize the strategy from configuration files
     let strategy = Strategy::from_files(
@@ -48,8 +48,8 @@ async fn main() -> anyhow::Result<()> {
 
     // join here will wait for the strategist thread to finish which should never happen in practice since it runs an infinite stayalive loop
     match strategist_join_handle.join() {
-        Ok(t) => warn!(target: RUNNER, "strategist thread completed: {:?}", t),
-        Err(e) => warn!(target: RUNNER, "strategist thread completed with error: {:?}", e),
+        Ok(t) => warn!(target: RUNNER, "strategist thread completed: {t:?}"),
+        Err(e) => warn!(target: RUNNER, "strategist thread completed with error: {e:?}"),
     }
 
     Ok(())

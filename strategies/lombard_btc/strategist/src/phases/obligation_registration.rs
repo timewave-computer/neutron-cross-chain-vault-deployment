@@ -71,7 +71,7 @@ impl Strategy {
                     &withdraw_id_json,
                 )
                 .await?;
-            info!(target: REGISTRATION_PHASE, "vault zkp resp: {:?}", vault_zkp_response);
+            info!(target: REGISTRATION_PHASE, "vault zkp resp: {vault_zkp_response:?}");
 
             // extract the program and domain parameters by decoding the zkp
             let (proof_program, inputs_program) = vault_zkp_response.program.decode()?;

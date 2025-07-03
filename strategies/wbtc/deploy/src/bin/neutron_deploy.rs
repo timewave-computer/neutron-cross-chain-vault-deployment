@@ -211,7 +211,7 @@ async fn main() -> anyhow::Result<()> {
             salt.clone(),
         )
         .await?;
-    println!("Authorization instantiated: {}", authorization_address);
+    println!("Authorization instantiated: {authorization_address}");
 
     let processor_instantiate_msg = valence_processor_utils::msg::InstantiateMsg {
         authorization_contract: authorization_address.clone(),
@@ -227,7 +227,7 @@ async fn main() -> anyhow::Result<()> {
             salt.clone(),
         )
         .await?;
-    println!("Processor instantiated: {}", processor_address);
+    println!("Processor instantiated: {processor_address}");
 
     // Instantiate the verification gateway
     // Get the domain verification key from coprocessor
@@ -272,16 +272,13 @@ async fn main() -> anyhow::Result<()> {
     let mut predicted_base_accounts = vec![];
     // We now will have 7 supervault deposit accounts, including the maxBTC-BTC vault one which will come later when the vault launches
     for i in 0..10 {
-        let salt = hex::encode(format!("{}{}", salt_raw, i).as_bytes());
+        let salt = hex::encode(format!("{salt_raw}{i}").as_bytes());
         salts.push(salt.clone());
         let predicted_base_account_address = neutron_client
             .predict_instantiate2_addr(code_id_base_account, salt.clone(), my_address.clone())
             .await?
             .address;
-        println!(
-            "Predicted base account address {}: {}",
-            i, predicted_base_account_address
-        );
+        println!("Predicted base account address {i}: {predicted_base_account_address}");
         predicted_base_accounts.push(predicted_base_account_address);
     }
 
@@ -324,10 +321,7 @@ async fn main() -> anyhow::Result<()> {
             None,
         )
         .await?;
-    println!(
-        "ICA IBC Transfer library instantiated: {}",
-        ica_ibc_transfer_library_address
-    );
+    println!("ICA IBC Transfer library instantiated: {ica_ibc_transfer_library_address}");
 
     // Instantiate the Dynamic ratio query provider library
     let receiver_to_split_perc = HashMap::from([
@@ -383,8 +377,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .await?;
     println!(
-        "Dynamic ratio query provider library instantiated: {}",
-        dynamic_ratio_query_provider_address
+        "Dynamic ratio query provider library instantiated: {dynamic_ratio_query_provider_address}",
     );
 
     // Instantiate the deposit splitter library
@@ -481,17 +474,14 @@ async fn main() -> anyhow::Result<()> {
             None,
         )
         .await?;
-    println!(
-        "Deposit splitter library instantiated: {}",
-        deposit_splitter_library_address
-    );
+    println!("Deposit splitter library instantiated: {deposit_splitter_library_address}");
 
     // Instantiate the Mars lending library
     // In Phase 1 the output account is the settlement account and in phase 2 this will be initial deposit account
     let mars_lending_config = valence_mars_lending::msg::LibraryConfig {
         input_addr: LibraryAccountType::Addr(predicted_base_accounts[1].clone()),
         output_addr: LibraryAccountType::Addr(predicted_base_accounts[9].clone()),
-        credit_manager_addr: params.program.mars_credit_manager.to_string(),
+        credit_manager_addr: params.program.mars_credit_manager.clone(),
         denom: params.program.deposit_token_on_neutron_denom.clone(),
     };
 
@@ -510,10 +500,7 @@ async fn main() -> anyhow::Result<()> {
             None,
         )
         .await?;
-    println!(
-        "Mars lending library instantiated: {}",
-        mars_lending_library_address
-    );
+    println!("Mars lending library instantiated: {mars_lending_library_address}");
 
     // Instantiate all supervaults lper library
     let supervaults_fbtc_lper_config = valence_supervaults_lper::msg::LibraryConfig {
@@ -545,8 +532,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .await?;
     println!(
-        "FBTC-WBTC Supervaults lper library instantiated: {}",
-        fbtc_supervaults_lper_library_address
+        "FBTC-WBTC Supervaults lper library instantiated: {fbtc_supervaults_lper_library_address}",
     );
 
     let lbtc_supervaults_lper_config = valence_supervaults_lper::msg::LibraryConfig {
@@ -580,8 +566,7 @@ async fn main() -> anyhow::Result<()> {
         .await?;
 
     println!(
-        "LBTC-WBTC Supervaults lper library instantiated: {}",
-        lbtc_supervaults_lper_library_address
+        "LBTC-WBTC Supervaults lper library instantiated: {lbtc_supervaults_lper_library_address}",
     );
 
     let solvbtc_supervaults_lper_config = valence_supervaults_lper::msg::LibraryConfig {
@@ -613,8 +598,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .await?;
     println!(
-        "SolvBTC-WBTC Supervaults lper library instantiated: {}",
-        solvbtc_supervaults_lper_library_address
+        "SolvBTC-WBTC Supervaults lper library instantiated: {solvbtc_supervaults_lper_library_address}",
     );
 
     let ebtc_supervaults_lper_config = valence_supervaults_lper::msg::LibraryConfig {
@@ -647,8 +631,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .await?;
     println!(
-        "eBTC-WBTC Supervaults lper library instantiated: {}",
-        ebtc_supervaults_lper_library_address
+        "eBTC-WBTC Supervaults lper library instantiated: {ebtc_supervaults_lper_library_address}",
     );
 
     let pumpbtc_supervaults_lper_config = valence_supervaults_lper::msg::LibraryConfig {
@@ -680,8 +663,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .await?;
     println!(
-        "PumpBTC-WBTC Supervaults lper library instantiated: {}",
-        pumpbtc_supervaults_lper_library_address
+        "PumpBTC-WBTC Supervaults lper library instantiated: {pumpbtc_supervaults_lper_library_address}",
     );
 
     let bedrockbtc_supervaults_lper_config = valence_supervaults_lper::msg::LibraryConfig {
@@ -712,8 +694,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .await?;
     println!(
-        "bedrockbtc-WBTC Supervaults lper library instantiated: {}",
-        bedrockbtc_supervaults_lper_library_address
+        "bedrockbtc-WBTC Supervaults lper library instantiated: {bedrockbtc_supervaults_lper_library_address}",
     );
 
     // We'll also instantiate the maxBTC-BTC one even though we don't have the address yet,
@@ -748,8 +729,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .await?;
     println!(
-        "Placeholer MaxBTC-BTC Supervaults lper library instantiated: {}",
-        maxbtc_btc_supervaults_lper_library_address
+        "Placeholer MaxBTC-BTC Supervaults lper library instantiated: {maxbtc_btc_supervaults_lper_library_address}",
     );
 
     // Finally instantiate the clearing queue library
@@ -814,10 +794,7 @@ async fn main() -> anyhow::Result<()> {
             Some(params.general.owner.clone()),
         )
         .await?;
-    println!(
-        "Clearing queue library instantiated: {}",
-        clearing_queue_library_address
-    );
+    println!("Clearing queue library instantiated: {clearing_queue_library_address}");
 
     ////////// Instantiate and set up everything we need for the phase shift. The authorization that will eventually //////////
     ////////// update the config and execute these libraries will be for the program owner, in this case the Neutron //////////
@@ -854,8 +831,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .await?;
     println!(
-        "FBTC-WBTC Supervaults withdrawer library instantiated: {}",
-        fbtc_supervault_withdrawer_library_address
+        "FBTC-WBTC Supervaults withdrawer library instantiated: {fbtc_supervault_withdrawer_library_address}",
     );
 
     let lbtc_supervault_withdrawer_config = valence_supervaults_withdrawer::msg::LibraryConfig {
@@ -887,8 +863,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .await?;
     println!(
-        "LBTC-WBTC Supervaults withdrawer library instantiated: {}",
-        lbtc_supervault_withdrawer_library_address
+        "LBTC-WBTC Supervaults withdrawer library instantiated: {lbtc_supervault_withdrawer_library_address}",
     );
 
     let solvbtc_supervault_withdrawer_config = valence_supervaults_withdrawer::msg::LibraryConfig {
@@ -920,8 +895,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .await?;
     println!(
-        "SolvBTC-WBTC Supervaults withdrawer library instantiated: {}",
-        solvbtc_supervault_withdrawer_library_address
+        "SolvBTC-WBTC Supervaults withdrawer library instantiated: {solvbtc_supervault_withdrawer_library_address}"
     );
 
     let ebtc_supervault_withdrawer_config = valence_supervaults_withdrawer::msg::LibraryConfig {
@@ -952,8 +926,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .await?;
     println!(
-        "eBTC-WBTC Supervaults withdrawer library instantiated: {}",
-        ebtc_supervault_withdrawer_library_address
+        "eBTC-WBTC Supervaults withdrawer library instantiated: {ebtc_supervault_withdrawer_library_address}"
     );
 
     let pumpbtc_supervault_withdrawer_config = valence_supervaults_withdrawer::msg::LibraryConfig {
@@ -985,8 +958,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .await?;
     println!(
-        "PumpBTC-WBTC Supervaults withdrawer library instantiated: {}",
-        pumpbtc_supervault_withdrawer_library_address
+        "PumpBTC-WBTC Supervaults withdrawer library instantiated: {pumpbtc_supervault_withdrawer_library_address}"
     );
 
     let bedrockbtc_supervault_withdrawer_config =
@@ -1019,8 +991,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .await?;
     println!(
-        "bedrockbtc-WBTC Supervaults withdrawer library instantiated: {}",
-        bedrockbtc_supervault_withdrawer_library_address
+        "bedrockbtc-WBTC Supervaults withdrawer library instantiated: {bedrockbtc_supervault_withdrawer_library_address}"
     );
 
     // 2. Instantiate the maxbtc issuer that will issue the maxbtc token depositing the counterparty of the deposit token in the vault.
@@ -1052,10 +1023,7 @@ async fn main() -> anyhow::Result<()> {
             None,
         )
         .await?;
-    println!(
-        "MaxBTC issuer library instantiated: {}",
-        maxbtc_issuer_library_address
-    );
+    println!("MaxBTC issuer library instantiated: {maxbtc_issuer_library_address}");
 
     // 3. Instantiate the splitter library that will return all LSTs to their corresponding LST deposit accounts
     let splitter_config = valence_splitter_library::msg::LibraryConfig {
@@ -1109,10 +1077,7 @@ async fn main() -> anyhow::Result<()> {
             None,
         )
         .await?;
-    println!(
-        "Phase shift splitter library instantiated: {}",
-        phase_shift_splitter_library_address
-    );
+    println!("Phase shift splitter library instantiated: {phase_shift_splitter_library_address}");
 
     // 4. Instantiate the phase shift forwarder library that will forward wBTC to the deposit account
     // of the maxBTC-WBTC supervault
@@ -1140,10 +1105,7 @@ async fn main() -> anyhow::Result<()> {
             None,
         )
         .await?;
-    println!(
-        "Phase shift forwarder library instantiated: {}",
-        phase_shift_forwarder_library_address
-    );
+    println!("Phase shift forwarder library instantiated: {phase_shift_forwarder_library_address}");
 
     //////////                           //////////
     //////////  End of phase shift setup //////////
@@ -1168,7 +1130,7 @@ async fn main() -> anyhow::Result<()> {
             salt.clone(),
         )
         .await?;
-    println!("Valence ICA instantiated: {}", valence_ica_address);
+    println!("Valence ICA instantiated: {valence_ica_address}");
 
     // Now the rest
     let ica_deposit_account = valence_account_utils::msg::InstantiateMsg {
@@ -1184,10 +1146,7 @@ async fn main() -> anyhow::Result<()> {
             salts[0].clone(),
         )
         .await?;
-    println!(
-        "ICA deposit account instantiated: {}",
-        ica_deposit_account_address
-    );
+    println!("ICA deposit account instantiated: {ica_deposit_account_address}");
 
     let mars_deposit_account = valence_account_utils::msg::InstantiateMsg {
         admin: params.general.owner.clone(),
@@ -1202,10 +1161,7 @@ async fn main() -> anyhow::Result<()> {
             salts[1].clone(),
         )
         .await?;
-    println!(
-        "Mars deposit account instantiated: {}",
-        mars_deposit_account_address
-    );
+    println!("Mars deposit account instantiated: {mars_deposit_account_address}");
 
     let fbtc_deposit_account_instantiate_msg = valence_account_utils::msg::InstantiateMsg {
         admin: params.general.owner.clone(),
@@ -1221,8 +1177,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .await?;
     println!(
-        "FBTC-WBTC supervault deposit account instantiated: {}",
-        fbtc_supervault_deposit_account_address
+        "FBTC-WBTC supervault deposit account instantiated: {fbtc_supervault_deposit_account_address}"
     );
 
     let lbtc_deposit_account_instantiate_msg = valence_account_utils::msg::InstantiateMsg {
@@ -1239,8 +1194,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .await?;
     println!(
-        "LBTC-WBTC supervault deposit account instantiated: {}",
-        lbtc_supervault_deposit_account_address
+        "LBTC-WBTC supervault deposit account instantiated: {lbtc_supervault_deposit_account_address}"
     );
 
     let solvbtc_deposit_account_instantiate_msg = valence_account_utils::msg::InstantiateMsg {
@@ -1258,8 +1212,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .await?;
     println!(
-        "SolvBTC-WBTC supervault deposit account instantiated: {}",
-        solvbtc_supervault_deposit_account_address
+        "SolvBTC-WBTC supervault deposit account instantiated: {solvbtc_supervault_deposit_account_address}"
     );
 
     let ebtc_deposit_account_instantiate_msg = valence_account_utils::msg::InstantiateMsg {
@@ -1276,8 +1229,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .await?;
     println!(
-        "eBTC-WBTC supervault deposit account instantiated: {}",
-        ebtc_supervault_deposit_account_address
+        "eBTC-WBTC supervault deposit account instantiated: {ebtc_supervault_deposit_account_address}"
     );
 
     let pumpbtc_deposit_account_instantiate_msg = valence_account_utils::msg::InstantiateMsg {
@@ -1294,8 +1246,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .await?;
     println!(
-        "PumpBTC-WBTC supervault deposit account instantiated: {}",
-        pumpbtc_supervault_deposit_account_address
+        "PumpBTC-WBTC supervault deposit account instantiated: {pumpbtc_supervault_deposit_account_address}"
     );
 
     let bedrockbtc_deposit_account_instantiate_msg = valence_account_utils::msg::InstantiateMsg {
@@ -1312,8 +1263,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .await?;
     println!(
-        "bedrockbtc-WBTC supervault deposit account instantiated: {}",
-        bedrockbtc_supervault_deposit_account_address
+        "bedrockbtc-WBTC supervault deposit account instantiated: {bedrockbtc_supervault_deposit_account_address}"
     );
 
     let maxbtc_btc_deposit_account_instantiate_msg = valence_account_utils::msg::InstantiateMsg {
@@ -1330,8 +1280,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .await?;
     println!(
-        "MaxBTC-BTC supervault deposit account instantiated: {}",
-        maxbtc_btc_supervault_deposit_account_address
+        "MaxBTC-BTC supervault deposit account instantiated: {maxbtc_btc_supervault_deposit_account_address}"
     );
 
     let settlement_account = valence_account_utils::msg::InstantiateMsg {
@@ -1359,10 +1308,7 @@ async fn main() -> anyhow::Result<()> {
             salts[9].clone(),
         )
         .await?;
-    println!(
-        "Settlement account instantiated: {}",
-        settlement_account_address
-    );
+    println!("Settlement account instantiated: {settlement_account_address}");
 
     let denoms = NeutronDenoms {
         deposit_token: params.program.deposit_token_on_neutron_denom,
@@ -1475,10 +1421,10 @@ async fn main() -> anyhow::Result<()> {
     let ica_address = match ica_state {
         valence_account_utils::ica::IcaState::Created(ica_information) => ica_information.address,
         _ => {
-            panic!("ICA creation failed!, state: {:?}", ica_state);
+            panic!("ICA creation failed!, state: {ica_state:?}");
         }
     };
-    println!("ICA address: {}", ica_address);
+    println!("ICA address: {ica_address}");
 
     let gaia_cfg = GaiaStrategyConfig {
         grpc_url: "grpc_url".to_string(),

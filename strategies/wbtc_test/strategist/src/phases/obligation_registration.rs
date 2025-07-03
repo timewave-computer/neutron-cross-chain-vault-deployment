@@ -54,7 +54,7 @@ impl Strategy {
             .unwrap_or_default();
         info!(
             target: REGISTRATION_PHASE,
-            "new_obligations = {:#?}", new_obligations
+            "new_obligations = {new_obligations:#?}"
         );
 
         // process the new OneWayVault Withdraw events in order from the oldest

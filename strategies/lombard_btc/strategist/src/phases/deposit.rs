@@ -189,7 +189,7 @@ impl Strategy {
             ))?;
 
         let post_fee_amount_out_u128: u128 = amount_out_str.parse()?;
-        info!(target: DEPOSIT_PHASE, "post_fee_amount_out_u128 = {:?}", post_fee_amount_out_u128);
+        info!(target: DEPOSIT_PHASE, "post_fee_amount_out_u128 = {post_fee_amount_out_u128:?}" );
 
         let timeout_duration = Duration::from_secs(TWELVE_HOURS_IN_SECS);
         let timeout_time = SystemTime::now()
@@ -282,7 +282,7 @@ impl Strategy {
             )
             .await?;
 
-        info!(target: DEPOSIT_PHASE, "co_processor zkp post response: {:?}", skip_response_zkp);
+        info!(target: DEPOSIT_PHASE, "co_processor zkp post response: {skip_response_zkp:?}");
 
         // extract the program and domain parameters by decoding the zkp
         let (proof_program, inputs_program) = skip_response_zkp.program.decode()?;

@@ -85,7 +85,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .await?
         .contract_address
         .unwrap();
-    println!("Deposit account deployed at: {}", deposit_account);
+    println!("Deposit account deployed at: {deposit_account}");
 
     let fee_distribution_config = FeeDistributionConfig {
         strategistAccount: parameters.vault.strategist_fee_account,
