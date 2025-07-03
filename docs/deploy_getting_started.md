@@ -94,4 +94,4 @@ After all contracts are deployed on both chains, you must set up the authorizati
     cargo run --bin ethereum_initialization -p <strategy-name>-deploy
     ```
 
-With that, the on-chain setup is complete. Strategist is ready to operate the vault.
+With that, the on-chain setup is complete. The strategist is ready to operate the vault.

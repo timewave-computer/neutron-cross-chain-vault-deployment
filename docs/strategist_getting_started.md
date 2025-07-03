@@ -28,7 +28,7 @@ The strategist is configured through a combination of environment variables and 
 
 ### Configuration Files
 
-The strategist requires four `.toml` files that contain the on-chain addresses and parameters generated during the [deployment process](./deploy_getting_started.md).
+The strategist requires several `.toml` files that contain the on-chain addresses and parameters generated during the [deployment process](./deploy_getting_started.md).
 
 -   **`neutron_strategy_config.toml`**: Contains all contract addresses, account addresses, asset denoms, and relevant co-processor IDs for the Neutron network.
 -   **`ethereum_strategy_config.toml`**: Contains all contract addresses, account addresses, asset denoms, and relevant co-processor IDs for the Ethereum network.
@@ -47,16 +47,19 @@ cp lbtc.env.example lbtc.env
 
 After that, modify the env file values:
 
--   `ETHEREUM_CFG_PATH`: Path to the `ethereum_strategy_config.toml`.
--   `GAIA_CFG_PATH`: Path to the `gaia_strategy_config.toml`.
--   `LOMBARD_CFG_PATH`: Path to the `lombard_strategy_config.toml`.
--   `MNEMONIC`: The 24-word mnemonic phrase for the strategist's wallet.
--   `LABEL`: A unique identifier for the strategist instance (e.g., "X_LBTC_PROD").
--   `STRATEGY_TIMEOUT`: The delay in seconds between each operational cycle.
--   `INDEXER_API_KEY`: Your API key for the Valence Indexer.
--   `INDEXER_API_URL`: The endpoint for the Valence Indexer.
--   `EUREKA_API_URL`: The endpoint for the IBC Eureka API.
--   `OTLP_ENDPOINT`: (optional) The endpoint for an OpenTelemetry collector to send structured logs.
+- Point to the deployment artifacts:
+  - `NEUTRON_CFG_PATH`: Path to the `neutron_strategy_config.toml`.
+  - `ETHEREUM_CFG_PATH`: Path to the `ethereum_strategy_config.toml`.
+  - `GAIA_CFG_PATH`: Path to the `gaia_strategy_config.toml`.
+  - `LOMBARD_CFG_PATH`: Path to the `lombard_strategy_config.toml`.
+- `MNEMONIC`: The 24-word mnemonic phrase for the strategist's wallet.
+- `LABEL`: A unique identifier for the strategist instance (e.g., "X_LBTC_PROD").
+- `STRATEGY_TIMEOUT`: The delay in seconds between each operational cycle.
+- Configure the indexer:
+  - `INDEXER_API_KEY`: Your API key for the Valence Indexer.
+  - `INDEXER_API_URL`: The endpoint for the Valence Indexer.
+- `EUREKA_API_URL`: The endpoint for the IBC Eureka API.
+- `OTLP_ENDPOINT`: (optional) The endpoint for an OpenTelemetry collector to send structured logs.
 
 ## Running the Strategist
 

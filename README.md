@@ -23,13 +23,13 @@ The system operates across three blockchain networks:
 
 1. Users deposit collateral tokens into Ethereum ERC-4626 vault, receive vault shares
 2. Strategist monitors user deposits and bridges the funds: Ethereum → Cosmos Hub/Noble → Neutron
-   The IBC Eureka route fetched from the Skip api is validated by the co-processor
+   The IBC Eureka route fetched from the Skip API is validated by the co-processor
 3. Strategist deploys bridged assets into Mars Protocol and Neutron Supervaults
 4. Users issue withdraw requests into Ethereum ERC-4626 vault, immediately burning their shares
 5. Strategist picks up user withdraw requests from the indexer and posts them to the co-processor
    for validation
 6. Strategist posts co-processor withdraw request proofs to the Neutron Authorizations contract
-   which turns them into withdraw obligations that get enqueued into the Clearing Queue contract
+   which turns them into withdrawal obligations that get enqueued into the Clearing Queue contract
 7. Strategist withdraws the funds necessary to cover the outstanding withdraw obligations and clears them
 8. The Strategist calculates the new redemption rate and posts it to the ERC-4626 vault, concluding
    the cycle
