@@ -60,7 +60,7 @@ eureka_transfer = "0x..."
 **2. Neutron Configuration (`neutron_config.toml`)**
 
 ```toml
-grpc_url = "https://rpc.neutron.quokkastake.io"
+grpc_url = "http://rpc.neutron.quokkastake.io"
 grpc_port = "9090"
 chain_id = "neutron-1"
 min_ibc_fee = "1000"
@@ -94,7 +94,7 @@ clearing_queue = "neutron1..."
 **3. Cosmos Hub Configuration (`gaia_config.toml`)**
 
 ```toml
-grpc_url = "https://cosmos-rpc.polkachu.com"
+grpc_url = "http://cosmos-rpc.polkachu.com"
 grpc_port = "9090"
 chain_id = "cosmoshub-4"
 chain_denom = "uatom"
