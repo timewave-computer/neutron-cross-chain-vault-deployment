@@ -26,6 +26,8 @@ use crate::strategy_config::Strategy;
 
 /// minimum Valence account balance to perform a split
 const MIN_SPLIT_BALANCE: u128 = 2;
+/// the timeout being used in skip ui
+const TWELVE_HOURS_IN_SECS: u64 = 43200;
 
 impl Strategy {
     /// carries out the steps needed to bring the new deposits from Ethereum to
@@ -53,19 +55,17 @@ impl Strategy {
 
             // validate that the deposit account balance exceeds the eureka routing
             // threshold amount
-            match eth_deposit_acc_bal < self.cfg.ethereum.ibc_transfer_threshold_amt {
+            if eth_deposit_acc_bal < self.cfg.ethereum.ibc_transfer_threshold_amt {
                 // if balance does not exceed the transfer threshold, we skip the eureka transfer steps
                 // and proceed to gaia ica -> neutron routing
-                true => {
-                    info!(target: DEPOSIT_PHASE, "IBC-Eureka transfer threshold not met! Proceeding to ICA routing.");
-                }
+                info!(target: DEPOSIT_PHASE, "IBC-Eureka transfer threshold not met! Proceeding to ICA routing.");
+            } else {
                 // if balance meets the transfer threshold, we carry out the eureka transfer steps
                 // prior to proceeding to gaia ica -> neutron routing
-                false => {
-                    info!(target: DEPOSIT_PHASE, "IBC-Eureka transfer threshold met!");
-                    self.eth_to_gaia_routing(eth_rp, eth_deposit_acc_bal)
-                        .await?;
-                }
+                info!(target: DEPOSIT_PHASE, "IBC-Eureka transfer threshold met!");
+
+                self.eth_to_gaia_routing(eth_rp, eth_deposit_acc_bal)
+                    .await?;
             }
         }
 
@@ -75,17 +75,15 @@ impl Strategy {
                 .gaia_client
                 .query_balance(&self.cfg.gaia.ica_address, &self.cfg.gaia.deposit_denom)
                 .await?;
+            info!(target: DEPOSIT_PHASE, "Cosmos Hub ICA balance = {gaia_ica_bal}");
 
             // depending on the gaia ICA deposit token balance, we either perform the ICA IBC routing
             // of the balances to Neutron, or proceed to the next stage
-            match gaia_ica_bal == 0 {
-                true => {
-                    info!(target: DEPOSIT_PHASE, "Cosmos Hub ICA balance is zero! proceeding to position entry");
-                }
-                false => {
-                    info!(target: DEPOSIT_PHASE, "Cosmos Hub ICA deposit token balance is {gaia_ica_bal}; pulling funds to Neutron");
-                    self.gaia_to_neutron_routing(gaia_ica_bal).await?;
-                }
+            if gaia_ica_bal == 0 {
+                info!(target: DEPOSIT_PHASE, "nothing to bridge; proceeding to position entry");
+            } else {
+                info!(target: DEPOSIT_PHASE, "pulling funds to Neutron...");
+                self.gaia_to_neutron_routing(gaia_ica_bal).await?;
             }
         }
 
@@ -98,56 +96,63 @@ impl Strategy {
                     &self.cfg.neutron.denoms.deposit_token,
                 )
                 .await?;
+            info!(target: DEPOSIT_PHASE, "Neutron deposit account balance = {neutron_deposit_bal}");
 
             // depending on the neutron deposit account balance, we either conclude the deposit phase
             // or perform the configured split before entering into Mars and Supervault positions.
-            match neutron_deposit_bal < MIN_SPLIT_BALANCE {
-                true => {
-                    info!(target: DEPOSIT_PHASE, "Neutron deposit account balance is insufficient for entry! concluding the deposit phase...");
-                }
-                false => {
-                    info!(target: DEPOSIT_PHASE, "Neutron deposit account balance = {neutron_deposit_bal}; lending & LPing...");
-                    // use Splitter to route funds from the Neutron program deposit
-                    // account to the Mars and Supervaults deposit accounts
-                    let splitter_exec_msg =
-                        valence_library_utils::msg::ExecuteMsg::<_, ()>::ProcessFunction(
-                            valence_splitter_library::msg::FunctionMsgs::Split {},
-                        );
-
-                    // use Mars Lending library to lend funds from Mars deposit account
-                    // into Mars protocol
-                    let mars_lending_exec_msg =
-                        valence_library_utils::msg::ExecuteMsg::<_, ()>::ProcessFunction(
-                            valence_mars_lending::msg::FunctionMsgs::Lend {},
-                        );
-
-                    // use Supervaults lper library to deposit funds from Supervaults deposit account
-                    // into the configured supervault
-                    let supervaults_lper_execute_msg =
-                        valence_library_utils::msg::ExecuteMsg::<_, ()>::ProcessFunction(
-                            valence_supervaults_lper::msg::FunctionMsgs::ProvideLiquidity {
-                                expected_vault_ratio_range: None,
-                            },
-                        );
-
-                    // enqueue all three actions under a single label as its an atomic subroutine
-                    valence_core::enqueue_neutron(
-                        &self.neutron_client,
-                        &self.cfg.neutron.authorizations,
-                        LEND_AND_PROVIDE_LIQUIDITY_LABEL,
-                        vec![
-                            to_json_binary(&splitter_exec_msg)?,
-                            to_json_binary(&mars_lending_exec_msg)?,
-                            to_json_binary(&supervaults_lper_execute_msg)?,
-                        ],
-                    )
-                    .await?;
-
-                    valence_core::tick_neutron(&self.neutron_client, &self.cfg.neutron.processor)
-                        .await?;
-                }
+            if neutron_deposit_bal < MIN_SPLIT_BALANCE {
+                info!(target: DEPOSIT_PHASE, "Neutron deposit account balance is insufficient for entry! concluding the deposit phase...");
+            } else {
+                info!(target: DEPOSIT_PHASE, "Neutron deposit account balance = {neutron_deposit_bal}; lending & LPing...");
+                self.enter_mars_supervaults_positions().await?;
             }
         }
+
+        Ok(())
+    }
+
+    /// performs three function calls atomically:
+    /// 1. split the deposit account balance between Mars and Supervaults
+    ///    input accounts at the preconfigured rate
+    /// 2. lend funds on Mars
+    /// 3. provide liquidity on Supervaults
+    async fn enter_mars_supervaults_positions(&mut self) -> anyhow::Result<()> {
+        // use Splitter to route funds from the Neutron program deposit
+        // account to the Mars and Supervaults deposit accounts
+        let splitter_exec_msg = valence_library_utils::msg::ExecuteMsg::<_, ()>::ProcessFunction(
+            valence_splitter_library::msg::FunctionMsgs::Split {},
+        );
+
+        // use Mars Lending library to lend funds from Mars deposit account
+        // into Mars protocol
+        let mars_lending_exec_msg =
+            valence_library_utils::msg::ExecuteMsg::<_, ()>::ProcessFunction(
+                valence_mars_lending::msg::FunctionMsgs::Lend {},
+            );
+
+        // use Supervaults lper library to deposit funds from Supervaults deposit account
+        // into the configured supervault
+        let supervaults_lper_execute_msg =
+            valence_library_utils::msg::ExecuteMsg::<_, ()>::ProcessFunction(
+                valence_supervaults_lper::msg::FunctionMsgs::ProvideLiquidity {
+                    expected_vault_ratio_range: None,
+                },
+            );
+
+        // enqueue all three actions under a single label as its an atomic subroutine
+        valence_core::enqueue_neutron(
+            &self.neutron_client,
+            &self.cfg.neutron.authorizations,
+            LEND_AND_PROVIDE_LIQUIDITY_LABEL,
+            vec![
+                to_json_binary(&splitter_exec_msg)?,
+                to_json_binary(&mars_lending_exec_msg)?,
+                to_json_binary(&supervaults_lper_execute_msg)?,
+            ],
+        )
+        .await?;
+
+        valence_core::tick_neutron(&self.neutron_client, &self.cfg.neutron.processor).await?;
 
         Ok(())
     }
@@ -167,8 +172,6 @@ impl Strategy {
             .query_skip_eureka_route(eth_deposit_acc_bal.to_string())
             .await
         {
-            // TODO: consider more thorough checks on this response as even in case of an error this
-            // may return something seemingly legit (json-value wise)
             Ok(r) => r,
             Err(e) => {
                 warn!(target: DEPOSIT_PHASE, "skip route error: {e}");
@@ -186,17 +189,16 @@ impl Strategy {
             ))?;
 
         let post_fee_amount_out_u128: u128 = amount_out_str.parse()?;
-        info!(target: DEPOSIT_PHASE, "post_fee_amount_out_u128 = {:?}", post_fee_amount_out_u128);
+        info!(target: DEPOSIT_PHASE, "post_fee_amount_out_u128 = {post_fee_amount_out_u128:?}" );
 
-        // 12 hours in secs, the timeout being used in skip ui
-        let timeout_duration = Duration::from_secs(12 * 60 * 60);
+        let timeout_duration = Duration::from_secs(TWELVE_HOURS_IN_SECS);
         let timeout_time = SystemTime::now()
             .checked_add(timeout_duration)
             .ok_or(anyhow!("failed to extend current time by 12h"))?;
 
         let timeout_timestamp_nanos = timeout_time
             .duration_since(UNIX_EPOCH)
-            .map_err(|e| anyhow::anyhow!("bad times: {e}"))?
+            .map_err(|e| anyhow!("bad times: {e}"))?
             .as_nanos();
 
         let skip_response_operations = skip_api_response
@@ -264,11 +266,7 @@ impl Strategy {
         // there for proof
         let coprocessor_input = json!({"skip_response": skip_api_response, "memo": temp_memo});
 
-        info!(
-            target: DEPOSIT_PHASE,
-            "co-processor input: {}",
-            coprocessor_input,
-        );
+        info!(target: DEPOSIT_PHASE, "co-processor input: {coprocessor_input}");
 
         info!(
             target: DEPOSIT_PHASE,
@@ -284,7 +282,7 @@ impl Strategy {
             )
             .await?;
 
-        info!(target: DEPOSIT_PHASE, "co_processor zkp post response: {:?}", skip_response_zkp);
+        info!(target: DEPOSIT_PHASE, "co_processor zkp post response: {skip_response_zkp:?}");
 
         // extract the program and domain parameters by decoding the zkp
         let (proof_program, inputs_program) = skip_response_zkp.program.decode()?;
@@ -308,20 +306,27 @@ impl Strategy {
             .get_transaction_receipt(zk_auth_exec_response.transaction_hash)
             .await?;
 
+        // transfer can be considered complete when the current ica balance increases
+        // by the expected post_fee ibc eureka transfer amount out
+        let pre_routing_gaia_ica_bal = self
+            .gaia_client
+            .query_balance(&self.cfg.gaia.ica_address, &self.cfg.gaia.deposit_denom)
+            .await?;
+        let gaia_ica_expected_balance = pre_routing_gaia_ica_bal + post_fee_amount_out_u128;
+        info!(
+            target: DEPOSIT_PHASE,
+            "gaia ica expected bal = {gaia_ica_expected_balance}; polling..."
+        );
+
         // block execution until the funds arrive to the Cosmos Hub ICA owned
         // by the Valence Interchain Account on Neutron.
-        // we poll
-        info!(target: DEPOSIT_PHASE, "gaia ica expected deposit token bal = {post_fee_amount_out_u128}; starting to poll");
-
         // poll for 15sec * 100 = 1500sec = 25min which should suffice for
         // IBC Eureka routing time of 15min
         self.gaia_client
             .poll_until_expected_balance(
                 &self.cfg.gaia.ica_address,
                 &self.cfg.gaia.deposit_denom,
-                // TODO: think about querying the current ica balance and adding
-                // this amount on top
-                post_fee_amount_out_u128,
+                gaia_ica_expected_balance,
                 15,  // every 15 sec
                 100, // for 100 times
             )
@@ -329,6 +334,11 @@ impl Strategy {
         Ok(())
     }
 
+    /// carries out the steps needed to route the deposits from cosmos hub ICA to the
+    /// Neutron deposit account.
+    /// two messages are enqueued:
+    /// 1. update the ica ibc transfer library transfer amount
+    /// 2. trigger the ica ibc transfer
     async fn gaia_to_neutron_routing(&mut self, gaia_ica_bal: u128) -> anyhow::Result<()> {
         let ica_ibc_transfer_update_msg: valence_library_utils::msg::ExecuteMsg<
             valence_ica_ibc_transfer::msg::FunctionMsgs,
@@ -368,6 +378,22 @@ impl Strategy {
         )
         .await?;
 
+        // transfer can be considered complete when the current ica balance increases
+        // by the expected post_fee ibc eureka transfer amount out
+        let pre_routing_neutron_deposit_acc_bal = self
+            .neutron_client
+            .query_balance(
+                &self.cfg.neutron.accounts.deposit,
+                &self.cfg.neutron.denoms.deposit_token,
+            )
+            .await?;
+
+        let neutron_deposit_acc_expected_bal = pre_routing_neutron_deposit_acc_bal + gaia_ica_bal;
+        info!(
+            target: DEPOSIT_PHASE,
+            "neutron deposit acc expected bal = {neutron_deposit_acc_expected_bal}; polling..."
+        );
+
         info!(target: DEPOSIT_PHASE, "tick: update & transfer");
         valence_core::tick_neutron(&self.neutron_client, &self.cfg.neutron.processor).await?;
 
@@ -379,7 +405,7 @@ impl Strategy {
             .poll_until_expected_balance(
                 &self.cfg.neutron.accounts.deposit,
                 &self.cfg.neutron.denoms.deposit_token,
-                gaia_ica_bal,
+                neutron_deposit_acc_expected_bal,
                 5,
                 30,
             )

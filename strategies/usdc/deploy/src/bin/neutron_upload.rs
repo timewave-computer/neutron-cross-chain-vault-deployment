@@ -29,7 +29,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         let entry = entry?;
         if entry.path().is_file() {
             let contract_name = entry.file_name().to_string_lossy().to_string();
-            println!("Uploading contract: {}", contract_name);
+            println!("Uploading contract: {contract_name}");
             let code_id = neutron_client
                 .upload_code(entry.path().to_str().unwrap())
                 .await?;

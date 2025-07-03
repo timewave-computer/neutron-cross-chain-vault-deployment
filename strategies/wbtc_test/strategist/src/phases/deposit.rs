@@ -180,7 +180,7 @@ impl Strategy {
             .prove(&self.cfg.coprocessor.eureka_circuit_id, &coprocessor_input)
             .await?;
 
-        info!(target: DEPOSIT_PHASE, "co_processor zkp post response: {:?}", skip_response_zkp);
+        info!(target: DEPOSIT_PHASE, "co_processor zkp post response: {skip_response_zkp:?}");
 
         // extract the program and domain parameters by decoding the zkp
         let (proof_program, inputs_program) = skip_response_zkp.program.decode()?;
