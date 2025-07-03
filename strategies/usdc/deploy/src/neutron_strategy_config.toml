@@ -1,0 +1,25 @@
+grpc_url = "http://rpc.neutron.quokkastake.io"
+grpc_port = "9090"
+chain_id = "neutron-1"
+min_ibc_fee = "1"
+supervault = "neutron1z4qky902yes9zl5eruwgdd2pgtlyeglunc0escf0a7n2xeyw97gqcr7u5u"
+authorizations = "neutron17galwl0670q5vrvfsuxu9zsnhut45p90ml75nucz73qp38hv7yyqyga83d"
+processor = "neutron1gdz93w34jwg69xwygf8m7202aguev93ygejy2duuvz2zd7m3sq6sktg7kk"
+
+[denoms]
+deposit_token = "ibc/B559A80D62249C8AA07A380E2A2BEA6E5CA9A6F079C912C3A9E9B494105E4F81"
+ntrn = "untrn"
+supervault_lp = "factory/neutron1z4qky902yes9zl5eruwgdd2pgtlyeglunc0escf0a7n2xeyw97gqcr7u5u/BTC-USDC"
+
+[accounts]
+noble_ica = "neutron1zt6smjf7ppn45ajnhenpn7jmsvvn69hcsry38kvdvftwcja2rgsqkumj3n"
+deposit = "neutron1g7498csr6svpfxtu26kk8tq5mavdfpr5j5p6h4cmtm9tv27gjlcqupl3kr"
+settlement = "neutron1ddmcqvr5xqet8c80m2zjcs0sud0xure854gtkytt2gd6zqakkrqsrlvncc"
+
+[libraries]
+supervault_lper = "neutron1caf34pkayjtt2mrtht8qjrjnz99mxqhf0f97kztxpklqldzrqkwqnx7fqm"
+clearing_queue = "neutron18dsl9523cvdj7dgn5ayev2kz09dhrha7fhsndv4p0urzetzvnyhsjsd3u4"
+ica_transfer_noble = "neutron1gzfkfjmcztq2mkcx8fmhzjq2wspu8elgjensyfes7qs8jv5jy6hqq4trxx"
+
+[coprocessor_app_ids]
+clearing_queue = "d285c75c5b41e731f0fd0b3c6279557d178fd15c1be978e98d5f5f3f1fcf73a4"

@@ -9,7 +9,7 @@ use packages::{
     utils::{mars::MarsLending, supervaults::Supervaults},
 };
 use valence_domain_clients::{
-    cosmos::{base_client::BaseClient},
+    cosmos::base_client::BaseClient,
     evm::base_client::{CustomProvider, EvmBaseClient},
 };
 

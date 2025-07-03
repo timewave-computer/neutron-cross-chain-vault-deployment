@@ -21,6 +21,6 @@ rate_update_threshold    = "0.2"                                        # 20% ra
 
 [cctp_transfer]
 cctp_token_messenger        = "0xBd3fa81B58Ba92a82136038B25aDec7066af3155" # CCTP Token Messenger contract address
-recipient                   = "0x0000000000000000000000000000000000000000000000000000000000000001" # Once ICA is created, we'll put the recipient here.
+recipient                   = "0x2772a7f14a1a678bdf35419de9708d0a1bfec4a894cc7e6d2d802d2bed3c1e3c" # ICA noble address in bytes32
 destination_domain          = 4                                          # Noble
 cctp_transfer_threshold_amt = 1000000
