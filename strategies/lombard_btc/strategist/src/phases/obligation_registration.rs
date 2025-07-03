@@ -39,7 +39,9 @@ impl Strategy {
         // default to 0 to fetch everything. otherwise we increment the id by 1 to only
         // fetch the new withdraw requests that have not been posted to the clearing
         // queue yet.
-        let start_id: u64 = clearing_queue_cfg.latest_id.map_or(0, |id| id.u64() + 1);
+        let start_id: u64 = clearing_queue_cfg
+            .latest_id
+            .map_or(0, |id| id.u64().saturating_add(1));
 
         // query the OneWayVault indexer to fetch all obligations that were registered
         // on the vault but are not yet registered into the queue on Neutron

@@ -53,12 +53,8 @@ impl Strategy {
 
         // validate that the newly calculated redemption rate does not exceed
         // the max rate update thresholds relative to the current rate
-        let current_vault_rate = self
-            .eth_client
-            .query(one_way_vault_contract.redemptionRate())
-            .await?
-            ._0;
-        self.validate_new_redemption_rate(current_vault_rate, redemption_rate_sol_u256)?;
+        self.validate_new_redemption_rate(eth_rp, redemption_rate_sol_u256)
+            .await?;
 
         info!(target: UPDATE_PHASE, "updating ethereum vault redemption rate");
         let update_request = one_way_vault_contract
@@ -75,13 +71,21 @@ impl Strategy {
     }
 
     /// checks that the newly calculated redemption rate is within the acceptable
-    /// rate update bounds relative to the current rate.
-    // todo: pause the vault if thresholds are exceeded
-    fn validate_new_redemption_rate(
+    /// rate update bounds relative to the current rate. pauses the vault otherwise.
+    async fn validate_new_redemption_rate(
         &self,
-        current_vault_rate: U256,
+        eth_rp: &CustomProvider,
         new_redemption_rate: U256,
     ) -> anyhow::Result<()> {
+        let one_way_vault_contract =
+            OneWayVault::new(self.cfg.ethereum.libraries.one_way_vault, &eth_rp);
+
+        let current_vault_rate = self
+            .eth_client
+            .query(one_way_vault_contract.redemptionRate())
+            .await?
+            ._0;
+
         info!(target: UPDATE_PHASE, "pre_update_rate = {current_vault_rate}");
         let current_rate_u128 = u128::try_from(current_vault_rate)?;
 
@@ -90,14 +94,20 @@ impl Strategy {
         let rate_change_decimal =
             Decimal::checked_from_ratio(redemption_rate_u128, current_rate_u128)?;
 
-        // TODO: pause the vault if thresholds are exceeded
         match rate_change_decimal.cmp(&Decimal::one()) {
             // rate change is less than 1.0 -> redemption rate decreased
             Ordering::Less => {
                 let rate_delta = Decimal::one() - rate_change_decimal;
                 info!(target: UPDATE_PHASE, "redemption rate epoch delta = -{rate_delta}");
-                if rate_delta >= self.cfg.ethereum.rate_update_threshold {
-                    warn!(target: UPDATE_PHASE, "rate delta exceeds the threshold of {}; skip", self.cfg.ethereum.rate_update_threshold);
+                if rate_delta > self.cfg.ethereum.rate_update_threshold {
+                    warn!(target: UPDATE_PHASE, "rate delta exceeds the threshold of {}; pausing the vault", self.cfg.ethereum.rate_update_threshold);
+                    let pause_request = one_way_vault_contract.pause().into_transaction_request();
+                    let pause_vault_exec_response =
+                        self.eth_client.sign_and_send(pause_request).await?;
+                    eth_rp
+                        .get_transaction_receipt(pause_vault_exec_response.transaction_hash)
+                        .await?;
+
                     return Err(anyhow!(
                         "newly calculated rate exceeds the rate update thresholds"
                     ));
@@ -106,15 +116,20 @@ impl Strategy {
             // rate change is exactly 1.0 -> redemption rate did not change
             Ordering::Equal => {
                 info!(target: UPDATE_PHASE, "redemption rate epoch delta = 0.0");
-                // TODO: consider removing this early return; for testing this just saves gas
-                return Ok(());
             }
             // rate change is greater than 1.0 -> redemption rate increased
             Ordering::Greater => {
                 let rate_delta = rate_change_decimal - Decimal::one();
                 info!(target: UPDATE_PHASE, "redemption rate epoch delta = +{rate_delta}");
-                if rate_delta >= self.cfg.ethereum.rate_update_threshold {
-                    warn!(target: UPDATE_PHASE, "rate delta exceeds the threshold of {}; skip", self.cfg.ethereum.rate_update_threshold);
+                if rate_delta > self.cfg.ethereum.rate_update_threshold {
+                    warn!(target: UPDATE_PHASE, "rate delta exceeds the threshold of {}; pausing the vault", self.cfg.ethereum.rate_update_threshold);
+                    let pause_request = one_way_vault_contract.pause().into_transaction_request();
+                    let pause_vault_exec_response =
+                        self.eth_client.sign_and_send(pause_request).await?;
+                    eth_rp
+                        .get_transaction_receipt(pause_vault_exec_response.transaction_hash)
+                        .await?;
+
                     return Err(anyhow!(
                         "newly calculated rate exceeds the rate update thresholds"
                     ));
