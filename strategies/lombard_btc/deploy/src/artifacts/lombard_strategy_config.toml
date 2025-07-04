@@ -1,4 +1,4 @@
-grpc_url = "https://grpc1.mainnet.lombard.tm.p2p.world"
+grpc_url = "https://<...>"
 grpc_port = "443"
 chain_id = "ledger-mainnet-1"
 chain_denom = "ulom"
