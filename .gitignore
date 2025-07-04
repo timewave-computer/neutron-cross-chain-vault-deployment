@@ -11,3 +11,4 @@ strategies/*/deploy/src/coprocessor_strategy_config.toml
 strategies/lombard_btc/deploy/src/lombard_strategy_config.toml
 !strategies/*/strategist/*.example.env
 !strategies/usdc/deploy/src/*.toml
+strategies/lombard_btc/deploy/src/artifacts/lombard_strategy_config.toml
