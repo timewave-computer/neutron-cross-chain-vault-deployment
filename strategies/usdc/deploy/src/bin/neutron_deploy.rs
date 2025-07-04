@@ -10,7 +10,7 @@ use alloy::{hex::FromHex, primitives::FixedBytes};
 use cosmwasm_std::{Binary, Decimal, Uint64, Uint128};
 use serde::Deserialize;
 use sp1_sdk::{HashableKey, SP1VerifyingKey};
-use usdc_deploy::{DIR, UUSDC_DENOM};
+use usdc_deploy::{INPUTS_DIR, OUTPUTS_DIR, UUSDC_DENOM};
 use usdc_types::{
     neutron_config::{
         NeutronAccounts, NeutronCoprocessorAppIds, NeutronDenoms, NeutronLibraries,
@@ -78,14 +78,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let current_dir = env::current_dir()?;
 
-    let parameters = fs::read_to_string(current_dir.join(format!("{DIR}/neutron.toml")))
+    let parameters = fs::read_to_string(current_dir.join(format!("{INPUTS_DIR}/neutron.toml")))
         .expect("Failed to read file");
 
     let params: Parameters = toml::from_str(&parameters).expect("Failed to parse TOML");
 
     // Read code IDS from the code ids file
     let code_ids_content =
-        fs::read_to_string(current_dir.join(format!("{DIR}/neutron_code_ids.toml")))
+        fs::read_to_string(current_dir.join(format!("{OUTPUTS_DIR}/neutron_code_ids.toml")))
             .expect("Failed to read code ids file");
     let uploaded_contracts: UploadedContracts =
         toml::from_str(&code_ids_content).expect("Failed to parse code ids");
@@ -420,7 +420,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let neutron_cfg_toml =
         toml::to_string(&neutron_cfg).expect("Failed to serialize Neutron Strategy Config");
     fs::write(
-        current_dir.join(format!("{DIR}/neutron_strategy_config.toml")),
+        current_dir.join(format!("{OUTPUTS_DIR}/neutron_strategy_config.toml")),
         neutron_cfg_toml,
     )
     .expect("Failed to write Neutron Strategy Config to file");
@@ -474,7 +474,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
 
     // Write the Noble strategy config to a file
-    let noble_cfg_path = current_dir.join(format!("{DIR}/noble_strategy_config.toml"));
+    let noble_cfg_path = current_dir.join(format!("{OUTPUTS_DIR}/noble_strategy_config.toml"));
     fs::write(
         noble_cfg_path,
         toml::to_string(&noble_cfg).expect("Failed to serialize Noble strategy config"),

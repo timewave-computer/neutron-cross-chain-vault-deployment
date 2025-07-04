@@ -13,7 +13,7 @@ use valence_domain_clients::{
     coprocessor::base_client::CoprocessorBaseClient,
     cosmos::{grpc_client::GrpcSigningClient, wasm_client::WasmClient},
 };
-use wbtc_test_deploy::DIR;
+use wbtc_test_deploy::{INPUTS_DIR, OUTPUTS_DIR};
 use wbtc_test_types::{
     gaia_config::GaiaStrategyConfig,
     neutron_config::{
@@ -84,14 +84,14 @@ async fn main() -> anyhow::Result<()> {
 
     let current_dir = env::current_dir()?;
 
-    let parameters = fs::read_to_string(current_dir.join(format!("{DIR}/neutron.toml")))
+    let parameters = fs::read_to_string(current_dir.join(format!("{INPUTS_DIR}/neutron.toml")))
         .expect("Failed to read file");
 
     let params: Parameters = toml::from_str(&parameters).expect("Failed to parse TOML");
 
     // Read code IDS from the code ids file
     let code_ids_content =
-        fs::read_to_string(current_dir.join(format!("{DIR}/neutron_code_ids.toml")))
+        fs::read_to_string(current_dir.join(format!("{OUTPUTS_DIR}/neutron_code_ids.toml")))
             .expect("Failed to read code ids file");
     let uploaded_contracts: UploadedContracts =
         toml::from_str(&code_ids_content).expect("Failed to parse code ids");
@@ -737,7 +737,7 @@ async fn main() -> anyhow::Result<()> {
     };
 
     // Write the Gaia strategy config to a file
-    let gaia_cfg_path = current_dir.join(format!("{DIR}/gaia_strategy_config.toml"));
+    let gaia_cfg_path = current_dir.join(format!("{OUTPUTS_DIR}/gaia_strategy_config.toml"));
     fs::write(
         gaia_cfg_path,
         toml::to_string(&gaia_cfg).expect("Failed to serialize Gaia strategy config"),

@@ -21,7 +21,7 @@ use valence_domain_clients::{
     cosmos::wasm_client::WasmClient,
 };
 use valence_library_utils::LibraryAccountType;
-use wbtc_test_deploy::DIR;
+use wbtc_test_deploy::{INPUTS_DIR, OUTPUTS_DIR};
 use wbtc_test_types::neutron_config::NeutronStrategyConfig;
 
 #[derive(Deserialize, Debug)]
@@ -48,7 +48,7 @@ async fn main() -> anyhow::Result<()> {
 
     let current_dir = env::current_dir()?;
 
-    let ntrn_params = fs::read_to_string(current_dir.join(format!("{DIR}/neutron.toml")))
+    let ntrn_params = fs::read_to_string(current_dir.join(format!("{INPUTS_DIR}/neutron.toml")))
         .expect("Failed to read file");
 
     let ntrn_params: Parameters =
@@ -57,7 +57,7 @@ async fn main() -> anyhow::Result<()> {
     let strategist = ntrn_params.general.strategist;
 
     let ntrn_cfg =
-        fs::read_to_string(current_dir.join(format!("{DIR}/neutron_strategy_config.toml")))
+        fs::read_to_string(current_dir.join(format!("{OUTPUTS_DIR}/neutron_strategy_config.toml")))
             .expect("Failed to read file");
 
     let ntrn_strategy_config: NeutronStrategyConfig =
