@@ -47,7 +47,7 @@ impl Strategy {
         // on the vault but are not yet registered into the queue on Neutron
         let new_obligations = self
             .indexer_client
-            .query_vault_withdraw_requests(Some(start_id))
+            .query_vault_withdraw_requests(Some(start_id), true)
             .await?;
 
         if new_obligations.is_empty() {

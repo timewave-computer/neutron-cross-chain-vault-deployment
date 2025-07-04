@@ -49,7 +49,7 @@ impl Strategy {
         // on the vault but are not yet registered into the queue on Neutron
         let new_obligations: Vec<(u64, alloy::primitives::Address, String, U256)> = self
             .indexer_client
-            .query_vault_withdraw_requests(latest_registered_obligation_id)
+            .query_vault_withdraw_requests(latest_registered_obligation_id, true)
             .await
             .unwrap_or_default();
         info!(
