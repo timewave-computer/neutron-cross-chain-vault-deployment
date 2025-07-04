@@ -12,7 +12,7 @@ use packages::{
     },
 };
 use serde::Deserialize;
-use usdc_deploy::DIR;
+use usdc_deploy::{INPUTS_DIR, OUTPUTS_DIR};
 use usdc_types::ethereum_config::EthereumStrategyConfig;
 use valence_domain_clients::{
     clients::ethereum::EthereumClient,
@@ -42,13 +42,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Read ethereum.toml from the deploy directory
     let current_dir = env::current_dir()?;
-    let parameters = fs::read_to_string(current_dir.join(format!("{DIR}/ethereum.toml")))
+    let parameters = fs::read_to_string(current_dir.join(format!("{INPUTS_DIR}/ethereum.toml")))
         .expect("Failed to read file");
     let parameters: Parameters = toml::from_str(&parameters).expect("Failed to parse TOML");
 
-    let eth_stg_cfg =
-        fs::read_to_string(current_dir.join(format!("{DIR}/ethereum_strategy_config.toml")))
-            .expect("Failed to read file");
+    let eth_stg_cfg = fs::read_to_string(
+        current_dir.join(format!("{OUTPUTS_DIR}/ethereum_strategy_config.toml")),
+    )
+    .expect("Failed to read file");
 
     let eth_stg_cfg: EthereumStrategyConfig =
         toml::from_str(&eth_stg_cfg).expect("Failed to parse TOML");

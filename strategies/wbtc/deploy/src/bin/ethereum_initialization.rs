@@ -12,7 +12,7 @@ use valence_domain_clients::{
     coprocessor::base_client::CoprocessorBaseClient,
     evm::{base_client::EvmBaseClient, request_provider_client::RequestProviderClient},
 };
-use wbtc_deploy::DIR;
+use wbtc_deploy::{INPUTS_DIR, OUTPUTS_DIR};
 use wbtc_types::ethereum_config::EthereumStrategyConfig;
 
 #[derive(Deserialize, Debug)]
@@ -44,13 +44,14 @@ async fn main() -> anyhow::Result<()> {
 
     // Read ethereum.toml from the deploy directory
     let current_dir = env::current_dir()?;
-    let parameters = fs::read_to_string(current_dir.join(format!("{DIR}/ethereum.toml")))
+    let parameters = fs::read_to_string(current_dir.join(format!("{INPUTS_DIR}/ethereum.toml")))
         .expect("Failed to read file");
     let parameters: Parameters = toml::from_str(&parameters).expect("Failed to parse TOML");
 
-    let eth_stg_cfg =
-        fs::read_to_string(current_dir.join(format!("{DIR}/ethereum_strategy_config.toml")))
-            .expect("Failed to read file");
+    let eth_stg_cfg = fs::read_to_string(
+        current_dir.join(format!("{OUTPUTS_DIR}/ethereum_strategy_config.toml")),
+    )
+    .expect("Failed to read file");
 
     let eth_stg_cfg: EthereumStrategyConfig =
         toml::from_str(&eth_stg_cfg).expect("Failed to parse TOML");

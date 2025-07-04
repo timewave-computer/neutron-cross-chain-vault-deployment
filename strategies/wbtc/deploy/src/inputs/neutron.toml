@@ -1,5 +1,5 @@
 [general]
-grpc_url   = "https://rpc.neutron.quokkastake.io"
+grpc_url   = "http://rpc.neutron.quokkastake.io"
 grpc_port  = "9090"
 chain_id   = "neutron-1"
 owner      = "neutron14mlpd48k5vkeset4x7f78myz3m47jcax3ysjkp" # Should be Neutron multisig

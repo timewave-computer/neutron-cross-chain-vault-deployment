@@ -11,7 +11,7 @@ use packages::types::sol_types::{
     processor_contract::LiteProcessor,
 };
 use serde::Deserialize;
-use usdc_deploy::DIR;
+use usdc_deploy::{INPUTS_DIR, OUTPUTS_DIR};
 use usdc_types::ethereum_config::{
     EthereumAccounts, EthereumDenoms, EthereumLibraries, EthereumStrategyConfig,
 };
@@ -67,7 +67,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Read ethereum.toml from the deploy directory
     let current_dir = env::current_dir()?;
-    let parameters = fs::read_to_string(current_dir.join(format!("{DIR}/ethereum.toml")))
+    let parameters = fs::read_to_string(current_dir.join(format!("{INPUTS_DIR}/ethereum.toml")))
         .expect("Failed to read file");
 
     // Parse the TOML into your struct
@@ -252,7 +252,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let eth_cfg_toml =
         toml::to_string(&eth_cfg).expect("Failed to serialize Ethereum Strategy Config");
     fs::write(
-        current_dir.join(format!("{DIR}/ethereum_strategy_config.toml")),
+        current_dir.join(format!("{OUTPUTS_DIR}/ethereum_strategy_config.toml")),
         eth_cfg_toml,
     )
     .expect("Failed to write Ethereum Strategy Config to file");
