@@ -12,7 +12,7 @@ use crate::{
     phases::{DEPOSIT_PHASE, REGISTRATION_PHASE},
 };
 
-const ICA_CONTRACT_FUNDING_AMT: u128 = 10_000;
+const ICA_CONTRACT_FUNDING_AMT: u128 = 200_000;
 
 pub async fn enqueue_neutron(
     client: &NeutronClient,
