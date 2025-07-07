@@ -9,7 +9,7 @@ const RUNNER: &str = "runner";
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     // load environment variables
-    let env_path = env::current_dir()?.join("strategies/lombard_btc/strategist/lbtc.env");
+    let env_path = env::current_dir()?.join("strategies/btc_lst/strategist/btc_lst.env");
     dotenv::from_path(env_path.as_path())?;
 
     setup_logging().await?;
