@@ -66,7 +66,7 @@ impl Strategy {
             &cfg.noble.grpc_port,
             &mnemonic,
             &cfg.noble.chain_id,
-            "ustake",
+            "uusdc",
         )
         .await?;
 
