@@ -1,0 +1,15 @@
+[code_ids]
+supervaults_withdrawer       = 3830
+verification_gateway         = 3883
+clearing_queue_supervaults   = 3832
+dynamic_ratio_query_provider = 3769
+supervaults_lper             = 3829
+forwarder_library            = 3701
+splitter_library             = 3771
+authorization                = 3820
+interchain_account           = 3770
+ica_ibc_transfer             = 3778
+mars_lending                 = 3775
+base_account                 = 3773
+processor                    = 3776
+maxbtc_issuer                = 3804

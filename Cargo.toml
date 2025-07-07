@@ -11,7 +11,10 @@ members = [
     "strategies/wbtc/strategist",
     "strategies/wbtc/types",
     "strategies/usdc/deploy",
-    "strategies/usdc/types"
+    "strategies/usdc/types",
+    "strategies/btc_lst/deploy",
+    "strategies/btc_lst/strategist",
+    "strategies/btc_lst/types",
 ]
 resolver = "2"
 
