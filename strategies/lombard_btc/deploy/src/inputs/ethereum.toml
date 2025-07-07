@@ -19,9 +19,6 @@ starting_rate            = "100000000"                                  # 1e8 - 
 min_rate_update_delay    = 300                                          # 5 minutes - Minimum delay for rate updates - for testing purposes      
 max_rate_update_delay    = 345600                                       # 4 days in seconds - Maximum delay for rate updates before vault gets paused
 
-# TODO(bekauz) - Leaving this here for now so that you can remove it without me having to fix the strategist code
-rate_update_threshold    = "0.2"                                        # 20% rate update threshold
-
 [eureka_transfer]
 handler                    = "0xfc2d0487a0ae42ae7329a80dc269916a9184cf7c"
 recipient                  = "lom13ehuhysn5mqjeaheeuew2gjs785f6k7jm8vfsqg3jhtpkwppcmzqdk2xf9" # Contract address that will handle the memo actions

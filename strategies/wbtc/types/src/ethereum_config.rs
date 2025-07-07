@@ -8,6 +8,13 @@ pub struct EthereumStrategyConfig {
     /// ethereum node rpc url
     pub rpc_url: String,
 
+    /// rate update thresholds. if newly calculated rate
+    /// would result in an increase or decrease relative
+    /// to the current rate that would exceed these values,
+    /// vault gets paused and the update is skipped.
+    pub max_rate_increment_bps: u64,
+    pub max_rate_decrement_bps: u64,
+
     /// minimum eureka-transfer input account balance
     /// to perform IBC transfer (taking fees into account)
     pub ibc_transfer_threshold_amt: U256,

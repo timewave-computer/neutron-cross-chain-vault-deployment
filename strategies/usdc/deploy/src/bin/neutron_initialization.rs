@@ -2,7 +2,7 @@ use std::{env, error::Error, fs};
 
 use cosmwasm_std::Binary;
 use packages::labels::{
-    ICA_TRANSFER_LABEL, PROVIDE_LIQUIDIY_LABEL, REGISTER_OBLIGATION_LABEL, SETTLE_OBLIGATION_LABEL,
+    PROVIDE_LIQUIDIY_LABEL, REGISTER_OBLIGATION_LABEL, SETTLE_OBLIGATION_LABEL,
 };
 use serde::Deserialize;
 use sp1_sdk::{HashableKey, SP1VerifyingKey};
@@ -78,90 +78,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         AuthorizationModeInfo::Permissioned(PermissionTypeInfo::WithoutCallLimit(vec![
             strategist.clone(),
         ]));
-
-    // Subroutine for ICA Transfer
-    // Involves updating the amount and trigger the transfer
-    let update_amount_function = AtomicFunction {
-        domain: Domain::Main,
-        message_details: MessageDetails {
-            message_type: MessageType::CosmwasmExecuteMsg,
-            message: Message {
-                // Well only allow updating the amount, any other update will be rejected
-                name: "update_config".to_string(),
-                params_restrictions: Some(vec![
-                    ParamRestriction::MustBeIncluded(vec![
-                        "update_config".to_string(),
-                        "new_config".to_string(),
-                        "amount".to_string(),
-                    ]),
-                    ParamRestriction::CannotBeIncluded(vec![
-                        "update_config".to_string(),
-                        "new_config".to_string(),
-                        "input_addr".to_string(),
-                    ]),
-                    ParamRestriction::CannotBeIncluded(vec![
-                        "update_config".to_string(),
-                        "new_config".to_string(),
-                        "denom".to_string(),
-                    ]),
-                    ParamRestriction::CannotBeIncluded(vec![
-                        "update_config".to_string(),
-                        "new_config".to_string(),
-                        "receiver".to_string(),
-                    ]),
-                    ParamRestriction::CannotBeIncluded(vec![
-                        "update_config".to_string(),
-                        "new_config".to_string(),
-                        "memo".to_string(),
-                    ]),
-                    ParamRestriction::CannotBeIncluded(vec![
-                        "update_config".to_string(),
-                        "new_config".to_string(),
-                        "remote_chain_info".to_string(),
-                    ]),
-                    ParamRestriction::CannotBeIncluded(vec![
-                        "update_config".to_string(),
-                        "new_config".to_string(),
-                        "denom_to_pfm_map".to_string(),
-                    ]),
-                ]),
-            },
-        },
-        contract_address: LibraryAccountType::Addr(
-            ntrn_strategy_config.libraries.ica_transfer_noble.clone(),
-        ),
-    };
-
-    let transfer_function = AtomicFunction {
-        domain: Domain::Main,
-        message_details: MessageDetails {
-            message_type: MessageType::CosmwasmExecuteMsg,
-            message: Message {
-                name: "process_function".to_string(),
-                // Only allow calling transfer
-                params_restrictions: Some(vec![ParamRestriction::MustBeIncluded(vec![
-                    "process_function".to_string(),
-                    "transfer".to_string(),
-                ])]),
-            },
-        },
-        contract_address: LibraryAccountType::Addr(
-            ntrn_strategy_config.libraries.ica_transfer_noble,
-        ),
-    };
-
-    let subroutine_ica_transfer = AtomicSubroutineBuilder::new()
-        .with_function(update_amount_function)
-        .with_function(transfer_function)
-        .build();
-
-    let authorization_ica_transfer = AuthorizationBuilder::new()
-        .with_label(ICA_TRANSFER_LABEL)
-        .with_mode(authorization_permissioned_mode.clone())
-        .with_subroutine(subroutine_ica_transfer)
-        .build();
-
-    authorizations.push(authorization_ica_transfer);
 
     let provide_liquidity_function = AtomicFunction {
         domain: Domain::Main,
