@@ -8610,6 +8610,40 @@ dependencies = [
 ]
 
 [[package]]
+name = "usdc_strategist"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "anyhow",
+ "async-trait",
+ "cosmwasm-std",
+ "dotenv",
+ "env_logger",
+ "hex",
+ "log",
+ "mmvault",
+ "packages",
+ "serde",
+ "serde_json",
+ "tokio",
+ "usdc_types",
+ "valence-account-utils",
+ "valence-authorization-utils",
+ "valence-clearing-queue-supervaults",
+ "valence-domain-clients",
+ "valence-forwarder-library",
+ "valence-ica-ibc-transfer",
+ "valence-lending-utils",
+ "valence-library-utils",
+ "valence-mars-lending",
+ "valence-processor-utils",
+ "valence-splitter-library",
+ "valence-strategist-utils",
+ "valence-supervaults-lper",
+ "valence-verification-gateway",
+]
+
+[[package]]
 name = "usdc_types"
 version = "0.1.0"
 dependencies = [
