@@ -48,7 +48,6 @@ struct General {
     chain_id: String,
     owner: String,
     valence_owner: String,
-    strategist: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -362,7 +361,7 @@ async fn main() -> anyhow::Result<()> {
 
     let dynamic_ratio_query_provider_instantiate_msg =
         valence_dynamic_ratio_query_provider::msg::InstantiateMsg {
-            admin: params.general.strategist,
+            admin: params.general.owner.clone(),
             split_cfg: DenomSplitMap {
                 split_cfg: denom_to_splits,
             },
@@ -1338,6 +1337,7 @@ async fn main() -> anyhow::Result<()> {
 
     let libraries = NeutronLibraries {
         deposit_splitter: deposit_splitter_library_address,
+        dynamic_ratio_query_provider: dynamic_ratio_query_provider_address,
         mars_lending: mars_lending_library_address,
         clearing_queue: clearing_queue_library_address,
         ica_transfer: ica_ibc_transfer_library_address,

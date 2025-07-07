@@ -80,6 +80,8 @@ pub struct NeutronAccounts {
 pub struct NeutronLibraries {
     /// Deposit splitter where funds will be moved from deposit account to both Mars deposit or Supervault deposit according to the split ratio
     pub deposit_splitter: String,
+    /// Dynamic ratio query provider
+    pub dynamic_ratio_query_provider: String,
     /// Mars lending library
     pub mars_lending: String,
     /// Supervault lpers
