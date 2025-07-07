@@ -1,6 +1,7 @@
 use std::{env, path::Path};
 
 use anyhow::anyhow;
+use packages::utils::supervaults::Supervaults;
 use serde::{Deserialize, Serialize};
 use usdc_types::{
     ethereum_config::EthereumStrategyConfig, neutron_config::NeutronStrategyConfig,
@@ -43,6 +44,8 @@ pub struct Strategy {
     /// active coprocessor client
     pub(crate) coprocessor_client: CoprocessorClient,
 }
+
+impl Supervaults for Strategy {}
 
 #[allow(dead_code)]
 impl Strategy {

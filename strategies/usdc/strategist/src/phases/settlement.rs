@@ -1,7 +1,7 @@
 use cosmwasm_std::to_json_binary;
 use log::{info, warn};
 use packages::{
-    labels::{MARS_WITHDRAW_LABEL, SETTLE_OBLIGATION_LABEL},
+    labels::SETTLE_OBLIGATION_LABEL,
     phases::SETTLEMENT_PHASE,
     utils::{obligation::batch_obligation_queue_payouts, valence_core},
 };
@@ -14,15 +14,14 @@ impl Strategy {
     pub async fn settlement(&mut self) -> anyhow::Result<()> {
         info!(target: SETTLEMENT_PHASE, "starting settlement phase");
 
-        let settlement_bal_deposit = self
+        let settlement_bal_lp = self
             .neutron_client
             .query_balance(
                 &self.cfg.neutron.accounts.settlement,
-                &self.cfg.neutron.denoms.deposit_token,
+                &self.cfg.neutron.denoms.supervault_lp,
             )
             .await?;
-
-        info!(target: SETTLEMENT_PHASE, "settlement deposit balance = {settlement_bal_deposit}");
+        info!(target: SETTLEMENT_PHASE, "settlement LP balance = {settlement_bal_lp}");
 
         // query the Clearing Queue pending obligations
         let ObligationsResponse { obligations } = self
@@ -51,46 +50,14 @@ impl Strategy {
 
         for obligation_coin in batched_obligation_coins {
             match obligation_coin.denom.as_str() {
-                d if d == self.cfg.neutron.denoms.deposit_token => {
-                    info!(target: SETTLEMENT_PHASE, "batched deposit_token obligation = {obligation_coin}");
-                    // if there is insufficient amount of deposit token denom in the settlement account,
-                    // we need to withdraw the delta from Mars lending position
-                    if settlement_bal_deposit < obligation_coin.amount.u128() {
-                        // find the amount to be withdrawn
-                        let obligations_delta = obligation_coin
-                            .amount
-                            .u128()
-                            .saturating_sub(settlement_bal_deposit);
-
-                        info!(
-                            target: SETTLEMENT_PHASE, "settlement_account deposit_token balance deficit = {obligations_delta}"
+                d if d == self.cfg.neutron.denoms.supervault_lp => {
+                    info!(target: SETTLEMENT_PHASE, "batched supervaults_lp obligation = {obligation_coin}");
+                    if settlement_bal_lp < obligation_coin.amount.u128() {
+                        warn!(target: SETTLEMENT_PHASE, "insufficient supervault LP share balance!");
+                        warn!(
+                            target: SETTLEMENT_PHASE,
+                            "available: {settlement_bal_lp}, obligation: {obligation_coin}"
                         );
-                        info!(
-                            target: SETTLEMENT_PHASE, "withdrawing {obligations_delta} from mars lending position"
-                        );
-
-                        // call the Mars lending library to perform the withdrawal.
-                        // This will deposit the underlying assets directly to the settlement account.
-                        let mars_withdraw_msg =
-                            valence_library_utils::msg::ExecuteMsg::<_, ()>::ProcessFunction(
-                                valence_mars_lending::msg::FunctionMsgs::Withdraw {
-                                    amount: Some(obligations_delta.into()),
-                                },
-                            );
-
-                        valence_core::enqueue_neutron(
-                            &self.neutron_client,
-                            &self.cfg.neutron.authorizations,
-                            MARS_WITHDRAW_LABEL,
-                            vec![to_json_binary(&mars_withdraw_msg)?],
-                        )
-                        .await?;
-
-                        valence_core::tick_neutron(
-                            &self.neutron_client,
-                            &self.cfg.neutron.processor,
-                        )
-                        .await?;
                     }
                 }
                 _ => {
