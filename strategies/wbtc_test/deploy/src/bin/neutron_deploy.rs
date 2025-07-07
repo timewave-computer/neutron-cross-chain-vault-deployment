@@ -47,7 +47,6 @@ struct General {
     chain_id: String,
     owner: String,
     valence_owner: String,
-    strategist: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -302,7 +301,7 @@ async fn main() -> anyhow::Result<()> {
 
     let dynamic_ratio_query_provider_instantiate_msg =
         valence_dynamic_ratio_query_provider::msg::InstantiateMsg {
-            admin: params.general.strategist,
+            admin: params.general.owner.clone(),
             split_cfg: DenomSplitMap {
                 split_cfg: denom_to_splits,
             },

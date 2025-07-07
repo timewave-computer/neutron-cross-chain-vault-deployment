@@ -700,6 +700,7 @@ async fn main() -> anyhow::Result<()> {
     // AUTHORIZATION 4 - STEPS:
     // 1) Update the new split config to use the new phase 2 ratios
     // 2) Update the clearing queue config to use the new settlement ratios
+    // 3) Update the dynamic ratio query provide to use the new split ratios
     let update_splitter_function = AtomicFunction {
         domain: Domain::Main,
         message_details: MessageDetails {
@@ -741,10 +742,27 @@ async fn main() -> anyhow::Result<()> {
             ntrn_strategy_config.libraries.clearing_queue.clone(),
         ),
     };
+    let update_dynamic_ratio_query_provider_function = AtomicFunction {
+        domain: Domain::Main,
+        message_details: MessageDetails {
+            message_type: MessageType::CosmwasmExecuteMsg,
+            message: Message {
+                name: "update_ratios".to_string(),
+                params_restrictions: None,
+            },
+        },
+        contract_address: LibraryAccountType::Addr(
+            ntrn_strategy_config
+                .libraries
+                .dynamic_ratio_query_provider
+                .clone(),
+        ),
+    };
 
     let subroutine_phase_shift_step4 = AtomicSubroutineBuilder::new()
         .with_function(update_splitter_function)
         .with_function(update_clearing_queue_function)
+        .with_function(update_dynamic_ratio_query_provider_function)
         .build();
     let authorization_phase_shift_step4 = AuthorizationBuilder::new()
         .with_label(PHASE_SHIFT_STEP4_LABEL)
