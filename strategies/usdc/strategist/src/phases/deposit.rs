@@ -1,11 +1,31 @@
+use crate::strategy_config::Strategy;
+use alloy::primitives::Bytes;
 use alloy::primitives::U256;
+use alloy::providers::Provider;
+use alloy::sol_types::SolCall;
+use alloy::sol_types::SolValue;
 use cosmwasm_std::to_json_binary;
 use log::info;
+use packages::types::sol_types::AtomicFunction;
+use packages::types::sol_types::AtomicSubroutine;
+use packages::types::sol_types::Duration;
+use packages::types::sol_types::DurationType;
+use packages::types::sol_types::Priority;
+use packages::types::sol_types::ProcessorMessage;
+use packages::types::sol_types::ProcessorMessageType;
+use packages::types::sol_types::RetryLogic;
+use packages::types::sol_types::RetryTimes;
+use packages::types::sol_types::RetryTimesType;
+use packages::types::sol_types::SendMsgs;
+use packages::types::sol_types::Subroutine;
+use packages::types::sol_types::SubroutineType;
 use packages::{
-    labels::{ICA_TRANSFER_LABEL, PROVIDE_LIQUIDIY_LABEL},
+    labels::{CCTP_TRANSFER_LABEL, ICA_TRANSFER_LABEL, PROVIDE_LIQUIDIY_LABEL},
     phases::DEPOSIT_PHASE,
     types::sol_types::{
-        Authorization, BaseAccount, CCTPTransfer, ERC20, processor_contract::LiteProcessor,
+        Authorization, BaseAccount,
+        CCTPTransfer::{self},
+        ERC20,
     },
     utils::valence_core,
 };
@@ -14,8 +34,6 @@ use valence_domain_clients::{
     evm::base_client::{CustomProvider, EvmBaseClient},
 };
 use valence_library_utils::OptionUpdate;
-
-use crate::strategy_config::Strategy;
 
 impl Strategy {
     pub async fn deposit(&mut self, eth_rp: &CustomProvider) -> anyhow::Result<()> {
@@ -101,19 +119,80 @@ impl Strategy {
         eth_deposit_acc_bal: U256,
     ) -> anyhow::Result<()> {
         let eth_auth_contract = Authorization::new(self.cfg.ethereum.authorizations, &eth_rp);
-        let eth_processor_contract = LiteProcessor::new(self.cfg.ethereum.processor, &eth_rp);
-        let cctp_transfer_contract =
-            CCTPTransfer::new(self.cfg.ethereum.libraries.cctp_transfer, &eth_rp);
-
         let eth_deposit_acc_bal_u128 = u128::try_from(eth_deposit_acc_bal)?;
-
-        // TODO: enqueue the cctp transfer message and tick
 
         // transfer can be considered complete when the current ica balance increases
         // by the amount available on eth deposit account (TODO: minus fees?)
         let pre_routing_noble_ica_bal = self
             .noble_client
             .query_balance(&self.cfg.noble.ica_address, &self.cfg.noble.chain_denom)
+            .await?;
+
+        let transfer_call = CCTPTransfer::transferCall {};
+        let encoded_transfer_call = transfer_call.abi_encode();
+        let atomic_function = AtomicFunction {
+            contractAddress: self.cfg.ethereum.libraries.cctp_transfer,
+        };
+
+        // Create retry logic with NoRetry for atomic execution
+        let retry_logic = RetryLogic {
+            times: RetryTimes {
+                retryType: RetryTimesType::NoRetry,
+                amount: 0,
+            },
+            interval: Duration {
+                durationType: DurationType::Time,
+                value: 0,
+            },
+        };
+
+        // Create AtomicSubroutine
+        let atomic_subroutine = AtomicSubroutine {
+            functions: vec![atomic_function],
+            retryLogic: retry_logic,
+        };
+
+        // Encode the atomic subroutine
+        let encoded_subroutine = atomic_subroutine.abi_encode();
+
+        // Create Subroutine wrapper
+        let subroutine = Subroutine {
+            subroutineType: SubroutineType::Atomic,
+            subroutine: Bytes::from(encoded_subroutine),
+        };
+
+        // Create SendMsgs message with the properly encoded transfer call
+        let send_msgs = SendMsgs {
+            executionId: 1, // Generated execution ID
+            priority: Priority::Medium,
+            subroutine,
+            expirationTime: 0, // No expiration
+            messages: vec![Bytes::from(encoded_transfer_call)],
+        };
+
+        // Encode SendMsgs
+        let encoded_send_msgs = send_msgs.abi_encode();
+
+        // Create ProcessorMessage
+        let processor_message = ProcessorMessage {
+            messageType: ProcessorMessageType::SendMsgs,
+            message: Bytes::from(encoded_send_msgs),
+        };
+
+        let enqueue_msg_tx_request = eth_auth_contract
+            .sendProcessorMessage(
+                CCTP_TRANSFER_LABEL.to_string(),
+                Bytes::from(processor_message.abi_encode()),
+            )
+            .into_transaction_request();
+
+        let enqueue_cctp_exec_response = self
+            .eth_client
+            .sign_and_send(enqueue_msg_tx_request)
+            .await?;
+
+        eth_rp
+            .get_transaction_receipt(enqueue_cctp_exec_response.transaction_hash)
             .await?;
 
         let noble_ica_expected_balance = pre_routing_noble_ica_bal + eth_deposit_acc_bal_u128;
