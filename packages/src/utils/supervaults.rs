@@ -46,7 +46,15 @@ pub async fn query_supervault_tvl_expressed_in_denom(
     // 2. simulating LP for that amount to know the deposit_token -> shares
     // exchange rate
     // 3. assuming the same rate for whole position
-    let exchange_rate = if deposit_denom == supervault_cfg.pair_data.token_0.denom {
+    let exchange_rate = {
+        // match the supervault config pair denom ordering
+        let (amount_0, amount_1, withdraw_amount) =
+            if deposit_denom == supervault_cfg.pair_data.token_0.denom {
+                (withdraw_amount_0, Uint128::zero(), withdraw_amount_0)
+            } else {
+                (Uint128::zero(), withdraw_amount_1, withdraw_amount_1)
+            };
+
         // simulate LP with the deposit token. amount here does not really matter,
         // but to avoid some rounding errors with small amounts we pass the expected
         // withdraw amount to get a reasonable value.
@@ -54,8 +62,8 @@ pub async fn query_supervault_tvl_expressed_in_denom(
             client,
             supervault,
             deposit_acc,
-            withdraw_amount_0,
-            Uint128::zero(),
+            amount_0,
+            amount_1,
         )
         .await?;
 
@@ -64,23 +72,7 @@ pub async fn query_supervault_tvl_expressed_in_denom(
             return Ok(0);
         }
 
-        Decimal::from_ratio(withdraw_amount_0, expected_lp_shares)
-    } else {
-        let expected_lp_shares = simulate_supervault_provide_liquidity(
-            client,
-            supervault,
-            deposit_acc,
-            Uint128::zero(),
-            withdraw_amount_1,
-        )
-        .await?;
-
-        // if expected share amount is zero we return tvl of 0
-        if expected_lp_shares.is_zero() {
-            return Ok(0);
-        }
-
-        Decimal::from_ratio(withdraw_amount_1, expected_lp_shares)
+        Decimal::from_ratio(withdraw_amount, expected_lp_shares)
     };
 
     // multiply the lp_shares balance by the derived (deposit_token / lp_shares) exchange rate

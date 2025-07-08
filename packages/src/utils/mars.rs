@@ -25,13 +25,14 @@ pub async fn query_mars_lending_denom_amount(
         credit_manager,
         first_credit_account.id.to_string(),
     )
-    .await {
+    .await
+    {
         Ok(res) => res,
         Err(e) => {
             warn!(target: UPDATE_PHASE, "no credit account found for {acc_owner}: {e}");
             info!(target: UPDATE_PHASE, "mars lending amount = 0");
-            return Ok(0)
-        },
+            return Ok(0);
+        }
     };
 
     // iterate over active lending positions until the target denom is found
