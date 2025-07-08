@@ -7,7 +7,7 @@ use btc_lst_types::{
 };
 use packages::{
     ibc_eureka_chain_ids::{EUREKA_COSMOS_HUB_CHAIN_ID, EUREKA_ETHEREUM_CHAIN_ID},
-    utils::{mars::MarsLending, supervaults::Supervaults},
+    utils::supervaults::Supervaults,
 };
 use valence_domain_clients::clients::{
     coprocessor::CoprocessorClient, ethereum::EthereumClient, gaia::CosmosHubClient,
@@ -51,8 +51,6 @@ pub struct Strategy {
     /// active coprocessor client
     pub(crate) coprocessor_client: CoprocessorClient,
 }
-
-impl MarsLending for Strategy {}
 
 impl Supervaults for Strategy {}
 

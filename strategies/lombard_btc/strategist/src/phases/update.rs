@@ -5,7 +5,7 @@ use log::info;
 use packages::{
     phases::UPDATE_PHASE,
     types::sol_types::{BaseAccount, ERC20, OneWayVault},
-    utils::{mars::MarsLending, supervaults::Supervaults, valence_core},
+    utils::{self, supervaults::Supervaults, valence_core},
 };
 use valence_domain_clients::{
     cosmos::base_client::BaseClient,
@@ -195,7 +195,7 @@ impl Strategy {
         // both mars and supervaults positions are derivatives of the
         // underlying denom. we do the necessary accounting for both and
         // fetch the tvl expressed in the underlying deposit token.
-        let mars_tvl = Strategy::query_mars_lending_denom_amount(
+        let mars_tvl = utils::mars::query_mars_lending_denom_amount(
             &self.neutron_client,
             &self.cfg.neutron.mars_credit_manager,
             &self.cfg.neutron.accounts.mars_deposit,
