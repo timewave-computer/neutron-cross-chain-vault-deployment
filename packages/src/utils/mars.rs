@@ -1,6 +1,9 @@
 use anyhow::anyhow;
+use log::{info, warn};
 use valence_domain_clients::{clients::neutron::NeutronClient, cosmos::wasm_client::WasmClient};
 use valence_lending_utils::mars::{Account, Positions, QueryMsg};
+
+use crate::phases::UPDATE_PHASE;
 
 pub async fn query_mars_lending_denom_amount(
     client: &NeutronClient,
@@ -17,12 +20,19 @@ pub async fn query_mars_lending_denom_amount(
         .next()
         .ok_or_else(|| anyhow!("no credit account found for owner {acc_owner}"))?;
 
-    let active_positions = query_mars_credit_account_positions(
+    let active_positions = match query_mars_credit_account_positions(
         client,
         credit_manager,
         first_credit_account.id.to_string(),
     )
-    .await?;
+    .await {
+        Ok(res) => res,
+        Err(e) => {
+            warn!(target: UPDATE_PHASE, "no credit account found for {acc_owner}: {e}");
+            info!(target: UPDATE_PHASE, "mars lending amount = 0");
+            return Ok(0)
+        },
+    };
 
     // iterate over active lending positions until the target denom is found
     for lend in active_positions.lends {
