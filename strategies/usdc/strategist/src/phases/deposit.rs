@@ -189,6 +189,8 @@ impl Strategy {
         // block execution until the funds arrive to the Neutron deposit account
         // via forwarding from Noble.
         // poll for 15sec * 100 = 1500sec = 25min.
+        // note: cctp routes can take a while. if this becomes a consistent issue,
+        // look into self-attestation: https://docs.noble.xyz/cctp/manual_relaying
         self.neutron_client
             .poll_until_expected_balance(
                 &self.cfg.neutron.accounts.deposit,
