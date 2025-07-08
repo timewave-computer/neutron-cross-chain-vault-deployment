@@ -78,7 +78,29 @@ cargo run --bin ethereum_deploy -p <strategy-name>-deploy
 
 This will create an `ethereum_strategy_config.toml` file with the addresses of the deployed Ethereum contracts.
 
-### Step 5: Initialize Authorizations
+### Step 5: Deploy Coprocessor Apps
+
+Each vault requires one or two (depending on the vault) coprocessor app deployed. We can deploy these by following the instructions in the coprocessor-apps folder. Once the coprocessor-app is deployed, we set the ID obtained after compilation in the corresponding field in `neutron.toml` and/or `ethereum.toml`.
+
+Example:
+
+For the LBTC vault we need a lombard-transfer and a clearing-queue coprocessor-app deployed. After these are deployed correctly, we need to set the fields:
+
+In `neutron.toml`:
+
+```toml
+[coprocessor_app]
+clearing_queue_coprocessor_app_id = "<clearing_queue_coprocessor_app_id>"
+```
+
+In `ethereum.toml`:
+
+```toml
+[coprocessor_app]
+eureka_transfer_coprocessor_app_id = "<lombard_transfer_coprocessor_app_id>"
+```
+
+### Step 6: Initialize Authorizations
 
 After all contracts are deployed on both chains, you must set up the authorizations that define who can perform what actions.
 

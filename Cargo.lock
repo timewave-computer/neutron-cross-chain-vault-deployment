@@ -405,7 +405,7 @@ dependencies = [
  "dashmap",
  "futures",
  "futures-utils-wasm",
- "lru",
+ "lru 0.12.5",
  "parking_lot",
  "pin-project",
  "reqwest 0.12.20",
@@ -1815,6 +1815,43 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b94f61472cee1439c0b966b47e3aca9ae07e45d070759512cd390ea2bebc6675"
 
 [[package]]
+name = "clearing-queue-circuit"
+version = "0.1.0"
+dependencies = [
+ "alloy-primitives 0.8.25",
+ "cosmwasm-std",
+ "serde_json",
+ "valence-authorization-utils",
+ "valence-clearing-queue-supervaults",
+ "valence-coprocessor",
+ "valence-library-utils",
+]
+
+[[package]]
+name = "clearing-queue-controller"
+version = "0.1.0"
+dependencies = [
+ "alloy-primitives 0.8.25",
+ "alloy-sol-types 0.8.25",
+ "anyhow",
+ "ethereum",
+ "hex",
+ "serde_json",
+ "valence-coprocessor",
+ "valence-coprocessor-wasm",
+]
+
+[[package]]
+name = "clearing-queue-domain"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "serde_json",
+ "valence-coprocessor",
+ "valence-coprocessor-wasm",
+]
+
+[[package]]
 name = "coins-bip32"
 version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1870,6 +1907,15 @@ name = "colorchoice"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b05b61dc5112cbb17e4b6cd61790d9845d13888356391624cbe7e41efeac1e75"
+
+[[package]]
+name = "common"
+version = "0.1.0"
+source = "git+https://github.com/timewave-computer/zk-merkle-proofs#f8071e33e53be4f01439d21e5e12154157cfb8b8"
+dependencies = [
+ "anyhow",
+ "serde",
+]
 
 [[package]]
 name = "console"
@@ -2796,6 +2842,58 @@ dependencies = [
 ]
 
 [[package]]
+name = "ethereum"
+version = "0.1.0"
+source = "git+https://github.com/timewave-computer/zk-merkle-proofs#f8071e33e53be4f01439d21e5e12154157cfb8b8"
+dependencies = [
+ "anyhow",
+ "arrayvec",
+ "bytes",
+ "common",
+ "const-hex",
+ "hash-db",
+ "hex-literal",
+ "num-bigint 0.4.6",
+ "nybbles",
+ "serde",
+ "serde_json",
+ "sha3",
+ "tracing",
+ "tracing-subscriber",
+ "triehash",
+]
+
+[[package]]
+name = "eureka-transfer-circuit"
+version = "0.1.0"
+dependencies = [
+ "alloy-primitives 0.8.25",
+ "alloy-sol-types 0.8.25",
+ "valence-coprocessor",
+]
+
+[[package]]
+name = "eureka-transfer-controller"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "serde_json",
+ "valence-coprocessor",
+ "valence-coprocessor-wasm",
+]
+
+[[package]]
+name = "eureka-transfer-domain"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "serde_json",
+ "valence-coprocessor",
+ "valence-coprocessor-wasm",
+]
+
+[[package]]
 name = "eventsource-stream"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3215,6 +3313,12 @@ dependencies = [
  "rand_core 0.6.4",
  "rayon",
 ]
+
+[[package]]
+name = "hash-db"
+version = "0.15.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d23bd4e7b5eda0d0f3a307e8b381fdc8ba9000f26fbe912250c0a4cc3956364a"
 
 [[package]]
 name = "hash32"
@@ -4445,7 +4549,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "07033963ba89ebaf1584d767badaa2e8fcec21aedea6b8c0346d487d49c28667"
 dependencies = [
  "cfg-if",
- "windows-targets 0.53.2",
+ "windows-targets 0.48.5",
 ]
 
 [[package]]
@@ -4491,6 +4595,38 @@ name = "log"
 version = "0.4.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
+
+[[package]]
+name = "lombard-transfer-circuit"
+version = "0.1.0"
+dependencies = [
+ "alloy-primitives 0.8.25",
+ "alloy-sol-types 0.8.25",
+ "anyhow",
+ "serde_json",
+ "valence-coprocessor",
+]
+
+[[package]]
+name = "lombard-transfer-controller"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "serde_json",
+ "valence-coprocessor",
+ "valence-coprocessor-wasm",
+]
+
+[[package]]
+name = "lombard-transfer-domain"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "serde_json",
+ "valence-coprocessor",
+ "valence-coprocessor-wasm",
+]
 
 [[package]]
 name = "lombard_btc_deploy"
@@ -4575,6 +4711,15 @@ name = "lru"
 version = "0.12.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "234cf4f4a04dc1f57e24b96cc0cd600cf2af460d4161ac5ecdd0af8e1f3b2a38"
+dependencies = [
+ "hashbrown 0.15.4",
+]
+
+[[package]]
+name = "lru"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9f8cc7106155f10bdf99a6f379688f543ad6596a415375b36a59a054ceda1198"
 dependencies = [
  "hashbrown 0.15.4",
 ]
@@ -4872,6 +5017,7 @@ checksum = "a5e44f723f1133c9deac646763579fdb3ac745e418f2a7af9cd0c431da1f20b9"
 dependencies = [
  "num-integer",
  "num-traits",
+ "serde",
 ]
 
 [[package]]
@@ -7320,7 +7466,7 @@ dependencies = [
  "hashbrown 0.14.5",
  "hex",
  "itertools 0.13.0",
- "lru",
+ "lru 0.12.5",
  "num-bigint 0.4.6",
  "p3-baby-bear",
  "p3-bn254-fr",
@@ -8533,6 +8679,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "triehash"
+version = "0.8.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a1631b201eb031b563d2e85ca18ec8092508e262a3196ce9bd10a67ec87b9f5c"
+dependencies = [
+ "hash-db",
+ "rlp",
+]
+
+[[package]]
 name = "try-lock"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8863,6 +9019,19 @@ dependencies = [
  "serde_json",
  "valence-coprocessor",
  "valence-coprocessor-client",
+]
+
+[[package]]
+name = "valence-coprocessor-wasm"
+version = "0.3.1"
+source = "git+https://github.com/timewave-computer/valence-coprocessor.git?tag=v0.3.1#cefeac69e40ebd86cafebb3ade47f0f9e75b6061"
+dependencies = [
+ "anyhow",
+ "lru 0.14.0",
+ "msgpacker",
+ "serde_json",
+ "tracing",
+ "valence-coprocessor",
 ]
 
 [[package]]
@@ -9471,7 +9640,7 @@ version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf221c93e13a30d793f7645a0e7762c55d169dbb0a49671918a2319d289b10bb"
 dependencies = [
- "windows-sys 0.59.0",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
