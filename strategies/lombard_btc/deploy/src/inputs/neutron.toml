@@ -1,10 +1,10 @@
 [general]
-grpc_url   = "http://rpc.neutron.quokkastake.io"
-grpc_port  = "9090"
-chain_id   = "neutron-1"
-owner      = "neutron14mlpd48k5vkeset4x7f78myz3m47jcax3ysjkp" # Should be Neutron multisig
+grpc_url      = "http://rpc.neutron.quokkastake.io"
+grpc_port     = "9090"
+chain_id      = "neutron-1"
+owner         = "neutron14mlpd48k5vkeset4x7f78myz3m47jcax3ysjkp" # Should be Neutron multisig
 valence_owner = "neutron14mlpd48k5vkeset4x7f78myz3m47jcax3ysjkp" # TBD Valence address that will own the verification gateway
-strategist = "neutron1z8qjsmtjxcd36j0la2rs2rfstf5nxmady2hx8a" # Should be strategist address
+strategist    = "neutron1z8qjsmtjxcd36j0la2rs2rfstf5nxmady2hx8a" # Should be strategist address
 
 [ica]
 deposit_token_on_hub_denom = "ibc/DBD9E339E1B093A052D76BECFFDE8435EAC114CF2133346B4D691F3F2068C957" # LBTC
@@ -14,13 +14,13 @@ connection_id              = "connection-0"                                     
 ica_timeout                = 43200                                                                  # 12 hours in seconds - Large value recommended: https://docs.neutron.org/neutron/modules/interchain-txs/messages
 
 [program]
-deposit_token_on_neutron_denom = "ibc/B7BF60BB54433071B49D586F54BD4DED5E20BEFBBA91958E87488A761115106B" # LBTC on Neutron
-mars_credit_manager = "neutron1scjuh29rzffqzhgxusjd56f7qnf7r9e6rwxym6n65h9d3kkhfrqs0xm4dn" # Need to figure this out, not sure if this one
-supervault = "neutron1720ank30032ml4h6rsygv0j9q4kdg9yr5g57yn55rmw3mnstg24q2keq2y" # Need to figure this out, not sure if this one
-supervault_asset1 = "ibc/0E293A7622DC9A6439DB60E6D234B5AF446962E27CA3AB44D0590603DFF6968E" # WBTC on Neutron
-supervault_asset2 = "ibc/B7BF60BB54433071B49D586F54BD4DED5E20BEFBBA91958E87488A761115106B" # LBTC on Neutron
-supervault_lp_denom = "factory/neutron1720ank30032ml4h6rsygv0j9q4kdg9yr5g57yn55rmw3mnstg24q2keq2y/BTC-BTC" # TBD after supervaults are deployed
-initial_split_percentage_to_mars = 80
+deposit_token_on_neutron_denom         = "ibc/B7BF60BB54433071B49D586F54BD4DED5E20BEFBBA91958E87488A761115106B"               # LBTC on Neutron
+mars_credit_manager                    = "neutron1scjuh29rzffqzhgxusjd56f7qnf7r9e6rwxym6n65h9d3kkhfrqs0xm4dn"                 # Need to figure this out, not sure if this one
+supervault                             = "neutron1720ank30032ml4h6rsygv0j9q4kdg9yr5g57yn55rmw3mnstg24q2keq2y"                 # Need to figure this out, not sure if this one
+supervault_asset1                      = "ibc/0E293A7622DC9A6439DB60E6D234B5AF446962E27CA3AB44D0590603DFF6968E"               # WBTC on Neutron
+supervault_asset2                      = "ibc/B7BF60BB54433071B49D586F54BD4DED5E20BEFBBA91958E87488A761115106B"               # LBTC on Neutron
+supervault_lp_denom                    = "factory/neutron1720ank30032ml4h6rsygv0j9q4kdg9yr5g57yn55rmw3mnstg24q2keq2y/BTC-BTC" # TBD after supervaults are deployed
+initial_split_percentage_to_mars       = 80
 initial_split_percentage_to_supervault = 20
 # How much will be settled from Mars vs Supervaults from the clearing queue. Important to point out that this value is for
 # Mars, so we if we put 75 here, it means 75% of the clearing queue will be settled to Mars and 25% to Supervaults.
