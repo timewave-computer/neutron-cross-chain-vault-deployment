@@ -6,12 +6,6 @@ owner      = "neutron14mlpd48k5vkeset4x7f78myz3m47jcax3ysjkp" # Should be Neutro
 valence_owner = "neutron14mlpd48k5vkeset4x7f78myz3m47jcax3ysjkp" # TBD Valence address that will own the verification gateway
 strategist = "neutron1z8qjsmtjxcd36j0la2rs2rfstf5nxmady2hx8a" # Should be strategist address
 
-[ica]
-channel_id                 = "channel-18"                                                          # Noble -> Neutron channel
-ibc_transfer_timeout       = 600                                                                   # 10 minutes
-connection_id              = "connection-31"                                                       # Neutron -> Noble connection
-ica_timeout                = 43200                                                                 # 12 hours in seconds - Large value recommended: https://docs.neutron.org/neutron/modules/interchain-txs/messages
-
 [program]
 deposit_token_on_neutron_denom = "ibc/B559A80D62249C8AA07A380E2A2BEA6E5CA9A6F079C912C3A9E9B494105E4F81" # USDC on Neutron
 supervault = "neutron1z4qky902yes9zl5eruwgdd2pgtlyeglunc0escf0a7n2xeyw97gqcr7u5u" # TBD after supervaults are deployed

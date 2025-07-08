@@ -1,9 +1,6 @@
 [workspace]
 members = [
     "packages",
-    "strategies/wbtc_test/deploy",
-    "strategies/wbtc_test/strategist",
-    "strategies/wbtc_test/types",
     "strategies/lombard_btc/deploy",
     "strategies/lombard_btc/strategist",
     "strategies/lombard_btc/types",

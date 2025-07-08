@@ -54,7 +54,7 @@ impl Strategy {
             info!(target: REGISTRATION_PHASE, "no new withdraw requests; concluding obligation registration phase...");
             return Ok(());
         }
-        info!(target: REGISTRATION_PHASE, "new_obligations = {:#?}", new_obligations);
+        info!(target: REGISTRATION_PHASE, "new_obligations = {new_obligations:#?}");
 
         // process the new OneWayVault Withdraw events in order from the oldest
         // to the newest, posting them to the coprocessor to obtain a ZKP

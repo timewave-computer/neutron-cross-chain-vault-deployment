@@ -1,13 +1,6 @@
-use std::{
-    collections::{BTreeMap, HashMap},
-    env,
-    error::Error,
-    fs,
-    time::SystemTime,
-};
+use std::{collections::HashMap, env, error::Error, fs, time::SystemTime};
 
-use alloy::{hex::FromHex, primitives::FixedBytes};
-use cosmwasm_std::{Binary, Decimal, Uint64, Uint128};
+use cosmwasm_std::{Binary, Decimal, Uint128};
 use serde::Deserialize;
 use sp1_sdk::{HashableKey, SP1VerifyingKey};
 use usdc_deploy::{INPUTS_DIR, OUTPUTS_DIR, UUSDC_DENOM};
@@ -35,7 +28,6 @@ struct UploadedContracts {
 #[derive(Deserialize, Debug)]
 struct Parameters {
     general: General,
-    ica: Ica,
     program: Program,
     coprocessor_app: CoprocessorApp,
 }
@@ -47,14 +39,6 @@ struct General {
     chain_id: String,
     owner: String,
     valence_owner: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct Ica {
-    channel_id: String,
-    ibc_transfer_timeout: u64,
-    connection_id: String,
-    ica_timeout: u64,
 }
 
 #[derive(Deserialize, Debug)]
@@ -107,18 +91,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Get all code IDs
     let code_id_authorization = *uploaded_contracts.code_ids.get("authorization").unwrap();
     let code_id_processor = *uploaded_contracts.code_ids.get("processor").unwrap();
-    let code_id_ica_ibc_transfer_library =
-        *uploaded_contracts.code_ids.get("ica_ibc_transfer").unwrap();
     let code_id_supervaults_lper = *uploaded_contracts.code_ids.get("supervaults_lper").unwrap();
     let code_id_clearing_queue = *uploaded_contracts
         .code_ids
         .get("clearing_queue_supervaults")
         .unwrap();
     let code_id_base_account = *uploaded_contracts.code_ids.get("base_account").unwrap();
-    let code_id_interchain_account = *uploaded_contracts
-        .code_ids
-        .get("interchain_account")
-        .unwrap();
     let code_id_verification_gateway = *uploaded_contracts
         .code_ids
         .get("verification_gateway")
@@ -221,47 +199,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         predicted_base_accounts.push(predicted_base_account_address);
     }
 
-    // Predict the valence ICA address
-    let predicted_valence_ica_address = neutron_client
-        .predict_instantiate2_addr(code_id_interchain_account, salt.clone(), my_address.clone())
-        .await?
-        .address;
-
-    // Instantiate the ICA ibc transfer library
-    let config = valence_ica_ibc_transfer::msg::LibraryConfig {
-        input_addr: LibraryAccountType::Addr(predicted_valence_ica_address.clone()),
-        // The strategist needs to update this to the actual amount that needs to be transferred. There will be an authorization for this.
-        amount: Uint128::one(),
-        denom: UUSDC_DENOM.to_string(),
-        receiver: predicted_base_accounts[0].clone(),
-        memo: "".to_string(),
-        remote_chain_info: valence_ica_ibc_transfer::msg::RemoteChainInfo {
-            channel_id: params.ica.channel_id,
-            ibc_transfer_timeout: Some(params.ica.ibc_transfer_timeout),
-        },
-        denom_to_pfm_map: BTreeMap::new(),
-        eureka_config: None,
-    };
-
-    let instantiate_ica_ibc_transfer_msg = valence_library_utils::msg::InstantiateMsg::<
-        valence_ica_ibc_transfer::msg::LibraryConfig,
-    > {
-        owner: processor_address.clone(),
-        processor: processor_address.clone(),
-        config,
-    };
-
-    // Instantiate the ICA IBC transfer library
-    let ica_ibc_transfer_library_address = neutron_client
-        .instantiate(
-            code_id_ica_ibc_transfer_library,
-            "ica_ibc_transfer".to_string(),
-            instantiate_ica_ibc_transfer_msg,
-            None,
-        )
-        .await?;
-    println!("ICA IBC Transfer library instantiated: {ica_ibc_transfer_library_address}");
-
     // Instantiate supervaults lper library
     let supervaults_lper_config = valence_supervaults_lper::msg::LibraryConfig {
         input_addr: LibraryAccountType::Addr(predicted_base_accounts[0].clone()),
@@ -323,42 +260,21 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .await?;
     println!("Clearing queue library instantiated: {clearing_queue_library_address}");
 
-    // Instantiate all acounts now
-    // First the ICA
-    let valence_ica_instantiate_msg = valence_account_utils::ica::InstantiateMsg {
-        admin: params.general.owner.clone(),
-        approved_libraries: vec![ica_ibc_transfer_library_address.clone()],
-        remote_domain_information: valence_account_utils::ica::RemoteDomainInfo {
-            connection_id: params.ica.connection_id.clone(),
-            ica_timeout_seconds: Uint64::from(params.ica.ica_timeout),
-        },
-    };
-    let valence_ica_address = neutron_client
-        .instantiate2(
-            code_id_interchain_account,
-            "valence_ica".to_string(),
-            valence_ica_instantiate_msg,
-            Some(params.general.owner.clone()),
-            salt.clone(),
-        )
-        .await?;
-    println!("Valence ICA instantiated: {valence_ica_address}");
-
     // Now the rest
-    let ica_deposit_account = valence_account_utils::msg::InstantiateMsg {
+    let deposit_account = valence_account_utils::msg::InstantiateMsg {
         admin: params.general.owner.clone(),
         approved_libraries: vec![supervaults_lper_library_address.clone()],
     };
-    let ica_deposit_account_address = neutron_client
+    let deposit_account_address = neutron_client
         .instantiate2(
             code_id_base_account,
-            "ica_deposit".to_string(),
-            ica_deposit_account,
+            "deposit".to_string(),
+            deposit_account,
             Some(params.general.owner.clone()),
             salts[0].clone(),
         )
         .await?;
-    println!("ICA deposit account instantiated: {ica_deposit_account_address}");
+    println!("Deposit account instantiated: {deposit_account_address}");
 
     let settlement_account = valence_account_utils::msg::InstantiateMsg {
         admin: params.general.owner.clone(),
@@ -385,15 +301,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let accounts = NeutronAccounts {
-        noble_ica: valence_ica_address.clone(),
-        deposit: ica_deposit_account_address,
+        deposit: deposit_account_address,
         settlement: settlement_account_address,
     };
 
     let libraries = NeutronLibraries {
         supervault_lper: supervaults_lper_library_address,
         clearing_queue: clearing_queue_library_address,
-        ica_transfer_noble: ica_ibc_transfer_library_address,
     };
 
     let coprocessor_app_ids = NeutronCoprocessorAppIds {
@@ -425,52 +339,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     )
     .expect("Failed to write Neutron Strategy Config to file");
 
-    // Last thing we will do is register the ICA on the valence ICA
-    let register_ica_msg = valence_account_utils::ica::ExecuteMsg::RegisterIca {};
-    neutron_client
-        .execute_wasm(
-            &valence_ica_address,
-            register_ica_msg,
-            vec![cosmrs::Coin::new(1_000_000u128, "untrn").unwrap()],
-            None,
-        )
-        .await?;
-
-    println!("Registering ICA...");
-
-    // Let's wait enough time for the transaction to succeed and the ICA to be registered
-    tokio::time::sleep(std::time::Duration::from_secs(60)).await;
-
-    // Let's query now to get the ICA address
-    let query_ica = valence_account_utils::ica::QueryMsg::IcaState {};
-    let ica_state: valence_account_utils::ica::IcaState = neutron_client
-        .query_contract_state(&valence_ica_address, query_ica)
-        .await?;
-
-    let ica_address = match ica_state {
-        valence_account_utils::ica::IcaState::Created(ica_information) => ica_information.address,
-        _ => {
-            panic!("ICA creation failed!, state: {ica_state:?}");
-        }
-    };
-    println!("ICA address: {ica_address}");
-
-    // Convert the ICA bech32 address to a bytes32 representation for the CCTP Transfer library
-    let (_, data) = bech32::decode(&ica_address)?;
-    // Convert to hex
-    let address_hex = hex::encode(data);
-    // Pad with zeroes to 32 bytes
-    let padded_hex = format!("{address_hex:0>64}");
-    // Convert to FixedBytes
-    let address_in_bytes32 = FixedBytes::<32>::from_hex(padded_hex)?;
-    println!("ICA address in bytes32: {address_in_bytes32}");
-
     let noble_cfg = NobleStrategyConfig {
         grpc_url: "grpc_url".to_string(),
         grpc_port: "grpc_port".to_string(),
         chain_id: "chain_id".to_string(),
         chain_denom: UUSDC_DENOM.to_string(),
-        ica_address,
+        forwarding_account: "noble_forwarding_account".to_string(),
     };
 
     // Write the Noble strategy config to a file
