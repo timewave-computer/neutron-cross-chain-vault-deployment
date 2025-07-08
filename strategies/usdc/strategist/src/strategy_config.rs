@@ -1,20 +1,16 @@
 use std::{env, path::Path};
 
-use packages::{
-    ibc_eureka_chain_ids::{EUREKA_COSMOS_HUB_CHAIN_ID, EUREKA_ETHEREUM_CHAIN_ID},
-    utils::{mars::MarsLending, supervaults::Supervaults},
+use anyhow::anyhow;
+use packages::utils::supervaults::Supervaults;
+use serde::{Deserialize, Serialize};
+use usdc_types::{
+    ethereum_config::EthereumStrategyConfig, neutron_config::NeutronStrategyConfig,
+    noble_config::NobleStrategyConfig,
 };
 use valence_domain_clients::clients::{
-    coprocessor::CoprocessorClient, ethereum::EthereumClient, gaia::CosmosHubClient,
-    ibc_eureka_route_client::IBCEurekaRouteClient, neutron::NeutronClient,
-    valence_indexer::OneWayVaultIndexerClient,
+    coprocessor::CoprocessorClient, ethereum::EthereumClient, neutron::NeutronClient,
+    noble::NobleClient, valence_indexer::OneWayVaultIndexerClient,
 };
-use wbtc_test_types::{
-    coprocessor_config::CoprocessorStrategyConfig, ethereum_config::EthereumStrategyConfig,
-    gaia_config::GaiaStrategyConfig, neutron_config::NeutronStrategyConfig,
-};
-
-use serde::{Deserialize, Serialize};
 use valence_strategist_utils::worker::ValenceWorkerTomlSerde;
 
 /// top-level config that wraps around each domain configuration
@@ -22,8 +18,7 @@ use valence_strategist_utils::worker::ValenceWorkerTomlSerde;
 pub struct StrategyConfig {
     pub ethereum: EthereumStrategyConfig,
     pub neutron: NeutronStrategyConfig,
-    pub gaia: GaiaStrategyConfig,
-    pub coprocessor: CoprocessorStrategyConfig,
+    pub noble: NobleStrategyConfig,
 }
 
 // main strategy struct that wraps around the StrategyConfig
@@ -40,19 +35,15 @@ pub struct Strategy {
 
     /// active ethereum client
     pub(crate) eth_client: EthereumClient,
-    /// active cosmos hub client
-    pub(crate) gaia_client: CosmosHubClient,
     /// active neutron client
     pub(crate) neutron_client: NeutronClient,
+    /// active noble client
+    pub(crate) noble_client: NobleClient,
     /// active one way vault indexer client
     pub(crate) indexer_client: OneWayVaultIndexerClient,
-    /// skip route client for IBC eureka
-    pub(crate) ibc_eureka_client: IBCEurekaRouteClient,
     /// active coprocessor client
     pub(crate) coprocessor_client: CoprocessorClient,
 }
-
-impl MarsLending for Strategy {}
 
 impl Supervaults for Strategy {}
 
@@ -62,25 +53,23 @@ impl Strategy {
     /// to initialize the respective domain clients. prerequisite to starting
     /// the strategist.
     pub async fn new(cfg: StrategyConfig) -> anyhow::Result<Self> {
-        dotenv::dotenv().ok();
-        let mnemonic = env::var("MNEMONIC").expect("mnemonic must be provided");
-        let label = env::var("LABEL").expect("label must be provided");
-        let indexer_api_key =
-            env::var("INDEXER_API_KEY").expect("indexer api key must be provided");
-        let indexer_api_url =
-            env::var("INDEXER_API_URL").expect("indexer url key must be provided");
-        let eureka_api_url =
-            env::var("EUREKA_API_URL").expect("IBC Eureka route api url must be provided");
+        let mnemonic =
+            env::var("MNEMONIC").map_err(|e| anyhow!("mnemonic must be provided: {e}"))?;
+        let label = env::var("LABEL").map_err(|e| anyhow!("label must be provided: {e}"))?;
+        let indexer_api_key = env::var("INDEXER_API_KEY")
+            .map_err(|e| anyhow!("indexer api key must be provided: {e}"))?;
+        let indexer_api_url = env::var("INDEXER_API_URL")
+            .map_err(|e| anyhow!("indexer api url key must be provided: {e}"))?;
         let strategy_timeout: u64 = env::var("STRATEGY_TIMEOUT")
-            .expect("Strategy timeout must be provided")
+            .map_err(|e| anyhow!("Strategy timeout must be provided: {e}"))?
             .parse()?;
 
-        let gaia_client = CosmosHubClient::new(
-            &cfg.gaia.grpc_url,
-            &cfg.gaia.grpc_port,
+        let noble_client = NobleClient::new(
+            &cfg.noble.grpc_url,
+            &cfg.noble.grpc_port,
             &mnemonic,
-            &cfg.gaia.chain_id,
-            &cfg.gaia.chain_denom,
+            &cfg.noble.chain_id,
+            "uusdc",
         )
         .await?;
 
@@ -102,54 +91,41 @@ impl Strategy {
 
         let coprocessor_client = CoprocessorClient::default();
 
-        let ibc_eureka_client = IBCEurekaRouteClient::new(
-            &eureka_api_url,
-            EUREKA_ETHEREUM_CHAIN_ID,
-            &cfg.ethereum.denoms.deposit_token.to_string(),
-            EUREKA_COSMOS_HUB_CHAIN_ID,
-            &cfg.gaia.deposit_denom,
-        );
-
         Ok(Self {
             cfg,
             timeout: strategy_timeout,
             eth_client,
-            gaia_client,
             neutron_client,
             label,
             indexer_client,
             coprocessor_client,
-            ibc_eureka_client,
+            noble_client,
         })
     }
 
-    /// constructor helper that takes in three paths:
+    /// constructor helper that takes in four paths:
     /// - neutron config path
     /// - ethereum config path
-    /// - cosmos hub config path
+    /// - noble config path
     ///
     /// reads the configs from those paths, sets up each domain config,
     /// wraps them in a `StrategyConfig`, and uses that to call the initializer above.
     pub async fn from_files<P: AsRef<Path>>(
         neutron_path: P,
-        gaia_path: P,
         eth_path: P,
-        coprocessor_path: P,
+        noble_path: P,
     ) -> anyhow::Result<Self> {
         let neutron_cfg = NeutronStrategyConfig::from_file(neutron_path)
-            .map_err(|e| anyhow::anyhow!("invalid neutron config: {:?}", e))?;
+            .map_err(|e| anyhow!("invalid neutron config: {:?}", e))?;
         let eth_cfg = EthereumStrategyConfig::from_file(eth_path)
-            .map_err(|e| anyhow::anyhow!("invalid ethereum config: {:?}", e))?;
-        let gaia_cfg = GaiaStrategyConfig::from_file(gaia_path)
-            .map_err(|e| anyhow::anyhow!("invalid gaia config: {:?}", e))?;
-        let coprocessor_cfg = CoprocessorStrategyConfig::from_file(coprocessor_path)
-            .map_err(|e| anyhow::anyhow!("invalid coprocessor config: {:?}", e))?;
+            .map_err(|e| anyhow!("invalid ethereum config: {:?}", e))?;
+        let noble_cfg = NobleStrategyConfig::from_file(noble_path)
+            .map_err(|e| anyhow!("invalid noble config: {:?}", e))?;
 
         let strategy_cfg = StrategyConfig {
             ethereum: eth_cfg,
             neutron: neutron_cfg,
-            gaia: gaia_cfg,
-            coprocessor: coprocessor_cfg,
+            noble: noble_cfg,
         };
 
         Self::new(strategy_cfg).await

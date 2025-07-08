@@ -8,8 +8,8 @@ pub struct NobleStrategyConfig {
     pub chain_id: String,
     // native chain denom
     pub chain_denom: String,
-    // ICA address
-    pub ica_address: String,
+    // Noble forwarding account
+    pub forwarding_account: String,
 }
 
 impl ValenceWorkerTomlSerde for NobleStrategyConfig {}

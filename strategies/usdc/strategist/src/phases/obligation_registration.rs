@@ -1,5 +1,3 @@
-use alloy::primitives::U256;
-use cosmwasm_std::Uint64;
 use log::info;
 use packages::{phases::REGISTRATION_PHASE, utils::valence_core};
 use serde_json::json;
@@ -11,14 +9,6 @@ use valence_domain_clients::{
 use crate::strategy_config::Strategy;
 
 impl Strategy {
-    /// reads the newly submitted withdrawal obligations that are not yet
-    /// present in the Clearing Queue, generates their zero-knowledge proofs,
-    /// and posts them into the Clearing queue in order.
-    /// consists of the following stages:
-    /// 1. fetching all new withdraw obligations from the indexer
-    /// 2. generating ZKP for each of the newly fetched obligations
-    /// 3. posting ZKPs to the neutron authorizations module before
-    ///    attempting to enqueue them
     pub async fn register_withdraw_obligations(&mut self) -> anyhow::Result<()> {
         info!(target: REGISTRATION_PHASE, "starting withdraw obligation registration phase");
 
@@ -36,31 +26,32 @@ impl Strategy {
             "latest_registered_obligation_id={:?}", clearing_queue_cfg.latest_id
         );
 
-        // get id of the latest obligation request that was registered on neutron
-        let latest_registered_obligation_id = match clearing_queue_cfg.latest_id {
-            // if there is a latest id, we increment it by 1 to only fetch the
-            // new withdraw requests
-            Some(id) => Some(id.checked_add(Uint64::one())?.u64()),
-            // if there is no latest id, we return the same to fetch everything
-            None => None,
-        };
+        // prepare the start_id for the indexer query. if there is no latest_id on the
+        // clearing queue config, meaning there are no obligations registered yet, we
+        // default to 0 to fetch everything. otherwise we increment the id by 1 to only
+        // fetch the new withdraw requests that have not been posted to the clearing
+        // queue yet.
+        let start_id: u64 = clearing_queue_cfg
+            .latest_id
+            .map_or(0, |id| id.u64().saturating_add(1));
 
         // query the OneWayVault indexer to fetch all obligations that were registered
         // on the vault but are not yet registered into the queue on Neutron
-        let new_obligations: Vec<(u64, alloy::primitives::Address, String, U256)> = self
+        let new_obligations = self
             .indexer_client
-            .query_vault_withdraw_requests(latest_registered_obligation_id, true)
-            .await
-            .unwrap_or_default();
-        info!(
-            target: REGISTRATION_PHASE,
-            "new_obligations = {new_obligations:#?}"
-        );
+            .query_vault_withdraw_requests(Some(start_id), true)
+            .await?;
+
+        if new_obligations.is_empty() {
+            info!(target: REGISTRATION_PHASE, "no new withdraw requests; concluding obligation registration phase...");
+            return Ok(());
+        }
+        info!(target: REGISTRATION_PHASE, "new_obligations = {new_obligations:#?}");
 
         // process the new OneWayVault Withdraw events in order from the oldest
         // to the newest, posting them to the coprocessor to obtain a ZKP
         for (obligation_id, ..) in new_obligations {
-            info!(target: REGISTRATION_PHASE, "processing obligation_id={obligation_id}");
+            info!(target: REGISTRATION_PHASE, "processing obligation #{obligation_id}");
 
             // build the json input for coprocessor client
             let withdraw_id_json = json!({"withdraw_request_id": obligation_id});
@@ -69,8 +60,12 @@ impl Strategy {
             info!(target: REGISTRATION_PHASE, "posting proof request to coprocessor client: {withdraw_id_json}");
             let vault_zkp_response = self
                 .coprocessor_client
-                .prove(&self.cfg.coprocessor.vault_circuit_id, &withdraw_id_json)
+                .prove(
+                    &self.cfg.neutron.coprocessor_app_ids.clearing_queue,
+                    &withdraw_id_json,
+                )
                 .await?;
+            info!(target: REGISTRATION_PHASE, "vault zkp resp: {vault_zkp_response:?}");
 
             // extract the program and domain parameters by decoding the zkp
             let (proof_program, inputs_program) = vault_zkp_response.program.decode()?;

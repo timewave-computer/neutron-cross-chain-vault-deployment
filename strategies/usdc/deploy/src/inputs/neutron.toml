@@ -1,23 +1,17 @@
 [general]
-grpc_url   = "http://rpc.neutron.quokkastake.io"
-grpc_port  = "9090"
-chain_id   = "neutron-1"
-owner      = "neutron14mlpd48k5vkeset4x7f78myz3m47jcax3ysjkp" # Should be Neutron multisig
+grpc_url      = "http://rpc.neutron.quokkastake.io"
+grpc_port     = "9090"
+chain_id      = "neutron-1"
+owner         = "neutron14mlpd48k5vkeset4x7f78myz3m47jcax3ysjkp" # Should be Neutron multisig
 valence_owner = "neutron14mlpd48k5vkeset4x7f78myz3m47jcax3ysjkp" # TBD Valence address that will own the verification gateway
-strategist = "neutron1z8qjsmtjxcd36j0la2rs2rfstf5nxmady2hx8a" # Should be strategist address
-
-[ica]
-channel_id                 = "channel-18"                                                          # Noble -> Neutron channel
-ibc_transfer_timeout       = 600                                                                   # 10 minutes
-connection_id              = "connection-31"                                                       # Neutron -> Noble connection
-ica_timeout                = 43200                                                                 # 12 hours in seconds - Large value recommended: https://docs.neutron.org/neutron/modules/interchain-txs/messages
+strategist    = "neutron1z8qjsmtjxcd36j0la2rs2rfstf5nxmady2hx8a" # Should be strategist address
 
 [program]
-deposit_token_on_neutron_denom = "ibc/B559A80D62249C8AA07A380E2A2BEA6E5CA9A6F079C912C3A9E9B494105E4F81" # USDC on Neutron
-supervault = "neutron1z4qky902yes9zl5eruwgdd2pgtlyeglunc0escf0a7n2xeyw97gqcr7u5u" # TBD after supervaults are deployed
-supervault_asset1 = "ibc/0E293A7622DC9A6439DB60E6D234B5AF446962E27CA3AB44D0590603DFF6968E" # WBTC
-supervault_asset2 = "ibc/B559A80D62249C8AA07A380E2A2BEA6E5CA9A6F079C912C3A9E9B494105E4F81" # USDC
-supervault_lp_denom = "factory/neutron1z4qky902yes9zl5eruwgdd2pgtlyeglunc0escf0a7n2xeyw97gqcr7u5u/BTC-USDC"
+deposit_token_on_neutron_denom = "ibc/B559A80D62249C8AA07A380E2A2BEA6E5CA9A6F079C912C3A9E9B494105E4F81"                # USDC on Neutron
+supervault                     = "neutron1z4qky902yes9zl5eruwgdd2pgtlyeglunc0escf0a7n2xeyw97gqcr7u5u"                  # TBD after supervaults are deployed
+supervault_asset1              = "ibc/0E293A7622DC9A6439DB60E6D234B5AF446962E27CA3AB44D0590603DFF6968E"                # WBTC
+supervault_asset2              = "ibc/B559A80D62249C8AA07A380E2A2BEA6E5CA9A6F079C912C3A9E9B494105E4F81"                # USDC
+supervault_lp_denom            = "factory/neutron1z4qky902yes9zl5eruwgdd2pgtlyeglunc0escf0a7n2xeyw97gqcr7u5u/BTC-USDC"
 
 [coprocessor_app]
 clearing_queue_coprocessor_app_id = "d285c75c5b41e731f0fd0b3c6279557d178fd15c1be978e98d5f5f3f1fcf73a4"

@@ -4658,7 +4658,7 @@ dependencies = [
 [[package]]
 name = "mmvault"
 version = "0.1.6"
-source = "git+https://github.com/neutron-org/slinky-vault#545118ff29b361cc5b7af6b8fcaf083e5c4bd61c"
+source = "git+https://github.com/neutron-org/slinky-vault#b2e2ff486cb5c012610573690232fe49c7be49cd"
 dependencies = [
  "cosmwasm-std",
  "cw-storage-plus",
@@ -8688,6 +8688,40 @@ dependencies = [
 ]
 
 [[package]]
+name = "usdc_strategist"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "anyhow",
+ "async-trait",
+ "cosmwasm-std",
+ "dotenv",
+ "env_logger",
+ "hex",
+ "log",
+ "mmvault",
+ "packages",
+ "serde",
+ "serde_json",
+ "tokio",
+ "usdc_types",
+ "valence-account-utils",
+ "valence-authorization-utils",
+ "valence-clearing-queue-supervaults",
+ "valence-domain-clients",
+ "valence-forwarder-library",
+ "valence-ica-ibc-transfer",
+ "valence-lending-utils",
+ "valence-library-utils",
+ "valence-mars-lending",
+ "valence-processor-utils",
+ "valence-splitter-library",
+ "valence-strategist-utils",
+ "valence-supervaults-lper",
+ "valence-verification-gateway",
+]
+
+[[package]]
 name = "usdc_types"
 version = "0.1.0"
 dependencies = [
@@ -8739,7 +8773,7 @@ dependencies = [
 [[package]]
 name = "valence-account-utils"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#b220c6571bc031d8cae2c1a49164403503066b13"
+source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -8755,7 +8789,7 @@ dependencies = [
 [[package]]
 name = "valence-authorization-utils"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#b220c6571bc031d8cae2c1a49164403503066b13"
+source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -8770,7 +8804,7 @@ dependencies = [
 [[package]]
 name = "valence-clearing-queue-supervaults"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#b220c6571bc031d8cae2c1a49164403503066b13"
+source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -8861,7 +8895,7 @@ dependencies = [
 [[package]]
 name = "valence-dynamic-ratio-query-provider"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#b220c6571bc031d8cae2c1a49164403503066b13"
+source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -8881,7 +8915,7 @@ dependencies = [
 [[package]]
 name = "valence-forwarder-library"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#b220c6571bc031d8cae2c1a49164403503066b13"
+source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -8900,7 +8934,7 @@ dependencies = [
 [[package]]
 name = "valence-gmp-utils"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#b220c6571bc031d8cae2c1a49164403503066b13"
+source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -8909,7 +8943,7 @@ dependencies = [
 [[package]]
 name = "valence-ibc-utils"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#b220c6571bc031d8cae2c1a49164403503066b13"
+source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
 dependencies = [
  "cosmos-sdk-proto 0.20.0",
  "cosmwasm-schema",
@@ -8922,7 +8956,7 @@ dependencies = [
 [[package]]
 name = "valence-ica-ibc-transfer"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#b220c6571bc031d8cae2c1a49164403503066b13"
+source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
 dependencies = [
  "cosmos-sdk-proto 0.26.1",
  "cosmwasm-schema",
@@ -8942,7 +8976,7 @@ dependencies = [
 [[package]]
 name = "valence-lending-utils"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#b220c6571bc031d8cae2c1a49164403503066b13"
+source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -8951,7 +8985,7 @@ dependencies = [
 [[package]]
 name = "valence-library-base"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#b220c6571bc031d8cae2c1a49164403503066b13"
+source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -8968,7 +9002,7 @@ dependencies = [
 [[package]]
 name = "valence-library-utils"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#b220c6571bc031d8cae2c1a49164403503066b13"
+source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -8987,7 +9021,7 @@ dependencies = [
 [[package]]
 name = "valence-macros"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#b220c6571bc031d8cae2c1a49164403503066b13"
+source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -8999,7 +9033,7 @@ dependencies = [
 [[package]]
 name = "valence-mars-lending"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#b220c6571bc031d8cae2c1a49164403503066b13"
+source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9018,7 +9052,7 @@ dependencies = [
 [[package]]
 name = "valence-maxbtc-issuer"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#b220c6571bc031d8cae2c1a49164403503066b13"
+source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9035,7 +9069,7 @@ dependencies = [
 [[package]]
 name = "valence-processor-utils"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#b220c6571bc031d8cae2c1a49164403503066b13"
+source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9050,7 +9084,7 @@ dependencies = [
 [[package]]
 name = "valence-splitter-library"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#b220c6571bc031d8cae2c1a49164403503066b13"
+source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9070,7 +9104,7 @@ dependencies = [
 [[package]]
 name = "valence-strategist-utils"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#b220c6571bc031d8cae2c1a49164403503066b13"
+source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
 dependencies = [
  "async-trait",
  "cosmwasm-std",
@@ -9084,7 +9118,7 @@ dependencies = [
 [[package]]
 name = "valence-supervaults-lper"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#b220c6571bc031d8cae2c1a49164403503066b13"
+source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9099,7 +9133,7 @@ dependencies = [
 [[package]]
 name = "valence-supervaults-utils"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#b220c6571bc031d8cae2c1a49164403503066b13"
+source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9112,7 +9146,7 @@ dependencies = [
 [[package]]
 name = "valence-supervaults-withdrawer"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#b220c6571bc031d8cae2c1a49164403503066b13"
+source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9127,7 +9161,7 @@ dependencies = [
 [[package]]
 name = "valence-verification-gateway"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#b220c6571bc031d8cae2c1a49164403503066b13"
+source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9359,83 +9393,6 @@ dependencies = [
  "valence-supervaults-lper",
  "valence-verification-gateway",
  "wbtc_types",
-]
-
-[[package]]
-name = "wbtc_test_deploy"
-version = "0.1.0"
-dependencies = [
- "alloy",
- "anyhow",
- "bincode",
- "cosmrs",
- "cosmwasm-std",
- "dotenv",
- "hex",
- "packages",
- "serde",
- "sp1-sdk",
- "tokio",
- "toml",
- "valence-account-utils",
- "valence-authorization-utils",
- "valence-clearing-queue-supervaults",
- "valence-domain-clients",
- "valence-dynamic-ratio-query-provider",
- "valence-forwarder-library",
- "valence-ica-ibc-transfer",
- "valence-library-utils",
- "valence-mars-lending",
- "valence-maxbtc-issuer",
- "valence-processor-utils",
- "valence-splitter-library",
- "valence-supervaults-lper",
- "valence-supervaults-withdrawer",
- "valence-verification-gateway",
- "wbtc_test_types",
-]
-
-[[package]]
-name = "wbtc_test_strategist"
-version = "0.1.0"
-dependencies = [
- "alloy",
- "anyhow",
- "async-trait",
- "cosmwasm-std",
- "dotenv",
- "hex",
- "log",
- "mmvault",
- "packages",
- "serde",
- "serde_json",
- "tokio",
- "valence-account-utils",
- "valence-authorization-utils",
- "valence-clearing-queue-supervaults",
- "valence-domain-clients",
- "valence-forwarder-library",
- "valence-ica-ibc-transfer",
- "valence-lending-utils",
- "valence-library-utils",
- "valence-mars-lending",
- "valence-processor-utils",
- "valence-splitter-library",
- "valence-strategist-utils",
- "valence-supervaults-lper",
- "valence-verification-gateway",
- "wbtc_test_types",
-]
-
-[[package]]
-name = "wbtc_test_types"
-version = "0.1.0"
-dependencies = [
- "alloy",
- "cosmwasm-std",
- "serde",
- "valence-strategist-utils",
 ]
 
 [[package]]
