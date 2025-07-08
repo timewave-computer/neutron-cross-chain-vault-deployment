@@ -190,7 +190,7 @@ fn validate_memo(memo: &Value) {
         .get("dest_callback")
         .and_then(|dc| dc.get("address"))
         .and_then(|addr| addr.as_str())
-        .unwrap();
+        .expect("dest_callback address not found");
 
     if dest_callback != DEST_CALLBACK {
         panic!("Invalid dest_callback address: {}", dest_callback);
@@ -215,13 +215,13 @@ fn validate_memo(memo: &Value) {
         .and_then(|sa| sa.get("post_swap_action"))
         .and_then(|psa| psa.get("ibc_transfer"))
         .and_then(|it| it.get("ibc_info"))
-        .unwrap();
+        .expect("ibc_info not found");
 
     // Validate IBC channel
     let ibc_channel = ibc_info
         .get("source_channel")
         .and_then(|sc| sc.as_str())
-        .unwrap();
+        .expect("source_channel not found");
 
     if ibc_channel != IBC_CHANNEL {
         panic!("Invalid IBC channel: {}", ibc_channel);
@@ -238,7 +238,7 @@ fn validate_memo(memo: &Value) {
     let recover_address = ibc_info
         .get("recover_address")
         .and_then(|ra| ra.as_str())
-        .unwrap();
+        .expect("recover_address not found");
 
     if recover_address != RECOVER_ADDRESS {
         panic!("Invalid recover address: {}", recover_address);
