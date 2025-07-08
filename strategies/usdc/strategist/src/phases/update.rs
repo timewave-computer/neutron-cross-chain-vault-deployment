@@ -118,8 +118,11 @@ impl Strategy {
                 &self.cfg.noble.chain_denom,
             )
             .await?;
-        warn!(target: UPDATE_PHASE, "noble_fwd_account_balance={noble_acc_balance} . funds need manual routing Noble -> Neutron!");
         deposit_token_balance_total += noble_acc_balance;
+        info!(target: UPDATE_PHASE, "noble_fwd_account_balance={noble_acc_balance}");
+        if noble_acc_balance != 0 {
+            warn!(target: UPDATE_PHASE, "noble forwarding account balance != 0. manual intervention needed!");
+        }
 
         let neutron_deposit_acc_balance = self
             .neutron_client
