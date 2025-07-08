@@ -4,7 +4,7 @@ use log::info;
 use packages::{
     phases::UPDATE_PHASE,
     types::sol_types::{BaseAccount, ERC20, OneWayVault},
-    utils::{mars::MarsLending, supervaults::Supervaults},
+    utils::{self},
 };
 use valence_domain_clients::{
     cosmos::base_client::BaseClient,
@@ -169,7 +169,7 @@ impl Strategy {
         // underlying denom. we do the necessary accounting for both and
         // fetch the tvl expressed in the underlying deposit token.
         {
-            let mars_tvl = Strategy::query_mars_lending_denom_amount(
+            let mars_tvl = utils::mars::query_mars_lending_denom_amount(
                 &self.neutron_client,
                 &self.cfg.neutron.mars_credit_manager,
                 &self.cfg.neutron.accounts.mars_deposit,
@@ -179,7 +179,7 @@ impl Strategy {
             info!(target: UPDATE_PHASE, "mars_tvl={mars_tvl}");
             total_deposit_assets += mars_tvl;
 
-            let bedrockbtc_tvl = Strategy::query_supervault_tvl_expressed_in_denom(
+            let bedrockbtc_tvl = utils::supervaults::query_supervault_tvl_expressed_in_denom(
                 &self.neutron_client,
                 &self.cfg.neutron.bedrockbtc_supervault,
                 &self.cfg.neutron.accounts.bedrockbtc_supervault_deposit,
@@ -190,7 +190,7 @@ impl Strategy {
             info!(target: UPDATE_PHASE, "bedrockbtc_tvl={bedrockbtc_tvl}");
             total_deposit_assets += bedrockbtc_tvl;
 
-            let ebtc_tvl = Strategy::query_supervault_tvl_expressed_in_denom(
+            let ebtc_tvl = utils::supervaults::query_supervault_tvl_expressed_in_denom(
                 &self.neutron_client,
                 &self.cfg.neutron.ebtc_supervault,
                 &self.cfg.neutron.accounts.ebtc_supervault_deposit,
@@ -201,7 +201,7 @@ impl Strategy {
             info!(target: UPDATE_PHASE, "ebtc_tvl={ebtc_tvl}");
             total_deposit_assets += ebtc_tvl;
 
-            let fbtc_tvl = Strategy::query_supervault_tvl_expressed_in_denom(
+            let fbtc_tvl = utils::supervaults::query_supervault_tvl_expressed_in_denom(
                 &self.neutron_client,
                 &self.cfg.neutron.fbtc_supervault,
                 &self.cfg.neutron.accounts.fbtc_supervault_deposit,
@@ -212,7 +212,7 @@ impl Strategy {
             info!(target: UPDATE_PHASE, "fbtc_tvl={fbtc_tvl}");
             total_deposit_assets += fbtc_tvl;
 
-            let lbtc_tvl = Strategy::query_supervault_tvl_expressed_in_denom(
+            let lbtc_tvl = utils::supervaults::query_supervault_tvl_expressed_in_denom(
                 &self.neutron_client,
                 &self.cfg.neutron.lbtc_supervault,
                 &self.cfg.neutron.accounts.lbtc_supervault_deposit,
@@ -223,7 +223,7 @@ impl Strategy {
             info!(target: UPDATE_PHASE, "lbtc_tvl={lbtc_tvl}");
             total_deposit_assets += lbtc_tvl;
 
-            let pumpbtc_tvl = Strategy::query_supervault_tvl_expressed_in_denom(
+            let pumpbtc_tvl = utils::supervaults::query_supervault_tvl_expressed_in_denom(
                 &self.neutron_client,
                 &self.cfg.neutron.pumpbtc_supervault,
                 &self.cfg.neutron.accounts.pumpbtc_supervault_deposit,
@@ -234,7 +234,7 @@ impl Strategy {
             info!(target: UPDATE_PHASE, "pumpbtc_tvl={pumpbtc_tvl}");
             total_deposit_assets += pumpbtc_tvl;
 
-            let solvbtc_tvl = Strategy::query_supervault_tvl_expressed_in_denom(
+            let solvbtc_tvl = utils::supervaults::query_supervault_tvl_expressed_in_denom(
                 &self.neutron_client,
                 &self.cfg.neutron.solvbtc_supervault,
                 &self.cfg.neutron.accounts.solvbtc_supervault_deposit,
