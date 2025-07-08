@@ -79,3 +79,89 @@ sol!(
         address transferToken;
     }
 );
+
+sol! {
+    /// Duration type for Valence messages
+    enum DurationType {
+        Height,
+        Time
+    }
+
+    /// Duration structure
+    struct Duration {
+        DurationType durationType;
+        uint64 value;
+    }
+
+    /// Retry times type
+    enum RetryTimesType {
+        NoRetry,
+        Indefinitely,
+        Amount
+    }
+
+    /// Retry times structure
+    struct RetryTimes {
+        RetryTimesType retryType;
+        uint64 amount;
+    }
+
+    /// Retry logic structure
+    struct RetryLogic {
+        RetryTimes times;
+        Duration interval;
+    }
+
+    /// Atomic function structure
+    struct AtomicFunction {
+        address contractAddress;
+    }
+
+    /// Atomic subroutine structure
+    struct AtomicSubroutine {
+        AtomicFunction[] functions;
+        RetryLogic retryLogic;
+    }
+
+    /// Subroutine type
+    enum SubroutineType {
+        Atomic,
+        NonAtomic
+    }
+
+    /// Subroutine structure
+    struct Subroutine {
+        SubroutineType subroutineType;
+        bytes subroutine;
+    }
+
+    /// Priority enum
+    enum Priority {
+        Medium,
+        High
+    }
+
+    /// SendMsgs structure
+    struct SendMsgs {
+        uint64 executionId;
+        Priority priority;
+        Subroutine subroutine;
+        uint64 expirationTime;
+        bytes[] messages;
+    }
+
+    /// ProcessorMessage type enum
+    enum ProcessorMessageType {
+        Pause,
+        Resume,
+        EvictMsgs,
+        SendMsgs,
+        InsertMsgs
+    }
+
+    /// ProcessorMessage structure
+    struct ProcessorMessage {
+        ProcessorMessageType messageType;
+        bytes message;
+    }
+}
