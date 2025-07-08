@@ -9,6 +9,14 @@ use valence_domain_clients::{
 use crate::strategy_config::Strategy;
 
 impl Strategy {
+    /// reads the newly submitted withdrawal obligations that are not yet
+    /// present in the Clearing Queue, generates their zero-knowledge proofs,
+    /// and posts them into the Clearing queue, in order.
+    /// consists of the following stages:
+    /// 1. fetching all new withdraw obligations from the indexer
+    /// 2. generating ZKP for each of the newly fetched obligations
+    /// 3. posting ZKPs to the neutron authorizations module before
+    ///    attempting to enqueue them
     pub async fn register_withdraw_obligations(&mut self) -> anyhow::Result<()> {
         info!(target: REGISTRATION_PHASE, "starting withdraw obligation registration phase");
 
