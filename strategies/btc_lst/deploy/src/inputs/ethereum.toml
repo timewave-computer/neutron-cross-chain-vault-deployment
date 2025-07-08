@@ -4,7 +4,7 @@ owner   = "0xd9A23b58e684B985F661Ce7005AA8E10630150c1" # Neutron multisig addres
 valence_owner = "0xd9A23b58e684B985F661Ce7005AA8E10630150c1" # TBD Owner of the verification gateway
 
 [vault]
-deposit_token            = "0x8236a87084f8B84306f72007F36F2618A5634494"
+deposit_token            = "0x8236a87084f8B84306f72007F36F2618A5634494" # Should be updated to correct BTC LST address
 strategist               = "0x510c4a1d637ff374399826f421003b775dc3e8dc" # Address of the strategist
 platform_fee_account     = "0x510c4a1d637ff374399826f421003b775dc3e8dc" # Receiver of the platform fees portion
 strategist_fee_account   = "0x510c4a1d637ff374399826f421003b775dc3e8dc" # Receiver of the strategist fees portion
