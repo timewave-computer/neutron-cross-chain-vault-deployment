@@ -45,8 +45,6 @@ pub struct NeutronDenoms {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NeutronAccounts {
-    /// Valence ICAs
-    pub noble_ica: String,
     /// deposit account where funds will arrive from cosmos hub
     pub deposit: String,
     /// settlement account where funds will be sent to end users
@@ -59,8 +57,6 @@ pub struct NeutronLibraries {
     pub supervault_lper: String,
     /// Clearing queue
     pub clearing_queue: String,
-    /// ICA transfer libraries
-    pub ica_transfer_noble: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

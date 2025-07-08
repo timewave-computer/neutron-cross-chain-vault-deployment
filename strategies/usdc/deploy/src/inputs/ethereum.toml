@@ -17,10 +17,9 @@ max_rate_decrement_bps   = 2000                                         # 20% ma
 starting_rate            = "1000000"                                    # 1e6 - USDC Precision - 6 decimals
 min_rate_update_delay    = 10                                           # 10 seconds - Minimum delay for rate updates   
 max_rate_update_delay    = 345600                                       # 4 days in seconds - Maximum delay for rate updates before vault gets paused
-rate_update_threshold    = "0.2"                                        # 20% rate update threshold
 
 [cctp_transfer]
 cctp_token_messenger        = "0xBd3fa81B58Ba92a82136038B25aDec7066af3155" # CCTP Token Messenger contract address
-recipient                   = "0x2772a7f14a1a678bdf35419de9708d0a1bfec4a894cc7e6d2d802d2bed3c1e3c" # ICA noble address in bytes32
+recipient                   = "0x0000000000000000000000006d36ee66d20fc92b6f703cf26927a5ac23703740" # Forwarding Account on Noble
 destination_domain          = 4                                          # Noble
 cctp_transfer_threshold_amt = 1000000

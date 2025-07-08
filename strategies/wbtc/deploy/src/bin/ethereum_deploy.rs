@@ -310,6 +310,8 @@ async fn main() -> anyhow::Result<()> {
         accounts,
         libraries,
         coprocessor_app_ids,
+        max_rate_decrement_bps: u64::from(parameters.vault.max_rate_decrement_bps),
+        max_rate_increment_bps: u64::from(parameters.vault.max_rate_increment_bps),
     };
 
     println!("Ethereum Strategy Config created successfully");
