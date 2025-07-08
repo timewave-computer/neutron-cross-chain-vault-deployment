@@ -32,5 +32,3 @@ valence-lending-utils              = { workspace = true }
 mmvault                            = { workspace = true }
 serde_json                         = { workspace = true }
 tokio                              = { workspace = true }
-# valence-encoder-utils              = { workspace = true }
-# alloy-sol-types = { workspace = true }
