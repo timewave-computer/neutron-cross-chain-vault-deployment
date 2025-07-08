@@ -20,7 +20,7 @@ use packages::types::sol_types::SendMsgs;
 use packages::types::sol_types::Subroutine;
 use packages::types::sol_types::SubroutineType;
 use packages::{
-    labels::{CCTP_TRANSFER_LABEL, ICA_TRANSFER_LABEL, PROVIDE_LIQUIDIY_LABEL},
+    labels::{CCTP_TRANSFER_LABEL, PROVIDE_LIQUIDIY_LABEL},
     phases::DEPOSIT_PHASE,
     types::sol_types::{
         Authorization, BaseAccount,
@@ -33,13 +33,12 @@ use valence_domain_clients::{
     cosmos::base_client::BaseClient,
     evm::base_client::{CustomProvider, EvmBaseClient},
 };
-use valence_library_utils::OptionUpdate;
 
 impl Strategy {
     pub async fn deposit(&mut self, eth_rp: &CustomProvider) -> anyhow::Result<()> {
         info!(target: DEPOSIT_PHASE, "starting deposit phase");
 
-        // Stage 1: deposit token routing from Ethereum to Noble
+        // Stage 1: deposit token routing from Ethereum to Neutron via Noble
         {
             let eth_deposit_token_contract =
                 ERC20::new(self.cfg.ethereum.denoms.deposit_token, &eth_rp);
@@ -64,33 +63,12 @@ impl Strategy {
                 // prior to proceeding to Noble ica -> neutron routing
                 info!(target: DEPOSIT_PHASE, "CCTP transfer threshold met!");
 
-                self.eth_to_noble_routing(eth_rp, eth_deposit_acc_bal)
+                self.eth_to_neutron_routing(eth_rp, eth_deposit_acc_bal)
                     .await?;
             }
         }
 
-        // Stage 2: deposit token routing from Noble to Neutron
-        {
-            let noble_ica_bal = self
-                .noble_client
-                .query_balance(
-                    &self.cfg.noble.forwarding_account,
-                    &self.cfg.noble.chain_denom,
-                )
-                .await?;
-            info!(target: DEPOSIT_PHASE, "Noble ICA balance = {noble_ica_bal}");
-
-            // depending on the Noble ICA deposit token balance, we either perform the ICA IBC routing
-            // of the balances to Neutron, or proceed to the next stage
-            if noble_ica_bal == 0 {
-                info!(target: DEPOSIT_PHASE, "nothing to bridge; proceeding to position entry");
-            } else {
-                info!(target: DEPOSIT_PHASE, "pulling funds to Neutron...");
-                self.noble_to_neutron_routing(noble_ica_bal).await?;
-            }
-        }
-
-        // Stage 3: Supervault position entry on Neutron
+        // Stage 2: Supervault position entry on Neutron
         {
             let neutron_deposit_bal = self
                 .neutron_client
@@ -116,7 +94,7 @@ impl Strategy {
 
     /// carries out the steps needed to route the deposits from Ethereum program deposit
     /// account to the configured Noble ICA managed by Neutron Valence-ICA.
-    async fn eth_to_noble_routing(
+    async fn eth_to_neutron_routing(
         &mut self,
         eth_rp: &CustomProvider,
         eth_deposit_acc_bal: U256,
@@ -125,12 +103,12 @@ impl Strategy {
         let eth_deposit_acc_bal_u128 = u128::try_from(eth_deposit_acc_bal)?;
 
         // transfer can be considered complete when the current ica balance increases
-        // by the amount available on eth deposit account (TODO: minus fees?)
-        let pre_routing_noble_ica_bal = self
-            .noble_client
+        // by the amount available on eth deposit account
+        let pre_routing_neutron_deposit_acc_bal = self
+            .neutron_client
             .query_balance(
-                &self.cfg.noble.forwarding_account,
-                &self.cfg.noble.chain_denom,
+                &self.cfg.neutron.accounts.deposit,
+                &self.cfg.neutron.denoms.deposit_token,
             )
             .await?;
 
@@ -201,99 +179,25 @@ impl Strategy {
             .get_transaction_receipt(enqueue_cctp_exec_response.transaction_hash)
             .await?;
 
-        let noble_ica_expected_balance = pre_routing_noble_ica_bal + eth_deposit_acc_bal_u128;
+        let neutron_deposit_acc_expected_balance =
+            pre_routing_neutron_deposit_acc_bal + eth_deposit_acc_bal_u128;
         info!(
             target: DEPOSIT_PHASE,
-            "Noble ica expected bal = {noble_ica_expected_balance}; polling..."
+            "Neutron deposit account expected bal = {neutron_deposit_acc_expected_balance}; polling..."
         );
 
-        // block execution until the funds arrive to the Noble ICA owned
-        // by the Valence Interchain Account on Neutron.
+        // block execution until the funds arrive to the Neutron deposit account
+        // via forwarding from Noble.
         // poll for 15sec * 100 = 1500sec = 25min.
-        self.noble_client
-            .poll_until_expected_balance(
-                &self.cfg.noble.forwarding_account,
-                &self.cfg.noble.chain_denom,
-                noble_ica_expected_balance,
-                15,  // every 15 sec
-                100, // for 100 times
-            )
-            .await?;
-        Ok(())
-    }
-
-    async fn noble_to_neutron_routing(&mut self, noble_ica_bal: u128) -> anyhow::Result<()> {
-        let ica_ibc_transfer_update_msg: valence_library_utils::msg::ExecuteMsg<
-            valence_ica_ibc_transfer::msg::FunctionMsgs,
-            valence_ica_ibc_transfer::msg::LibraryConfigUpdate,
-        > = valence_library_utils::msg::ExecuteMsg::UpdateConfig {
-            new_config: valence_ica_ibc_transfer::msg::LibraryConfigUpdate {
-                input_addr: None,
-                amount: Some(noble_ica_bal.into()),
-                denom: None,
-                receiver: None,
-                memo: None,
-                remote_chain_info: None,
-                denom_to_pfm_map: None,
-                eureka_config: OptionUpdate::Set(None),
-            },
-        };
-        let ica_ibc_transfer_exec_msg =
-            valence_library_utils::msg::ExecuteMsg::<_, ()>::ProcessFunction(
-                valence_ica_ibc_transfer::msg::FunctionMsgs::Transfer {},
-            );
-
-        info!(target: DEPOSIT_PHASE, "enqueuing ica_ibc_transfer library update & transfer");
-        valence_core::enqueue_neutron(
-            &self.neutron_client,
-            &self.cfg.neutron.authorizations,
-            ICA_TRANSFER_LABEL,
-            vec![
-                to_json_binary(&ica_ibc_transfer_update_msg)?,
-                to_json_binary(&ica_ibc_transfer_exec_msg)?,
-            ],
-        )
-        .await?;
-
-        valence_core::ensure_neutron_account_fees_coverage(
-            &self.neutron_client,
-            &self.cfg.neutron.accounts.deposit,
-        )
-        .await?;
-
-        // transfer can be considered complete when the current ica balance increases
-        // by the expected post_fee ibc eureka transfer amount out
-        let pre_routing_neutron_deposit_acc_bal = self
-            .neutron_client
-            .query_balance(
-                &self.cfg.neutron.accounts.deposit,
-                &self.cfg.neutron.denoms.deposit_token,
-            )
-            .await?;
-
-        let neutron_deposit_acc_expected_bal = pre_routing_neutron_deposit_acc_bal + noble_ica_bal;
-        info!(
-            target: DEPOSIT_PHASE,
-            "neutron deposit acc expected bal = {neutron_deposit_acc_expected_bal}; polling..."
-        );
-
-        info!(target: DEPOSIT_PHASE, "tick: update & transfer");
-        valence_core::tick_neutron(&self.neutron_client, &self.cfg.neutron.processor).await?;
-
-        info!(target: DEPOSIT_PHASE, "polling for neutron deposit account to receive the funds");
-
-        // block execution until funds arrive to the Neutron program deposit
-        // account
         self.neutron_client
             .poll_until_expected_balance(
                 &self.cfg.neutron.accounts.deposit,
                 &self.cfg.neutron.denoms.deposit_token,
-                neutron_deposit_acc_expected_bal,
-                5,
-                30,
+                neutron_deposit_acc_expected_balance,
+                15,  // every 15 sec
+                100, // for 100 times
             )
             .await?;
-
         Ok(())
     }
 

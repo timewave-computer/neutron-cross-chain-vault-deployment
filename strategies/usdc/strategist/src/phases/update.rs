@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 
-use alloy::primitives::U256;
+use alloy::{primitives::U256, providers::Provider};
 use anyhow::anyhow;
 use cosmwasm_std::{Decimal, Uint128};
 use log::{info, warn};
@@ -47,15 +47,15 @@ impl Strategy {
             .await?;
 
         info!(target: UPDATE_PHASE, "updating ethereum vault redemption rate to {redemption_rate_sol_u256}");
-        // let update_request = one_way_vault_contract
-        //     .update(redemption_rate_sol_u256)
-        //     .into_transaction_request();
+        let update_request = one_way_vault_contract
+            .update(redemption_rate_sol_u256)
+            .into_transaction_request();
 
-        // let update_vault_exec_response = self.eth_client.sign_and_send(update_request).await?;
+        let update_vault_exec_response = self.eth_client.sign_and_send(update_request).await?;
 
-        // eth_rp
-        //     .get_transaction_receipt(update_vault_exec_response.transaction_hash)
-        //     .await?;
+        eth_rp
+            .get_transaction_receipt(update_vault_exec_response.transaction_hash)
+            .await?;
 
         Ok(())
     }
@@ -189,7 +189,7 @@ impl Strategy {
                 &self.cfg.noble.chain_denom,
             )
             .await?;
-        info!(target: UPDATE_PHASE, "noble_fwd_account_balance={noble_acc_balance}");
+        warn!(target: UPDATE_PHASE, "noble_fwd_account_balance={noble_acc_balance} . funds need manual routing Noble -> Neutron!");
         deposit_token_balance_total += noble_acc_balance;
 
         let neutron_deposit_acc_balance = self
