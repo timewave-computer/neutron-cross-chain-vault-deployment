@@ -1,9 +1,6 @@
 use std::{env, path::Path};
 
-use packages::{
-    ibc_eureka_chain_ids::{EUREKA_COSMOS_HUB_CHAIN_ID, EUREKA_ETHEREUM_CHAIN_ID},
-    utils::supervaults::Supervaults,
-};
+use packages::ibc_eureka_chain_ids::{EUREKA_COSMOS_HUB_CHAIN_ID, EUREKA_ETHEREUM_CHAIN_ID};
 use valence_domain_clients::clients::{
     coprocessor::CoprocessorClient, ethereum::EthereumClient, gaia::CosmosHubClient,
     ibc_eureka_route_client::IBCEurekaRouteClient, neutron::NeutronClient,
@@ -51,8 +48,6 @@ pub struct Strategy {
     /// active coprocessor client
     pub(crate) coprocessor_client: CoprocessorClient,
 }
-
-impl Supervaults for Strategy {}
 
 #[allow(dead_code)]
 impl Strategy {

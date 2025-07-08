@@ -5,7 +5,7 @@ use log::{info, warn};
 use packages::{
     phases::UPDATE_PHASE,
     types::sol_types::{BaseAccount, ERC20, OneWayVault},
-    utils::{supervaults::Supervaults, valence_core},
+    utils::{self, valence_core},
 };
 use valence_domain_clients::{
     cosmos::base_client::BaseClient,
@@ -134,7 +134,7 @@ impl Strategy {
         info!(target: UPDATE_PHASE, "neutron_deposit_acc_balance={neutron_deposit_acc_balance}");
         deposit_token_balance_total += neutron_deposit_acc_balance;
 
-        let supervaults_tvl = Strategy::query_supervault_tvl_expressed_in_denom(
+        let supervaults_tvl = utils::supervaults::query_supervault_tvl_expressed_in_denom(
             &self.neutron_client,
             &self.cfg.neutron.supervault,
             &self.cfg.neutron.accounts.deposit,

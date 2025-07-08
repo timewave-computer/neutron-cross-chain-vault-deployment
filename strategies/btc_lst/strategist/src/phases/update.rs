@@ -5,7 +5,7 @@ use log::{info, warn};
 use packages::{
     phases::UPDATE_PHASE,
     types::sol_types::{BaseAccount, ERC20, OneWayVault},
-    utils::{self, supervaults::Supervaults},
+    utils::{self},
 };
 use std::cmp::Ordering;
 use valence_domain_clients::{
@@ -265,7 +265,7 @@ impl Strategy {
         info!(target: UPDATE_PHASE, "mars_tvl={mars_tvl}");
         deposit_token_balance_total += mars_tvl;
 
-        let supervaults_tvl = Strategy::query_supervault_tvl_expressed_in_denom(
+        let supervaults_tvl = utils::supervaults::query_supervault_tvl_expressed_in_denom(
             &self.neutron_client,
             &self.cfg.neutron.supervault,
             &self.cfg.neutron.accounts.supervault_deposit,
