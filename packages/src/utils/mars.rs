@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use valence_domain_clients::{clients::neutron::NeutronClient, cosmos::wasm_client::WasmClient};
 use valence_lending_utils::mars::{Account, Positions, QueryMsg};
 
@@ -7,19 +8,14 @@ pub async fn query_mars_lending_denom_amount(
     acc_owner: &str,
     denom: &str,
 ) -> anyhow::Result<u128> {
-    let credit_accounts = query_mars_credit_accounts(client, credit_manager, acc_owner).await?;
-
     // get the first credit account. while credit accounts are returned as a vec,
     // mars lending library should only ever create one credit account and re-use it
     // for all LP actions, so we get the [0]
-    let first_credit_account = match credit_accounts.first() {
-        Some(acc) => acc,
-        None => {
-            return Err(anyhow::anyhow!(
-                "no credit account found for owner {acc_owner}"
-            ))
-        }
-    };
+    let first_credit_account = query_mars_credit_accounts(client, credit_manager, acc_owner)
+        .await?
+        .into_iter()
+        .next()
+        .ok_or_else(|| anyhow!("no credit account found for owner {acc_owner}"))?;
 
     let active_positions = query_mars_credit_account_positions(
         client,

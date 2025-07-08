@@ -1,9 +1,12 @@
 use cosmwasm_std::{Addr, Decimal, Uint128};
+use log::warn;
 use mmvault::state::Config;
 use valence_domain_clients::{
     clients::neutron::NeutronClient,
     cosmos::{base_client::BaseClient, wasm_client::WasmClient},
 };
+
+use crate::phases::UPDATE_PHASE;
 
 /// calculates total value of the active supervault position,
 /// expressed in the deposit token denom
@@ -25,6 +28,7 @@ pub async fn query_supervault_tvl_expressed_in_denom(
 
     // if no shares are available, we early return supervaults tvl of 0
     if lp_shares_balance.is_zero() {
+        warn!(target: UPDATE_PHASE, "deposit account lp shares balance is 0");
         return Ok(0);
     }
 
