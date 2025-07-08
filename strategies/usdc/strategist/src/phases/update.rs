@@ -91,8 +91,8 @@ impl Strategy {
             Ordering::Less => {
                 let rate_delta = Decimal::one() - rate_change_decimal;
                 info!(target: UPDATE_PHASE, "redemption rate epoch delta = -{rate_delta}");
-                // TODO: switch to max decrement threshold bps
-                let decrement_threshold = self.cfg.ethereum.rate_update_threshold;
+
+                let decrement_threshold = Decimal::bps(self.cfg.ethereum.max_rate_decrement_bps);
                 if rate_delta > decrement_threshold {
                     warn!(target: UPDATE_PHASE, "rate delta exceeds the threshold of {decrement_threshold}; pausing the vault");
                     // let pause_request = one_way_vault_contract.pause().into_transaction_request();
@@ -116,7 +116,7 @@ impl Strategy {
                 let rate_delta = rate_change_decimal - Decimal::one();
                 info!(target: UPDATE_PHASE, "redemption rate epoch delta = +{rate_delta}");
                 // TODO: switch to max decrement threshold bps
-                let increment_threshold = self.cfg.ethereum.rate_update_threshold;
+                let increment_threshold = Decimal::bps(self.cfg.ethereum.max_rate_increment_bps);
                 if rate_delta > increment_threshold {
                     warn!(target: UPDATE_PHASE, "rate delta exceeds the threshold of {increment_threshold}; pausing the vault");
                     // let pause_request = one_way_vault_contract.pause().into_transaction_request();
@@ -184,7 +184,10 @@ impl Strategy {
 
         let noble_acc_balance = self
             .noble_client
-            .query_balance(&self.cfg.noble.ica_address, &self.cfg.noble.chain_denom)
+            .query_balance(
+                &self.cfg.noble.forwarding_account,
+                &self.cfg.noble.chain_denom,
+            )
             .await?;
         info!(target: UPDATE_PHASE, "noble_fwd_account_balance={noble_acc_balance}");
         deposit_token_balance_total += noble_acc_balance;

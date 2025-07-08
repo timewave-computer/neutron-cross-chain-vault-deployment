@@ -73,7 +73,10 @@ impl Strategy {
         {
             let noble_ica_bal = self
                 .noble_client
-                .query_balance(&self.cfg.noble.ica_address, &self.cfg.noble.chain_denom)
+                .query_balance(
+                    &self.cfg.noble.forwarding_account,
+                    &self.cfg.noble.chain_denom,
+                )
                 .await?;
             info!(target: DEPOSIT_PHASE, "Noble ICA balance = {noble_ica_bal}");
 
@@ -125,7 +128,10 @@ impl Strategy {
         // by the amount available on eth deposit account (TODO: minus fees?)
         let pre_routing_noble_ica_bal = self
             .noble_client
-            .query_balance(&self.cfg.noble.ica_address, &self.cfg.noble.chain_denom)
+            .query_balance(
+                &self.cfg.noble.forwarding_account,
+                &self.cfg.noble.chain_denom,
+            )
             .await?;
 
         let transfer_call = CCTPTransfer::transferCall {};
@@ -206,7 +212,7 @@ impl Strategy {
         // poll for 15sec * 100 = 1500sec = 25min.
         self.noble_client
             .poll_until_expected_balance(
-                &self.cfg.noble.ica_address,
+                &self.cfg.noble.forwarding_account,
                 &self.cfg.noble.chain_denom,
                 noble_ica_expected_balance,
                 15,  // every 15 sec
@@ -251,7 +257,7 @@ impl Strategy {
 
         valence_core::ensure_neutron_account_fees_coverage(
             &self.neutron_client,
-            &self.cfg.neutron.accounts.noble_ica,
+            &self.cfg.neutron.accounts.deposit,
         )
         .await?;
 
