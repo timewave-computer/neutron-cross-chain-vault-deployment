@@ -1,0 +1,10 @@
+[package]
+name        = "eureka-transfer-circuit"
+version     = "0.1.0"
+edition     = "2024"
+description = "The Valence co-processor circuit definition."
+
+[dependencies]
+valence-coprocessor      = { workspace = true } 
+alloy-sol-types          = { version = "0.8", default-features = false, features = ["std"] }
+alloy-primitives         = { version = "0.8", default-features = false, features = ["std"] }

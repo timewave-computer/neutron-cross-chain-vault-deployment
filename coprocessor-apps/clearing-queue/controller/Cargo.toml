@@ -1,0 +1,15 @@
+[package]
+name        = "clearing-queue-controller"
+version     = "0.1.0"
+edition     = "2024"
+description = "The Valence co-processor controller definition."
+
+[dependencies]
+anyhow                   = { workspace = true }
+serde_json               = { workspace = true }
+valence-coprocessor      = { workspace = true }
+valence-coprocessor-wasm = { workspace = true }
+alloy-sol-types          = { version = "0.8.25", default-features = false }
+alloy-primitives         = { version = "0.8.25", default-features = false }
+ethereum-merkle-proofs   = { package = "ethereum", git = "https://github.com/timewave-computer/zk-merkle-proofs", default-features = false }
+hex                      = { version = "0.4", default-features = false, features = ["alloc"] }
