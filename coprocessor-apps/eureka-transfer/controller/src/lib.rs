@@ -33,7 +33,7 @@ fn extract_fee_data(skip_response: &Value) -> anyhow::Result<FeeData> {
         .and_then(|op| op.get("eureka_transfer"))
         .and_then(|et| et.get("smart_relay_fee_quote"))
         .expect("eureka_transfer operation or smart_relay_fee_quote not found");
-    
+
     let fee_amount = smart_relay_fees["fee_amount"].as_str().unwrap();
 
     let expiration = smart_relay_fees["expiration"].as_str().unwrap();

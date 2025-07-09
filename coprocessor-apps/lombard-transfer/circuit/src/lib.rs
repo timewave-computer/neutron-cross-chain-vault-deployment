@@ -342,7 +342,7 @@ mod tests {
                         "ibc_transfer": {
                             "ibc_info": {
                                 "source_channel": "channel-0",
-                                "receiver": "cosmos14mlpd48k5vkeset4x7f78myz3m47jcax4mesvx",
+                                "receiver": "cosmos1ga06dpquuxrfu2ukz4mjz3htmrns8dqsxm7qnzntara4w2x7h55slt2306",
                                 "recover_address": "lom1g8p66wfxmvvknv5w23ntxsl9wj8rr4923zfquk8tw8kemrlz8rks8m7fn7"
                             }
                         }
