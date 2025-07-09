@@ -27,7 +27,7 @@ The vault consists of two phases with the following characteristics.
 Here is a general diagram of the flow during phase 1:
 ![Phase 1](images/btc_lst_phase1.png)
 
-## Phrase transition
+## Phase transition
 
 **NOTES**:
 Before triggering the phase transition, the strategist must settle all current obligations.

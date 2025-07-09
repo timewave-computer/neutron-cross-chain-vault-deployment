@@ -27,7 +27,7 @@ The vault consists of two phases with the following characteristics.
 Here is a general diagram of the flow during phase 1:
 ![Phase 1](images/wbtc_phase1.png)
 
-## Phrase transition
+## Phase transition
 
 **NOTES**:
 Before triggering the phase transition, the strategist must settle all current obligations.
@@ -38,8 +38,7 @@ Here is a diagram of how the phase transition looks like for each step:
 
 ## Phase 2 flow
 
-The phase 2 flow is very similar to phase 1 except that there is an additional deposit to a wBTC/maxBTC supervault. Now the strategist will execute
-7 deposit messages instead of 6.
+The phase 2 flow is very similar to phase 1 except that there is an additional deposit to a wBTC/maxBTC supervault. Now the strategist will execute 7 deposit messages instead of 6.
 
 Here is a diagram for phase 2:
 ![Phase 2](images/wbtc_phase2.png)
