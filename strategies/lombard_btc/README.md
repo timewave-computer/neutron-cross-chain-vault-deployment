@@ -1,6 +1,6 @@
 # LBTC Vault
 
-This vault is meant for LBTC tokens that are transferred from Ethereum to the Cosmos Hub (Gaia) via Lombard Ledger using IBC Eureka. This is done using a memo and the lombardTransfer function from the IBC Eureka Library. The memo is used to trigger a swap of the IBCeable LBTC vouchers (iLBTCv) to LBTC on Lombard chain and transfer them to the valence ICA on the Hub. This is needed because LBTC is not directly transferred to the Hub but instead mints/burns a voucher that needs to be sent to the Lombard Ledger and swapped to LBTC.
+This vault is for LBTC tokens that are transferred from Ethereum to the Cosmos Hub (Gaia) via Lombard Ledger using IBC Eureka. This is done using a memo and the lombardTransfer function from the IBC Eureka Library. The memo is used to trigger a swap of the IBCeable LBTC vouchers (iLBTCv) to LBTC on Lombard chain and transfer them to the valence ICA on the Hub. This is needed because LBTC is not directly transferred to the Hub but instead mints/burns a voucher that needs to be sent to the Lombard Ledger and swapped to LBTC.
 
 The vault consists of two phases with the following characteristics.
 

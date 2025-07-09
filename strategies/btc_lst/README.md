@@ -1,6 +1,6 @@
 # BTC LST Vault
 
-This vault is meant for BTC LST tokens that are transferred directly from Ethereum to the Cosmos Hub (Gaia) using IBC Eureka without going through an intermediate domain. Examples of these would be pumpBTC, brBTC, solvBTC... except LBTC (lombard BTC) and WBTC. These last two are special cases that have unique vaults.
+This vault is for BTC LST tokens that are transferred directly from Ethereum to the Cosmos Hub (Gaia) using IBC Eureka without going through an intermediate domain. Examples of these would be pumpBTC, brBTC, solvBTC... except LBTC (lombard BTC) and WBTC. These last two are special cases that have unique vaults.
 
 The vault consists of two phases with the following characteristics.
 
