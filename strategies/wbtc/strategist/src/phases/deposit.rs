@@ -174,8 +174,6 @@ impl Strategy {
             .query_skip_eureka_route(eth_deposit_acc_bal.to_string())
             .await
         {
-            // TODO: consider more thorough checks on this response as even in case of an error this
-            // may return something seemingly legit (json-value wise)
             Ok(r) => r,
             Err(e) => {
                 warn!(target: DEPOSIT_PHASE, "skip route error: {e}");

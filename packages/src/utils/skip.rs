@@ -13,24 +13,3 @@ pub fn get_amount_out(json: &Value) -> anyhow::Result<u128> {
 
     Ok(amount_out_u128)
 }
-
-pub fn get_operations_array(json: &Value) -> anyhow::Result<Vec<Value>> {
-    let skip_response_operations = json
-        .get("operations")
-        .cloned()
-        .ok_or(anyhow!("failed to get operations"))?
-        .as_array()
-        .cloned()
-        .ok_or(anyhow!("operations not an array"))?;
-
-    Ok(skip_response_operations)
-}
-
-pub fn get_eureka_transfer_operation(json: Vec<Value>) -> anyhow::Result<Value> {
-    let skip_response_eureka_operation = json
-        .iter()
-        .find(|op| op.get("eureka_transfer").cloned().is_some())
-        .ok_or(anyhow!("no eureka transfer operation in skip response"))?;
-
-    Ok(skip_response_eureka_operation.clone())
-}
