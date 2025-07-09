@@ -12,9 +12,9 @@ use packages::{
     labels::{ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_LABEL},
     phases::DEPOSIT_PHASE,
     types::sol_types::{Authorization, BaseAccount, ERC20},
-    utils::valence_core,
+    utils::{self, valence_core},
 };
-use serde_json::{Value, json};
+use serde_json::json;
 use valence_domain_clients::{
     coprocessor::base_client::CoprocessorBaseClient,
     cosmos::base_client::BaseClient,
@@ -167,7 +167,7 @@ impl Strategy {
         let eth_auth_contract = Authorization::new(self.cfg.ethereum.authorizations, &eth_rp);
 
         // fetch the IBC-Eureka route from eureka client
-        let mut skip_api_response = match self
+        let skip_api_response = match self
             .ibc_eureka_client
             .query_skip_eureka_route(eth_deposit_acc_bal.to_string())
             .await
@@ -179,17 +179,9 @@ impl Strategy {
             }
         };
 
-        let skip_response_clone = skip_api_response.clone();
+        let post_fee_amount_out_u128 = utils::skip::get_amount_out(&skip_api_response)?;
 
-        let amount_out_str = skip_response_clone
-            .get("amount_out")
-            .and_then(Value::as_str)
-            .ok_or(anyhow!(
-                "skip_api response amount_out not found or not a string"
-            ))?;
-
-        let post_fee_amount_out_u128: u128 = amount_out_str.parse()?;
-        info!(target: DEPOSIT_PHASE, "post_fee_amount_out_u128 = {post_fee_amount_out_u128:?}" );
+        info!(target: DEPOSIT_PHASE, "post_fee_amount_out_u128 = {post_fee_amount_out_u128:?}");
 
         let timeout_duration = Duration::from_secs(TWELVE_HOURS_IN_SECS);
         let timeout_time = SystemTime::now()
@@ -201,23 +193,7 @@ impl Strategy {
             .map_err(|e| anyhow!("bad times: {e}"))?
             .as_nanos();
 
-        let skip_response_operations = skip_api_response
-            .get("operations")
-            .cloned()
-            .ok_or(anyhow!("failed to get operations"))?
-            .as_array()
-            .cloned()
-            .ok_or(anyhow!("operations not an array"))?;
-        let skip_response_eureka_operation = skip_response_operations
-            .iter()
-            .find(|op| op.get("eureka_transfer").cloned().is_some())
-            .ok_or(anyhow!("no eureka transfer operation in skip response"))?;
-
-        // current circuit expects array with a single element so we override
-        // the existing array
-        skip_api_response["operations"] = json!([skip_response_eureka_operation]);
-
-        let temp_memo = json!(
+        let lombard_pfm_memo = json!(
             {
               "dest_callback": {
                 "address": self.cfg.lombard.callback_contract
@@ -241,7 +217,7 @@ impl Strategy {
                     "min_asset": {
                       "native": {
                         "denom": self.cfg.lombard.native_denom,
-                        "amount": amount_out_str
+                        "amount": post_fee_amount_out_u128.to_string()
                       }
                     },
                     "timeout_timestamp": timeout_timestamp_nanos,
@@ -264,7 +240,10 @@ impl Strategy {
 
         // format the response in format expected by the coprocessor and post it
         // there for proof
-        let coprocessor_input = json!({"skip_response": skip_api_response, "memo": temp_memo});
+        let coprocessor_input = json!({
+            "skip_response": skip_api_response,
+            "memo": lombard_pfm_memo
+        });
 
         info!(target: DEPOSIT_PHASE, "co-processor input: {coprocessor_input}");
 

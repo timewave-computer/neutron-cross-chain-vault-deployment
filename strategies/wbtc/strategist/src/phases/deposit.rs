@@ -16,6 +16,7 @@ use valence_domain_clients::{
     cosmos::base_client::BaseClient,
     evm::base_client::{CustomProvider, EvmBaseClient},
 };
+use valence_library_utils::OptionUpdate;
 use wbtc_types::labels::LEND_AND_PROVIDE_LIQUIDITY_PHASE1_LABEL;
 
 use crate::strategy_config::Strategy;
@@ -174,8 +175,6 @@ impl Strategy {
             .query_skip_eureka_route(eth_deposit_acc_bal.to_string())
             .await
         {
-            // TODO: consider more thorough checks on this response as even in case of an error this
-            // may return something seemingly legit (json-value wise)
             Ok(r) => r,
             Err(e) => {
                 warn!(target: DEPOSIT_PHASE, "skip route error: {e}");
@@ -242,29 +241,22 @@ impl Strategy {
     }
 
     async fn gaia_to_neutron_routing(&mut self, gaia_ica_bal: u128) -> anyhow::Result<()> {
-        // let ica_ibc_transfer_update_msg: valence_library_utils::msg::ExecuteMsg<
-        //     valence_ica_ibc_transfer::msg::FunctionMsgs,
-        //     valence_ica_ibc_transfer::msg::LibraryConfigUpdate,
-        // > = valence_library_utils::msg::ExecuteMsg::UpdateConfig {
-        //     new_config: valence_ica_ibc_transfer::msg::LibraryConfigUpdate {
-        //         input_addr: None,
-        //         amount: Some(gaia_ica_bal.into()),
-        //         denom: None,
-        //         receiver: None,
-        //         memo: None,
-        //         remote_chain_info: None,
-        //         denom_to_pfm_map: None,
-        //         eureka_config: OptionUpdate::Set(None),
-        //     },
-        // };
-        let ica_ibc_transfer_update_msg = json!({
-            "update_config": {
-                "new_config": {
-                    "amount": gaia_ica_bal.to_string(),
-                    "eureka_config": "none"
-                }
-            }
-        });
+        let ica_ibc_transfer_update_msg: valence_library_utils::msg::ExecuteMsg<
+            valence_ica_ibc_transfer::msg::FunctionMsgs,
+            valence_ica_ibc_transfer::msg::LibraryConfigUpdate,
+        > = valence_library_utils::msg::ExecuteMsg::UpdateConfig {
+            new_config: valence_ica_ibc_transfer::msg::LibraryConfigUpdate {
+                input_addr: None,
+                amount: Some(gaia_ica_bal.into()),
+                denom: None,
+                receiver: None,
+                memo: None,
+                remote_chain_info: None,
+                denom_to_pfm_map: None,
+                eureka_config: OptionUpdate::Set(None),
+            },
+        };
+
         let ica_ibc_transfer_exec_msg =
             valence_library_utils::msg::ExecuteMsg::<_, ()>::ProcessFunction(
                 valence_ica_ibc_transfer::msg::FunctionMsgs::Transfer {},

@@ -22,3 +22,4 @@ opentelemetry-otlp                  = { workspace = true }
 opentelemetry-stdout                = { workspace = true }
 opentelemetry-appender-log          = { workspace = true }
 anyhow                              = { workspace = true }
+serde_json                          = { workspace = true }
