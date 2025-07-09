@@ -14,13 +14,13 @@ use valence_coprocessor::Witness;
 // Currently fee is 0.20$ which translates currently to 193. So we'll set a ceiling of 10 times that.
 const MAX_FEE_ALLOWED: u64 = 1930;
 // The library this will be executed on:
-const EUREKA_TRANSFER_LIBRARY_CONTRACT: &str = "0xc9e967dbfe888e3999697cb289a1212443928450";
+const EUREKA_TRANSFER_LIBRARY_CONTRACT: &str = "0x56f82e443004fdf8adda9bf2253944bab621cce2";
 
 // Memo fields that need to be validated
 const DEST_CALLBACK: &str = "lom13ehuhysn5mqjeaheeuew2gjs785f6k7jm8vfsqg3jhtpkwppcmzqdk2xf9";
 const WASM_CONTRACT: &str = "lom1szrfu43ncn6as3mgjd8davelgd77zdj7n3zhwkuc8w85gc3yrctsdrnnxl";
 const IBC_CHANNEL: &str = "channel-0";
-const RECEIVER: &str = "cosmos1qh44ugsak6mejr60dsew5f0vaaxpl0pqhtzs2pudl37hkukk09aqjm5ex2";
+const RECEIVER: &str = "cosmos1ga06dpquuxrfu2ukz4mjz3htmrns8dqsxm7qnzntara4w2x7h55slt2306";
 const RECOVER_ADDRESS: &str = "lom1g8p66wfxmvvknv5w23ntxsl9wj8rr4923zfquk8tw8kemrlz8rks8m7fn7";
 
 /// Main circuit function for token transfer validation
