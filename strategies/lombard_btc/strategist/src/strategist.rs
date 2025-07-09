@@ -41,7 +41,7 @@ impl ValenceWorker for Strategy {
         // having processed all new exit requests after the deposit flow,
         // the epoch is ready to be concluded.
         // we perform the final accounting flow and post vault update.
-        self.update(&eth_rp).await?;
+        // self.update(&eth_rp).await?;
 
         Ok(())
     }

@@ -11,7 +11,7 @@ use packages::{
     types::sol_types::{Authorization, BaseAccount, ERC20},
     utils::{self, valence_core},
 };
-use serde_json::{json};
+use serde_json::json;
 use valence_domain_clients::{
     coprocessor::base_client::CoprocessorBaseClient,
     cosmos::base_client::BaseClient,
@@ -181,7 +181,8 @@ impl Strategy {
 
         let skip_response_operations = utils::skip::get_operations_array(&skip_api_response)?;
 
-        let skip_response_eureka_operation = utils::skip::get_eureka_transfer_operation(skip_response_operations)?;
+        let skip_response_eureka_operation =
+            utils::skip::get_eureka_transfer_operation(skip_response_operations)?;
 
         // current circuit expects array with a single element so we override
         // the existing array
