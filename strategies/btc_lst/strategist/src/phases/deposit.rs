@@ -3,16 +3,15 @@ use alloy::{
     providers::Provider,
 };
 
-use anyhow::anyhow;
 use cosmwasm_std::to_json_binary;
 use log::{info, warn};
 use packages::{
     labels::{ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_LABEL},
     phases::DEPOSIT_PHASE,
     types::sol_types::{Authorization, BaseAccount, ERC20},
-    utils::valence_core,
+    utils::{self, valence_core},
 };
-use serde_json::{Value, json};
+use serde_json::{json};
 use valence_domain_clients::{
     coprocessor::base_client::CoprocessorBaseClient,
     cosmos::base_client::BaseClient,
@@ -177,27 +176,12 @@ impl Strategy {
 
         let skip_response_clone = skip_api_response.clone();
 
-        let amount_out_str = skip_response_clone
-            .get("amount_out")
-            .and_then(Value::as_str)
-            .ok_or(anyhow!(
-                "skip_api response amount_out not found or not a string"
-            ))?;
-
-        let post_fee_amount_out_u128: u128 = amount_out_str.parse()?;
+        let post_fee_amount_out_u128 = utils::skip::get_amount_out(&skip_response_clone)?;
         info!(target: DEPOSIT_PHASE, "post_fee_amount_out_u128 = {post_fee_amount_out_u128:?}" );
 
-        let skip_response_operations = skip_api_response
-            .get("operations")
-            .cloned()
-            .ok_or(anyhow!("failed to get operations"))?
-            .as_array()
-            .cloned()
-            .ok_or(anyhow!("operations not an array"))?;
-        let skip_response_eureka_operation = skip_response_operations
-            .iter()
-            .find(|op| op.get("eureka_transfer").cloned().is_some())
-            .ok_or(anyhow!("no eureka transfer operation in skip response"))?;
+        let skip_response_operations = utils::skip::get_operations_array(&skip_api_response)?;
+
+        let skip_response_eureka_operation = utils::skip::get_eureka_transfer_operation(skip_response_operations)?;
 
         // current circuit expects array with a single element so we override
         // the existing array
