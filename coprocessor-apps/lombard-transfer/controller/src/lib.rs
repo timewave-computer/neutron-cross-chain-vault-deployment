@@ -25,8 +25,14 @@ fn extract_fee_data(skip_response: &Value) -> anyhow::Result<FeeData> {
     abi::log!("Extracting fee data from Skip API response")?;
 
     // Extract the fees where all the information is provided
-    let smart_relay_fees =
-        &skip_response["operations"][0]["eureka_transfer"]["smart_relay_fee_quote"];
+    let smart_relay_fees = skip_response["operations"]
+        .as_array()
+        .expect("operations is not an array")
+        .iter()
+        .find(|op| op.get("eureka_transfer").is_some())
+        .and_then(|op| op.get("eureka_transfer"))
+        .and_then(|et| et.get("smart_relay_fee_quote"))
+        .expect("eureka_transfer operation or smart_relay_fee_quote not found");
 
     let fee_amount = smart_relay_fees["fee_amount"].as_str().unwrap();
 
