@@ -1,19 +1,22 @@
 [package]
-name        = "clearing-queue-controller"
-version     = "0.1.0"
-edition     = "2024"
-description = "The Valence co-processor controller definition."
+name    = "clearing-queue-core"
+version = "0.1.0"
+edition = "2024"
 
 [dependencies]
 serde_json               = { workspace = true }
 valence-coprocessor      = { workspace = true }
 valence-coprocessor-wasm = { workspace = true }
+alloy-rlp                = { version = "0.3.12", default-features = false, features = ["derive"] }
 alloy-primitives         = { version = "0.8.15", default-features = false }
 alloy-rpc-types-eth      = { version = "0.9.2", default-features = false, features = ["serde"] }
+alloy-serde              = { version = "0.9.2", default-features = false }
 alloy-sol-types          = { version = "0.8.15", default-features = false, features = ["eip712-serde"] }
 alloy-trie               = { version = "0.7.8", default-features = false, features = ["ethereum", "serde"] }
 serde                    = { version = "1.0.219", default-features = false, features = ["alloc", "derive"] }
+rlp                      = { version = "0.6.1", default-features = false }
 anyhow                   = { version = "1.0.83", default-features = false }
-hex                      = { version = "0.4.3", default-features = false, features = ["alloc"] }
-bincode                  = { version = "2.0.1", default-features = false, features = ["alloc", "serde"] }
-clearing-queue-core.path = "../core"
+
+[dev-dependencies]
+hex        = { workspace = true }
+serde_json = { workspace = true }
