@@ -1,9 +1,8 @@
-use std::{error::Error, time::Duration};
+use std::error::Error;
 
 use async_trait::async_trait;
 use log::info;
 use packages::phases::VALENCE_WORKER;
-use tokio::time::sleep;
 use valence_domain_clients::evm::{
     base_client::CustomProvider, request_provider_client::RequestProviderClient,
 };
@@ -21,10 +20,10 @@ impl ValenceWorker for Strategy {
     }
 
     async fn cycle(&mut self) -> Result<(), Box<dyn Error + Send + Sync>> {
-        info!(target: VALENCE_WORKER, "sleeping for {}sec", self.timeout);
-        sleep(Duration::from_secs(self.timeout)).await;
-
         info!(target: VALENCE_WORKER, "{}: Starting cycle...", self.get_name());
+
+        // go into sentry (pre-flight) phase
+        self.sentry().await?;
 
         let eth_rp: CustomProvider = self.eth_client.get_request_provider().await?;
 
