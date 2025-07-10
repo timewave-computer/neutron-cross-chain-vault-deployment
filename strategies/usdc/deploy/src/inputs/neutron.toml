@@ -2,8 +2,7 @@
 grpc_url      = "http://rpc.neutron.quokkastake.io"
 grpc_port     = "9090"
 chain_id      = "neutron-1"
-owner         = "neutron14mlpd48k5vkeset4x7f78myz3m47jcax3ysjkp" # Should be Neutron multisig
-valence_owner = "neutron14mlpd48k5vkeset4x7f78myz3m47jcax3ysjkp" # TBD Valence address that will own the verification gateway
+owner         = "neutron14mlpd48k5vkeset4x7f78myz3m47jcax3ysjkp" # Should be Neutron multisigs
 strategist    = "neutron1z8qjsmtjxcd36j0la2rs2rfstf5nxmady2hx8a" # Should be strategist address
 
 [program]

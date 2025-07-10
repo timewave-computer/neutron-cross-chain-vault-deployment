@@ -1,8 +1,8 @@
 use std::{collections::HashMap, env, error::Error, fs, time::SystemTime};
 
-use cosmwasm_std::{Binary, Decimal, Uint128};
+use cosmwasm_std::{Decimal, Uint128};
+use packages::verification::VALENCE_NEUTRON_VERIFICATION_GATEWAY;
 use serde::Deserialize;
-use sp1_sdk::{HashableKey, SP1VerifyingKey};
 use usdc_deploy::{INPUTS_DIR, OUTPUTS_DIR, UUSDC_DENOM};
 use usdc_types::{
     neutron_config::{
@@ -13,8 +13,7 @@ use usdc_types::{
 };
 use valence_clearing_queue_supervaults::msg::SupervaultSettlementInfo;
 use valence_domain_clients::{
-    clients::{coprocessor::CoprocessorClient, neutron::NeutronClient},
-    coprocessor::base_client::CoprocessorBaseClient,
+    clients::neutron::NeutronClient,
     cosmos::{grpc_client::GrpcSigningClient, wasm_client::WasmClient},
 };
 
@@ -38,7 +37,6 @@ struct General {
     grpc_port: String,
     chain_id: String,
     owner: String,
-    valence_owner: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -97,11 +95,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .get("clearing_queue_supervaults")
         .unwrap();
     let code_id_base_account = *uploaded_contracts.code_ids.get("base_account").unwrap();
-    let code_id_verification_gateway = *uploaded_contracts
-        .code_ids
-        .get("verification_gateway")
-        .unwrap();
-
+    
     let now = SystemTime::now();
     let salt_raw = now
         .duration_since(SystemTime::UNIX_EPOCH)?
@@ -148,31 +142,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .await?;
     println!("Processor instantiated: {processor_address}");
 
-    // Instantiate the verification gateway
-    // Get the domain verification key from coprocessor
-    let coprocessor_client = CoprocessorClient::default();
-    let domain_vk = coprocessor_client.get_domain_vk().await?;
-    let sp1_domain_vk: SP1VerifyingKey = bincode::deserialize(&domain_vk)?;
-
-    let instantiate_verification_gateway_msg = valence_verification_gateway::msg::InstantiateMsg {
-        owner: params.general.valence_owner.clone(),
-        domain_vk: Binary::from(sp1_domain_vk.bytes32().as_bytes()),
-    };
-
-    let verification_gateway = neutron_client
-        .instantiate(
-            code_id_verification_gateway,
-            "verification-gateway".to_string(),
-            instantiate_verification_gateway_msg,
-            Some(params.general.valence_owner.clone()),
-        )
-        .await?;
-
     // Set the verification gateway address on the authorization contract
     let set_verification_gateway_msg =
         valence_authorization_utils::msg::ExecuteMsg::PermissionedAction(
             valence_authorization_utils::msg::PermissionedMsg::SetVerificationGateway {
-                verification_gateway,
+                verification_gateway: VALENCE_NEUTRON_VERIFICATION_GATEWAY.to_string(),
             },
         );
 
