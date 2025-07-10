@@ -2,43 +2,40 @@
 
 This vault is for wBTC tokens that are transferred directly from Ethereum to the Cosmos Hub (Gaia) using IBC Eureka without going through an intermediate domain.
 
-The vault consists of two phases with the following characteristics.
+The vault operates in two phases:
 
-- Phase 1 (pre maxBTC): the wBTC is paired with several other BTC LSTs in multiple supervaults (6 supervaults in total).
-- Phase 2 (maxBTC available): the wBTC is paired with all the previous BTC LSTs but also with maxBTC (7 supervaults in total).
+- **Phase 1** (pre maxBTC): wBTC is paired with multiple BTC LSTs across 6 supervaults
+- **Phase 2** (maxBTC available): wBTC is paired with all previous BTC LSTs plus maxBTC across 7 supervaults
 
-## Phase 1 flow
+## Phase 1 Flow
 
-### Deposit
+### Deposit Process
 
-1. Users deposit the wBTC in the vault contract on Ethereum and get vault shares.
-2. The strategist executes the coprocessor which returns a ZK proof and posts it to the authorization contract on Ethereum that triggers an Eureka Transfer with an empty memo on the IBCEurekaTransfer library which sends all the deposited wBTC from Ethereum to an ICA on Gaia. This is done with ZK because we are forcing an empty memo to avoid extra hops on the destination chain and to hardcode a max bridge fee amount.
-3. Once funds arrive, the strategist executes an IBC transfer authorization that transfers the assets from the ICA to the deposit account on Neutron.
-4. Once funds are in the deposit account, the strategist executes a split+lend+6deposit authorization that lends part of the tokens into a Mars position and deposits the rest in multiple supervaults, sending the LP tokens to the settlement account.
+1. Users deposit wBTC in the vault contract on Ethereum and receive vault shares
+2. The strategist executes the coprocessor, which generates a ZK proof and posts it to the authorization contract on Ethereum, triggering an Eureka Transfer with an empty memo via the IBCEurekaTransfer library. This sends all deposited wBTC from Ethereum to an ICA on Gaia. The ZK proof ensures an empty memo to avoid extra hops and hardcodes the maximum bridge fee
+3. Once funds arrive, the strategist executes an IBC transfer authorization to move assets from the ICA to the deposit account on Neutron
+4. Once funds are in the deposit account, the strategist executes a split+lend+deposit authorization that lends a portion of tokens into a Mars position and deposits the remainder across multiple supervaults, sending LP tokens to the settlement account
 
-### Withdraw
+### Withdraw Process
 
-1. User requests a withdraw on Ethereum. This withdraw request is stored in the contract state with the current redemption rate and the amount of shares burned.
-2. The strategist executes the coprocessor which returns a ZK proof after doing state proof verification of the vault contract on Ethereum. This proof contains, as public inputs, the amount of tokens that the user is entitled to.
-3. The strategist posts the proof to the authorization contract on Neutron, which executes a `register_obligation` message on the clearing queue. This library splits the amount that the user should get in wBTC into an array of wBTC tokens and supervaults LP tokens according to settlement ratios.
-4. The strategist withdraws enough tokens from the Mars lending position to pay the user from the settlement account.
-5. The strategist triggers the obligation settlement on the clearing queue library and user gets the funds from the settlement account.
+1. User requests a withdrawal on Ethereum, which is stored in the contract state with the current redemption rate and burned share amount
+2. The strategist executes the coprocessor, which returns a ZK proof after state proof verification of the vault contract on Ethereum. This proof contains the amount of tokens the user is entitled to as public inputs
+3. The strategist posts the proof to the authorization contract on Neutron, which executes a `register_obligation` message on the clearing queue. This library splits the user's entitled amount into an array of wBTC tokens and supervault LP tokens according to settlement ratios
+4. The strategist withdraws sufficient tokens from the Mars lending position to pay the user from the settlement account
+5. The strategist triggers the obligation settlement on the clearing queue library, and the user receives funds from the settlement account
 
-Here is a general diagram of the flow during phase 1:
-![Phase 1](images/wbtc_phase1.png)
+![Phase 1 Flow](images/wbtc_phase1.png)
 
-## Phase transition
+## Phase Transition
 
-**NOTES**:
-Before triggering the phase transition, the strategist must settle all current obligations.
+**Important**: Before triggering the phase transition, the strategist must settle all current obligations.
+
 This transition is executed by the program owner in multiple authorization transactions due to its complexity.
 
-Here is a diagram of how the phase transition looks like for each step:
-![Phase transition](images/wbtc_phase_transition.png)
+![Phase Transition](images/wbtc_phase_transition.png)
 
-## Phase 2 flow
+## Phase 2 Flow
 
-The phase 2 flow is very similar to phase 1 except that there is an additional deposit to a wBTC/maxBTC supervault. Now the strategist will execute 7 deposit messages instead of 6.
+Phase 2 operates identically to Phase 1, with the addition of a wBTC/maxBTC supervault deposit. The strategist now executes 7 deposit messages instead of 6.
 
-Here is a diagram for phase 2:
-![Phase 2](images/wbtc_phase2.png)
+![Phase 2 Flow](images/wbtc_phase2.png)

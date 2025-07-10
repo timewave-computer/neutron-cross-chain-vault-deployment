@@ -1,54 +1,49 @@
 # LBTC Vault
 
-This vault is for LBTC tokens that are transferred from Ethereum to the Cosmos Hub (Gaia) via Lombard Ledger using IBC Eureka. This is done using a memo and the lombardTransfer function from the IBC Eureka Library. The memo is used to trigger a swap of the IBCeable LBTC vouchers (iLBTCv) to LBTC on Lombard chain and transfer them to the valence ICA on the Hub. This is needed because LBTC is not directly transferred to the Hub but instead mints/burns a voucher that needs to be sent to the Lombard Ledger and swapped to LBTC.
+This vault is for LBTC tokens that are transferred from Ethereum to the Cosmos Hub (Gaia) via Lombard Ledger using IBC Eureka. The transfer uses a memo and the `lombardTransfer` function from the IBC Eureka Library. The memo triggers a swap of IBCeable LBTC vouchers (iLBTCv) to LBTC on the Lombard chain and transfers them to the valence ICA on the Hub. This process is necessary because LBTC is not directly transferred to the Hub; instead, it mints/burns vouchers that must be sent to the Lombard Ledger and swapped to LBTC.
 
-The vault consists of two phases with the following characteristics.
+The vault operates in two phases:
 
-- Phase 1 (pre maxBTC): the underlying supervault pairs the LBTC with WBTC.
-- Phase 2 (maxBTC available): the underlying supervault pairs the LBTC with maxBTC and the previous position is migrated to the new supervault.
+- **Phase 1** (pre maxBTC): LBTC is paired with WBTC in the underlying supervault
+- **Phase 2** (maxBTC available): LBTC is paired with maxBTC in the underlying supervault, with the previous position migrated to the new supervault
 
-## Phase 1 flow
+## Phase 1 Flow
 
-### Deposit
+### Deposit Process
 
-1. Users deposit the LBTC in the vault contract on Ethereum and get vault shares.
-2. The strategist executes the coprocessor which returns a ZK proof and posts it to the authorization contract on Ethereum that triggers an Eureka Transfer with a memo on the IBCEurekaTransfer library which sends all the deposited LBTC from Ethereum to the Lombard Ledger. During the EurekaTransfer, the LBTCs are burnt and a voucher (iLBTCv) is minted. The memo is used to swap the iLBTCv back to LBTC on Lombard and transfer them using IBC to the ICA sitting on the Cosmos Hub.
-3. Once funds arrive, the strategist executes an IBC transfer authorization that transfers the assets from the ICA to the deposit account on Neutron.
-4. Once funds are in the deposit account, the strategist executes a split+lend+deposit authorization that lends part of the tokens into a Mars position and deposits the other part in a supervault, sending the LP tokens to the settlement account.
+1. Users deposit LBTC in the vault contract on Ethereum and receive vault shares
+2. The strategist executes the coprocessor, which generates a ZK proof and posts it to the authorization contract on Ethereum, triggering an Eureka Transfer with a memo via the IBCEurekaTransfer library. This sends all deposited LBTC from Ethereum to the Lombard Ledger. During the EurekaTransfer, LBTC is burned and vouchers (iLBTCv) are minted. The memo includes an instruction to swap the iLBTCv back to LBTC on Lombard and transfers them via IBC to the ICA on the Cosmos Hub
+3. Once funds arrive, the strategist executes an IBC transfer authorization to move assets from the ICA to the deposit account on Neutron
+4. Once funds are in the deposit account, the strategist executes a split+lend+deposit authorization that lends a portion of tokens into a Mars position and deposits the remainder in a supervault, sending LP tokens to the settlement account
 
-### Withdraw
+### Withdraw Process
 
-1. User requests a withdraw on Ethereum. This withdraw request is stored in the contract state with the current redemption rate and the amount of shares burned.
-2. The strategist executes the coprocessor which returns a ZK proof after doing state proof verification of the vault contract on Ethereum. This proof contains, as public inputs, the amount of tokens that the user is entitled to.
-3. The strategist posts the proof to the authorization contract on Neutron, which executes a `register_obligation` message on the clearing queue. This library splits the amount that the user should get in LBTC into an array of LBTC tokens and supervault LP tokens according to a settlement ratio.
-4. The strategist withdraws enough tokens from the Mars lending position to pay the user from the settlement account.
-5. The strategist triggers the obligation settlement on the clearing queue library and user gets the funds from the settlement account.
+1. User requests a withdrawal on Ethereum, which is stored in the contract state with the current redemption rate and burned share amount
+2. The strategist executes the coprocessor, which returns a ZK proof after state proof verification of the vault contract on Ethereum. This proof contains the amount of tokens the user is entitled to as public inputs
+3. The strategist posts the proof to the authorization contract on Neutron, which executes a `register_obligation` message on the clearing queue. This library splits the user's entitled amount into an array of LBTC tokens and supervault LP tokens according to settlement ratios
+4. The strategist withdraws sufficient tokens from the Mars lending position to pay the user from the settlement account
+5. The strategist triggers the obligation settlement on the clearing queue library, and the user receives funds from the settlement account
 
-Here is a general diagram of the flow during phase 1:
-![Phase 1](images/lbtc_phase1.png)
+![Phase 1 Flow](images/lbtc_phase1.png)
 
-## Phase transition
+## Phase Transition
 
-**NOTES**:
-Before triggering the phase transition, the strategist must settle all current obligations.
-This transition is executed by the program owner in a single authorization execution.
+**Important**: Before triggering the phase transition, the strategist must settle all current obligations.
 
-The program owner will execute the phase shift authorization with the following actions:
+This transition is executed by the program owner in a single authorization execution with the following steps:
 
 1. Withdraw all liquidity from the LBTC/wBTC supervault
-2. Update the maxBTC issuer library with the correct maxBTC contract address.
-3. Issue maxBTC, which will consume all wBTC and mint maxBTC that is sent to the supervault deposit account.
-4. Forward the LBTC using the phase shift forwarder from the settlement account to the supervault deposit account.
-5. Update supervault deposit library config with the new supervault (LBTC/maxBTC) information.
-6. Update clearing queue library config with the new supervault information.
-7. Provide liquidity to the supervault with the maxBTC and LBTC that are sitting in the supervault deposit account.
+2. Update the maxBTC issuer library with the correct maxBTC contract address
+3. Issue maxBTC, consuming all wBTC and minting maxBTC sent to the supervault deposit account
+4. Forward LBTC using the phase shift forwarder from the settlement account to the supervault deposit account
+5. Update supervault deposit library config with the new supervault (LBTC/maxBTC) information
+6. Update clearing queue library config with the new supervault information
+7. Provide liquidity to the supervault with the maxBTC and LBTC in the supervault deposit account
 
-Here is a diagram of the phase transition:
-![Phase transition](images/lbtc_phase_transition.png)
+![Phase Transition](images/lbtc_phase_transition.png)
 
-## Phase 2 flow
+## Phase 2 Flow
 
-The phase 2 flow is exactly the same as phase 1 but now instead of depositing into a LBTC/wBTC supervault we deposit into a LBTC/maxBTC one.
+Phase 2 operates identically to Phase 1, but now deposits into a LBTC/maxBTC supervault instead of LBTC/wBTC.
 
-Here is a diagram for phase 2:
-![Phase 2](images/lbtc_phase2.png)
+![Phase 2 Flow](images/lbtc_phase2.png)
