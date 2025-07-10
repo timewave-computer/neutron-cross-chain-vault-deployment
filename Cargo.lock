@@ -1540,7 +1540,6 @@ dependencies = [
  "valence-splitter-library",
  "valence-supervaults-lper",
  "valence-supervaults-withdrawer",
- "valence-verification-gateway",
 ]
 
 [[package]]
@@ -1574,7 +1573,6 @@ dependencies = [
  "valence-splitter-library",
  "valence-strategist-utils",
  "valence-supervaults-lper",
- "valence-verification-gateway",
 ]
 
 [[package]]
@@ -4659,7 +4657,6 @@ dependencies = [
  "valence-splitter-library",
  "valence-supervaults-lper",
  "valence-supervaults-withdrawer",
- "valence-verification-gateway",
 ]
 
 [[package]]
@@ -4693,7 +4690,6 @@ dependencies = [
  "valence-splitter-library",
  "valence-strategist-utils",
  "valence-supervaults-lper",
- "valence-verification-gateway",
 ]
 
 [[package]]
@@ -8841,7 +8837,6 @@ dependencies = [
  "valence-processor-utils",
  "valence-supervaults-lper",
  "valence-supervaults-withdrawer",
- "valence-verification-gateway",
 ]
 
 [[package]]
@@ -8875,7 +8870,6 @@ dependencies = [
  "valence-splitter-library",
  "valence-strategist-utils",
  "valence-supervaults-lper",
- "valence-verification-gateway",
 ]
 
 [[package]]
@@ -9527,7 +9521,6 @@ dependencies = [
  "valence-splitter-library",
  "valence-supervaults-lper",
  "valence-supervaults-withdrawer",
- "valence-verification-gateway",
  "wbtc_types",
 ]
 
@@ -9561,7 +9554,6 @@ dependencies = [
  "valence-splitter-library",
  "valence-strategist-utils",
  "valence-supervaults-lper",
- "valence-verification-gateway",
  "wbtc_types",
 ]
 

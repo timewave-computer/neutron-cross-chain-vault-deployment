@@ -1,0 +1,4 @@
+pub const VALENCE_NEUTRON_VERIFICATION_GATEWAY: &str =
+    "neutron1s4s64kn07vvkp267aghsh9zy9wlwqsly9xvm858gsnzj20t3nk8qm5tn9p";
+pub const VALENCE_ETHEREUM_VERIFICATION_GATEWAY: &str =
+    "0x967A4D58fed028FC88854ea66F5f97D877456A5d";

@@ -1,6 +1,5 @@
 [code_ids]
 supervaults_withdrawer       = 3830
-verification_gateway         = 3883
 clearing_queue_supervaults   = 3832
 dynamic_ratio_query_provider = 3769
 supervaults_lper             = 3829

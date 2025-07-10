@@ -1,27 +1,26 @@
 use std::{env, fs};
 
 use alloy::{
-    hex::FromHex,
     primitives::{Address, Bytes, FixedBytes, U256},
     sol_types::SolValue,
 };
 use cosmwasm_std::Uint128;
-use lombard_btc_deploy::{INPUTS_DIR, OUTPUTS_DIR, SP1_VERIFIER};
+use lombard_btc_deploy::{INPUTS_DIR, OUTPUTS_DIR};
 use lombard_btc_types::ethereum_config::{
     EthereumAccounts, EthereumCoprocessorAppIds, EthereumDenoms, EthereumLibraries,
     EthereumStrategyConfig,
 };
-use packages::types::sol_types::{
-    Authorization, BaseAccount, ERC1967Proxy, IBCEurekaTransfer, IBCEurekaTransferConfig,
-    OneWayVault::{self, FeeDistributionConfig, OneWayVaultConfig},
-    SP1VerificationGateway,
-    processor_contract::LiteProcessor,
+use packages::{
+    types::sol_types::{
+        Authorization, BaseAccount, ERC1967Proxy, IBCEurekaTransfer, IBCEurekaTransferConfig,
+        OneWayVault::{self, FeeDistributionConfig, OneWayVaultConfig},
+        processor_contract::LiteProcessor,
+    },
+    verification::VALENCE_ETHEREUM_VERIFICATION_GATEWAY,
 };
 use serde::Deserialize;
-use sp1_sdk::{HashableKey, SP1VerifyingKey};
 use valence_domain_clients::{
-    clients::{coprocessor::CoprocessorClient, ethereum::EthereumClient},
-    coprocessor::base_client::CoprocessorBaseClient,
+    clients::ethereum::EthereumClient,
     evm::{base_client::EvmBaseClient, request_provider_client::RequestProviderClient},
 };
 
@@ -37,7 +36,6 @@ struct Parameters {
 struct General {
     rpc_url: String,
     owner: Address,
-    valence_owner: Address,
 }
 
 #[derive(Deserialize, Debug)]
@@ -163,55 +161,11 @@ async fn main() -> anyhow::Result<()> {
         .unwrap();
     println!("Processor deployed at: {processor_address}");
 
-    let verification_gateway =
-        SP1VerificationGateway::deploy_builder(&rp).into_transaction_request();
-    let verification_gateway_implementation = eth_client
-        .sign_and_send(verification_gateway)
-        .await?
-        .contract_address
-        .unwrap();
-
-    let proxy_tx =
-        ERC1967Proxy::deploy_builder(&rp, verification_gateway_implementation, Bytes::new())
-            .into_transaction_request();
-    let verification_gateway_address = eth_client
-        .sign_and_send(proxy_tx)
-        .await?
-        .contract_address
-        .unwrap();
-    println!("Verification Gateway deployed at: {verification_gateway_address}");
-
-    // Initialize the verification gateway
-    // We need to get the domain vk of the coprocessor
-    let coprocessor_client = CoprocessorClient::default();
-    let domain_vk = coprocessor_client.get_domain_vk().await?;
-    let sp1_domain_vk: SP1VerifyingKey = bincode::deserialize(&domain_vk)?;
-    let domain_vk = FixedBytes::<32>::from_hex(sp1_domain_vk.bytes32()).unwrap();
-
-    let verification_gateway = SP1VerificationGateway::new(verification_gateway_address, &rp);
-    let initialize_verification_gateway_tx = verification_gateway
-        .initialize(SP1_VERIFIER.parse().unwrap(), domain_vk)
-        .into_transaction_request();
-    eth_client
-        .sign_and_send(initialize_verification_gateway_tx)
-        .await?;
-    println!("Verification Gateway initialized");
-
-    // Transfer the ownership of the verification gateway
-    let transfer_ownership_tx = verification_gateway
-        .transferOwnership(parameters.general.valence_owner)
-        .into_transaction_request();
-    eth_client.sign_and_send(transfer_ownership_tx).await?;
-    println!(
-        "Verification Gateway ownership transferred to: {}",
-        parameters.general.valence_owner
-    );
-
     let authorization = Authorization::deploy_builder(
         &rp,
         my_address, // We will be initial owners to eventually add the authorizations, then we need to transfer ownership
         processor_address,
-        verification_gateway_address,
+        VALENCE_ETHEREUM_VERIFICATION_GATEWAY.parse()?,
         true, // Store callbacks
     );
 

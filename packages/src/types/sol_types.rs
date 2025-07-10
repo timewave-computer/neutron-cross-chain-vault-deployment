@@ -53,12 +53,6 @@ sol!(
 );
 
 sol!(
-    #[sol(rpc)]
-    SP1VerificationGateway,
-    "src/contracts/evm/SP1VerificationGateway.sol/SP1VerificationGateway.json",
-);
-
-sol!(
     struct IBCEurekaTransferConfig {
         uint256 amount;
         uint256 minAmountOut;
