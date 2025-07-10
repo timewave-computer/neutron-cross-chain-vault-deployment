@@ -23,7 +23,7 @@ const CLEARING_QUEUE_LIBRARY_ADDRESS: &str =
     "neutron1pdp6mty3ykchjxksj9hakupma3atyrah27mtws3ph2matjkhg7qse70m8g";
 
 pub fn circuit(witnesses: Vec<Witness>) -> Vec<u8> {
-    /*let state = witnesses[0].as_state_proof().unwrap();
+    let state = witnesses[0].as_state_proof().unwrap();
     let root = state.root;
     let proof: EIP1186AccountProofResponse =
         bincode::serde::decode_from_slice(&state.proof, bincode::config::standard())
@@ -92,7 +92,7 @@ pub fn circuit(witnesses: Vec<Witness>) -> Vec<u8> {
         domain: Domain::Main,
         authorization_contract: None,
         message,
-    };*/
+    };
 
-    Vec::new()
+    serde_json::to_vec(&msg).unwrap()
 }
