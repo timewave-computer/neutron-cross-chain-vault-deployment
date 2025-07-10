@@ -95,7 +95,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .get("clearing_queue_supervaults")
         .unwrap();
     let code_id_base_account = *uploaded_contracts.code_ids.get("base_account").unwrap();
-    
+
     let now = SystemTime::now();
     let salt_raw = now
         .duration_since(SystemTime::UNIX_EPOCH)?

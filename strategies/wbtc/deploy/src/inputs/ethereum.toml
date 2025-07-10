@@ -1,7 +1,6 @@
 [general]
 rpc_url       = "https://eth-mainnet.public.blastapi.io"
 owner         = "0xd9A23b58e684B985F661Ce7005AA8E10630150c1" # Neutron multisig address
-valence_owner = "0xd9A23b58e684B985F661Ce7005AA8E10630150c1" # TBD Owner of the verification gateway
 
 [vault]
 deposit_token            = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
