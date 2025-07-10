@@ -90,7 +90,7 @@ The strategist operates in a continuous cycle, executing a series of phases to m
 
 While deposit, withdraw & settlement, and update phases are pretty self-explanatory, it is worth to briefly explain the purpose of the sentry phase.
 
-Sentry phase can be seen as a dynamic, condition-based waiting period that gates the strategist operational cycle. It is meant to handle a variety of triggers in order to make strategist more adaptive, state-aware, and opportunistic. Few possible examples may involve:
+Sentry phase can be seen as a dynamic, condition-based waiting period that gates the strategist operational cycle. It is meant to be capable of handling a variety of triggers in order to make strategist more adaptive, state-aware, and opportunistic. See the list below for some future implementation ideas (none of this is currently implemented):
 
 - Price/Oracle triggers: wait until the price of an underlying asset
   (e.g., BTC, USDC) crosses a specific threshold before executing the
