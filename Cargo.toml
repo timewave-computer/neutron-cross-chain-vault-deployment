@@ -63,7 +63,6 @@ valence-clearing-queue-supervaults   = { git = "https://github.com/timewave-comp
 valence-dynamic-ratio-query-provider = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
 valence-splitter-library             = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
 valence-forwarder-library            = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
-valence-verification-gateway         = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
 valence-strategist-utils             = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
 valence-maxbtc-issuer                = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
 valence-lending-utils                = { git = "https://github.com/timewave-computer/valence-protocol", branch = "neutron-vaults" }
