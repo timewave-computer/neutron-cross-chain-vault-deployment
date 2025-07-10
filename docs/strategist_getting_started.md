@@ -80,10 +80,44 @@ The strategist operates in a continuous cycle, executing a series of phases to m
 
 ### The Strategist Cycle
 
-1.  **Deposit:** Manages new user deposit flows.
-2.  **Register Withdraw Obligations:** Processes new withdrawal requests, generates their ZKPs, and posts them to the Neutron Authorizations contract.
-3.  **Settlement:** Settles the withdrawal obligations.
-4.  **Update:** Calculates and updates the vault's redemption rate.
+1.  **Sentry**: pre-flight phase waiting for start conditions to be met before proceeding to deposit
+2.  **Deposit:** Manages new user deposit flows.
+3.  **Register Withdraw Obligations:** Processes new withdrawal requests, generates their ZKPs, and posts them to the Neutron Authorizations contract.
+4.  **Settlement:** Settles the withdrawal obligations.
+5.  **Update:** Calculates and updates the vault's redemption rate.
+
+#### Sentry phase
+
+While deposit, withdraw & settlement, and update phases are pretty self-explanatory, it is worth to briefly explain the purpose of the sentry phase.
+
+Sentry phase can be seen as a dynamic, condition-based waiting period that gates the strategist operational cycle. It is meant to be capable of handling a variety of triggers in order to make strategist more adaptive, state-aware, and opportunistic. See the list below for some future implementation ideas (none of this is currently implemented):
+
+- Price/Oracle triggers: wait until the price of an underlying asset
+  (e.g., BTC, USDC) crosses a specific threshold before executing the
+  cycle
+- Volatility triggers: wait until market volatility cools down to an
+  acceptable level to avoid executing trades in unpredictable conditions
+- Interest Rate triggers: strategist could be monitoring Mars or other venues
+  borrow/lend interest rates until they reach a desired value
+- Liquidity threshold triggers: strategist could block the cycle until the
+  amount of pending deposits or withdrawal requests reaches a certain level.
+  This would make the strategy more gas efficient because gas-intensive
+  operations would be performed only when there is sufficient demand.
+- Gas Price-based triggers: wait until eth gas fees go below a certain gwei
+  threshold to minimize operational costs
+- Circuit-breaker-like triggers: only proceed with the cycle if some
+  on-chain (or off-chain) "emergency_halt" flag is false. This could reduce
+  coordination risk between different systems because some action performed
+  on-chain would effectively switch off the strategist.
+
+It is also worth noting that the sentry phase is not limited to a single one of such triggers.
+It could operate based on a set of conditions, and only proceed if some specific predicate is true.
+
+Needless to say, sentry phase configuration is more of an art than science.
+Each trigger comes with its own drawbacks, and arriving at a perfect set of triggers
+will likely take time and testing. For that reason, current sentry phases across all
+vaults are simply sleeping for a set amount of time, effectively acting as a cooldown
+period between any two strategist cycles.
 
 ## Monitoring and Operations
 
