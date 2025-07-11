@@ -408,7 +408,7 @@ dependencies = [
  "lru 0.12.5",
  "parking_lot",
  "pin-project",
- "reqwest 0.12.20",
+ "reqwest 0.12.22",
  "schnellru",
  "serde",
  "serde_json",
@@ -475,7 +475,7 @@ dependencies = [
  "alloy-transport-ws",
  "futures",
  "pin-project",
- "reqwest 0.12.20",
+ "reqwest 0.12.22",
  "serde",
  "serde_json",
  "tokio",
@@ -791,7 +791,7 @@ dependencies = [
  "http-body-util",
  "hyper 1.6.0",
  "hyper-util",
- "reqwest 0.12.20",
+ "reqwest 0.12.22",
  "serde_json",
  "tower 0.5.2",
  "tracing",
@@ -827,7 +827,7 @@ dependencies = [
  "alloy-transport",
  "futures",
  "http 1.3.1",
- "rustls 0.23.28",
+ "rustls 0.23.29",
  "serde_json",
  "tokio",
  "tokio-tungstenite",
@@ -1555,7 +1555,7 @@ dependencies = [
  "env_logger",
  "hex",
  "log",
- "mmvault",
+ "mmvault 0.1.6 (git+https://github.com/neutron-org/slinky-vault?rev=b2e2ff4)",
  "packages",
  "serde",
  "serde_json",
@@ -1711,9 +1711,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.2.27"
+version = "1.2.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d487aa071b5f64da6f19a3e848e3578944b726ee5a4854b82172f02aa876bfdc"
+checksum = "5c1599538de2394445747c8cf7935946e3cc27e9625f889d979bfb2aaf569362"
 dependencies = [
  "shlex",
 ]
@@ -1774,9 +1774,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.5.40"
+version = "4.5.41"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "40b6887a1d8685cebccf115538db5c0efe625ccac9696ad45c409d96566e910f"
+checksum = "be92d32e80243a54711e5d7ce823c35c41c9d929dc4ab58e1276f625841aadf9"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -1784,9 +1784,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.5.40"
+version = "4.5.41"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e0c66c08ce9f0c698cbce5c0279d0bb6ac936d8674174fe48f736533b964f59e"
+checksum = "707eab41e9622f9139419d573eca0900137718000c517d47da73045f54331c3d"
 dependencies = [
  "anstream",
  "anstyle",
@@ -1796,9 +1796,9 @@ dependencies = [
 
 [[package]]
 name = "clap_derive"
-version = "4.5.40"
+version = "4.5.41"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2c7947ae4cc3d851207c1adb5b5e260ff0cca11446b1d6d1423788e442257ce"
+checksum = "ef4f52386a59ca4c860f7393bcf8abd8dfd91ecccc0f774635ff68e92eeef491"
 dependencies = [
  "heck 0.5.0",
  "proc-macro2",
@@ -2631,7 +2631,7 @@ dependencies = [
  "digest 0.10.7",
  "futures",
  "rand 0.8.5",
- "reqwest 0.12.20",
+ "reqwest 0.12.22",
  "thiserror 1.0.69",
  "tokio",
 ]
@@ -3272,9 +3272,9 @@ dependencies = [
 
 [[package]]
 name = "h2"
-version = "0.4.10"
+version = "0.4.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a9421a676d1b147b16b82c9225157dc629087ef8ec4d5e2960f9437a90dac0a5"
+checksum = "17da50a276f1e01e0ba6c029e47b7100754904ee8a278f886546e98575380785"
 dependencies = [
  "atomic-waker",
  "bytes",
@@ -3533,7 +3533,7 @@ dependencies = [
  "bytes",
  "futures-channel",
  "futures-util",
- "h2 0.4.10",
+ "h2 0.4.11",
  "http 1.3.1",
  "http-body 1.0.1",
  "httparse",
@@ -3568,7 +3568,7 @@ dependencies = [
  "http 1.3.1",
  "hyper 1.6.0",
  "hyper-util",
- "rustls 0.23.28",
+ "rustls 0.23.29",
  "rustls-pki-types",
  "tokio",
  "tokio-rustls 0.26.2",
@@ -3607,9 +3607,9 @@ dependencies = [
 
 [[package]]
 name = "hyper-util"
-version = "0.1.14"
+version = "0.1.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc2fdfdbff08affe55bb779f33b053aa1fe5dd5b54c257343c17edfa55711bdb"
+checksum = "7f66d5bd4c6f02bf0542fad85d626775bab9258cf795a4256dcaf3161114d1df"
 dependencies = [
  "base64 0.22.1",
  "bytes",
@@ -4393,6 +4393,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "io-uring"
+version = "0.7.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b86e202f00093dcba4275d4636b93ef9dd75d025ae560d2521b45ea28ab49013"
+dependencies = [
+ "bitflags 2.9.1",
+ "cfg-if",
+ "libc",
+]
+
+[[package]]
 name = "ipnet"
 version = "2.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4547,7 +4558,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "07033963ba89ebaf1584d767badaa2e8fcec21aedea6b8c0346d487d49c28667"
 dependencies = [
  "cfg-if",
- "windows-targets 0.48.5",
+ "windows-targets 0.53.2",
 ]
 
 [[package]]
@@ -4672,7 +4683,7 @@ dependencies = [
  "hex",
  "log",
  "lombard_btc_types",
- "mmvault",
+ "mmvault 0.1.6 (git+https://github.com/neutron-org/slinky-vault?rev=b2e2ff4)",
  "packages",
  "serde",
  "serde_json",
@@ -4794,6 +4805,24 @@ dependencies = [
  "libc",
  "wasi 0.11.1+wasi-snapshot-preview1",
  "windows-sys 0.59.0",
+]
+
+[[package]]
+name = "mmvault"
+version = "0.1.6"
+source = "git+https://github.com/neutron-org/slinky-vault?rev=b2e2ff4#b2e2ff486cb5c012610573690232fe49c7be49cd"
+dependencies = [
+ "cosmwasm-std",
+ "cw-storage-plus",
+ "cw2",
+ "neutron-std 5.1.2",
+ "prost 0.12.6",
+ "prost-types",
+ "schemars",
+ "serde",
+ "serde_json",
+ "test-case",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -5274,7 +5303,7 @@ dependencies = [
  "bytes",
  "http 1.3.1",
  "opentelemetry",
- "reqwest 0.12.20",
+ "reqwest 0.12.22",
 ]
 
 [[package]]
@@ -5289,7 +5318,7 @@ dependencies = [
  "opentelemetry-proto",
  "opentelemetry_sdk",
  "prost 0.13.5",
- "reqwest 0.12.20",
+ "reqwest 0.12.22",
  "thiserror 2.0.12",
  "tracing",
 ]
@@ -5615,7 +5644,7 @@ dependencies = [
  "cosmwasm-std",
  "env_logger",
  "log",
- "mmvault",
+ "mmvault 0.1.6 (git+https://github.com/neutron-org/slinky-vault?rev=b2e2ff4)",
  "multi_log",
  "opentelemetry-appender-log",
  "opentelemetry-otlp",
@@ -6121,7 +6150,7 @@ dependencies = [
  "quinn-proto",
  "quinn-udp",
  "rustc-hash 2.1.1",
- "rustls 0.23.28",
+ "rustls 0.23.29",
  "socket2",
  "thiserror 2.0.12",
  "tokio",
@@ -6141,7 +6170,7 @@ dependencies = [
  "rand 0.9.1",
  "ring",
  "rustc-hash 2.1.1",
- "rustls 0.23.28",
+ "rustls 0.23.29",
  "rustls-pki-types",
  "slab",
  "thiserror 2.0.12",
@@ -6417,9 +6446,9 @@ dependencies = [
 
 [[package]]
 name = "reqwest"
-version = "0.12.20"
+version = "0.12.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eabf4c97d9130e2bf606614eb937e86edac8292eaa6f422f995d7e8de1eb1813"
+checksum = "cbc931937e6ca3a06e3b6c0aa7841849b160a90351d6ab467a8b9b9959767531"
 dependencies = [
  "base64 0.22.1",
  "bytes",
@@ -6427,7 +6456,7 @@ dependencies = [
  "futures-channel",
  "futures-core",
  "futures-util",
- "h2 0.4.10",
+ "h2 0.4.11",
  "http 1.3.1",
  "http-body 1.0.1",
  "http-body-util",
@@ -6442,7 +6471,7 @@ dependencies = [
  "percent-encoding",
  "pin-project-lite",
  "quinn",
- "rustls 0.23.28",
+ "rustls 0.23.29",
  "rustls-pki-types",
  "serde",
  "serde_json",
@@ -6639,15 +6668,15 @@ dependencies = [
 
 [[package]]
 name = "rustls"
-version = "0.23.28"
+version = "0.23.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7160e3e10bf4535308537f3c4e1641468cd0e485175d6163087c0393c7d46643"
+checksum = "2491382039b29b9b11ff08b76ff6c97cf287671dbb74f0be44bda389fffe9bd1"
 dependencies = [
  "log",
  "once_cell",
  "ring",
  "rustls-pki-types",
- "rustls-webpki 0.103.3",
+ "rustls-webpki 0.103.4",
  "subtle",
  "zeroize",
 ]
@@ -6716,9 +6745,9 @@ dependencies = [
 
 [[package]]
 name = "rustls-webpki"
-version = "0.103.3"
+version = "0.103.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e4a72fe2bcf7a6ac6fd7d0b9e5cb68aeb7d4c0a0271730218b3e92d43b4eb435"
+checksum = "0a17884ae0c1b773f1ccd2bd4a8c72f16da897310a98b0e84bf349ad5ead92fc"
 dependencies = [
  "ring",
  "rustls-pki-types",
@@ -6874,9 +6903,9 @@ dependencies = [
 
 [[package]]
 name = "sdd"
-version = "3.0.8"
+version = "3.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "584e070911c7017da6cb2eb0788d09f43d789029b5877d3e5ecc8acf86ceee21"
+checksum = "62f5557d2bbddd5afd236ba7856b0e494f5acc7ce805bb0774cc5674b20a06b4"
 
 [[package]]
 name = "sec1"
@@ -6904,9 +6933,9 @@ dependencies = [
 
 [[package]]
 name = "secp256k1-sys"
-version = "0.8.1"
+version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "70a129b9e9efbfb223753b9163c4ab3b13cff7fd9c7f010fbac25ab4099fa07e"
+checksum = "4473013577ec77b4ee3668179ef1186df3146e2cf2d927bd200974c6fe60fd99"
 dependencies = [
  "cc",
 ]
@@ -7630,9 +7659,9 @@ dependencies = [
 
 [[package]]
 name = "sp1-sdk"
-version = "5.0.6"
+version = "5.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05114cab7a33f251cf8d470ed85497297dd127a4727569a1a11f759f02136357"
+checksum = "d20372512858547350dc4fcbed57b9c6af3812da10aa9d497f7625b22bd564d2"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -8318,17 +8347,19 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokio"
-version = "1.45.1"
+version = "1.46.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "75ef51a33ef1da925cea3e4eb122833cb377c61439ca401b770f54902b806779"
+checksum = "0cc3a2344dafbe23a245241fe8b09735b521110d30fcefbbd5feb1797ca35d17"
 dependencies = [
  "backtrace",
  "bytes",
+ "io-uring",
  "libc",
  "mio",
  "parking_lot",
  "pin-project-lite",
  "signal-hook-registry",
+ "slab",
  "socket2",
  "tokio-macros",
  "windows-sys 0.52.0",
@@ -8371,7 +8402,7 @@ version = "0.26.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8e727b36a1a0e8b74c376ac2211e40c2c8af09fb4013c60d910495810f008e9b"
 dependencies = [
- "rustls 0.23.28",
+ "rustls 0.23.29",
  "tokio",
 ]
 
@@ -8395,7 +8426,7 @@ checksum = "edc5f74e248dc973e0dbb7b74c7e0d6fcc301c694ff50049504004ef4d0cdcd9"
 dependencies = [
  "futures-util",
  "log",
- "rustls 0.23.28",
+ "rustls 0.23.29",
  "rustls-pki-types",
  "tokio",
  "tokio-rustls 0.26.2",
@@ -8479,7 +8510,7 @@ dependencies = [
  "axum",
  "base64 0.22.1",
  "bytes",
- "h2 0.4.10",
+ "h2 0.4.11",
  "http 1.3.1",
  "http-body 1.0.1",
  "http-body-util",
@@ -8704,7 +8735,7 @@ dependencies = [
  "httparse",
  "log",
  "rand 0.8.5",
- "rustls 0.23.28",
+ "rustls 0.23.29",
  "rustls-pki-types",
  "sha1",
  "thiserror 1.0.69",
@@ -8724,7 +8755,7 @@ dependencies = [
  "http-body-util",
  "hyper 1.6.0",
  "prost 0.13.5",
- "reqwest 0.12.20",
+ "reqwest 0.12.22",
  "serde",
  "serde_json",
  "thiserror 1.0.69",
@@ -8851,7 +8882,7 @@ dependencies = [
  "env_logger",
  "hex",
  "log",
- "mmvault",
+ "mmvault 0.1.6 (git+https://github.com/neutron-org/slinky-vault?rev=b2e2ff4)",
  "packages",
  "serde",
  "serde_json",
@@ -8924,7 +8955,7 @@ dependencies = [
 [[package]]
 name = "valence-account-utils"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=21febf6#21febf69603a9a4687836e3df755ba6e174a9e15"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -8940,7 +8971,7 @@ dependencies = [
 [[package]]
 name = "valence-authorization-utils"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=21febf6#21febf69603a9a4687836e3df755ba6e174a9e15"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -8955,14 +8986,14 @@ dependencies = [
 [[package]]
 name = "valence-clearing-queue-supervaults"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=21febf6#21febf69603a9a4687836e3df755ba6e174a9e15"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
  "cw-ownable",
  "cw-storage-plus",
  "cw-utils",
- "mmvault",
+ "mmvault 0.1.6 (git+https://github.com/neutron-org/slinky-vault)",
  "valence-library-base",
  "valence-library-utils",
  "valence-macros",
@@ -8980,7 +9011,7 @@ dependencies = [
  "buf-fs",
  "hashbrown 0.15.4",
  "msgpacker",
- "reqwest 0.12.20",
+ "reqwest 0.12.22",
  "serde",
  "serde_json",
  "tracing",
@@ -8994,7 +9025,7 @@ source = "git+https://github.com/timewave-computer/valence-coprocessor.git?tag=v
 dependencies = [
  "anyhow",
  "hex",
- "reqwest 0.12.20",
+ "reqwest 0.12.22",
  "serde",
  "serde_json",
  "tokio",
@@ -9032,7 +9063,7 @@ dependencies = [
 [[package]]
 name = "valence-domain-clients"
 version = "0.1.0"
-source = "git+https://github.com/timewave-computer/valence-domain-clients.git?branch=main#167a7997bccd0c263ed8ed95c8194b86b75683fc"
+source = "git+https://github.com/timewave-computer/valence-domain-clients.git?tag=v1.0.0#167a7997bccd0c263ed8ed95c8194b86b75683fc"
 dependencies = [
  "alloy",
  "alloy-primitives 0.7.7",
@@ -9059,7 +9090,7 @@ dependencies = [
 [[package]]
 name = "valence-dynamic-ratio-query-provider"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=21febf6#21febf69603a9a4687836e3df755ba6e174a9e15"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9079,7 +9110,7 @@ dependencies = [
 [[package]]
 name = "valence-forwarder-library"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=21febf6#21febf69603a9a4687836e3df755ba6e174a9e15"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9098,7 +9129,7 @@ dependencies = [
 [[package]]
 name = "valence-gmp-utils"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=21febf6#21febf69603a9a4687836e3df755ba6e174a9e15"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9107,7 +9138,7 @@ dependencies = [
 [[package]]
 name = "valence-ibc-utils"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=21febf6#21febf69603a9a4687836e3df755ba6e174a9e15"
 dependencies = [
  "cosmos-sdk-proto 0.20.0",
  "cosmwasm-schema",
@@ -9120,7 +9151,7 @@ dependencies = [
 [[package]]
 name = "valence-ica-ibc-transfer"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=21febf6#21febf69603a9a4687836e3df755ba6e174a9e15"
 dependencies = [
  "cosmos-sdk-proto 0.26.1",
  "cosmwasm-schema",
@@ -9140,7 +9171,7 @@ dependencies = [
 [[package]]
 name = "valence-lending-utils"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=21febf6#21febf69603a9a4687836e3df755ba6e174a9e15"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9149,7 +9180,7 @@ dependencies = [
 [[package]]
 name = "valence-library-base"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=21febf6#21febf69603a9a4687836e3df755ba6e174a9e15"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9166,7 +9197,7 @@ dependencies = [
 [[package]]
 name = "valence-library-utils"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=21febf6#21febf69603a9a4687836e3df755ba6e174a9e15"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9185,7 +9216,7 @@ dependencies = [
 [[package]]
 name = "valence-macros"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=21febf6#21febf69603a9a4687836e3df755ba6e174a9e15"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9197,7 +9228,7 @@ dependencies = [
 [[package]]
 name = "valence-mars-lending"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=21febf6#21febf69603a9a4687836e3df755ba6e174a9e15"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9216,7 +9247,7 @@ dependencies = [
 [[package]]
 name = "valence-maxbtc-issuer"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=21febf6#21febf69603a9a4687836e3df755ba6e174a9e15"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9233,7 +9264,7 @@ dependencies = [
 [[package]]
 name = "valence-processor-utils"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=21febf6#21febf69603a9a4687836e3df755ba6e174a9e15"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9248,7 +9279,7 @@ dependencies = [
 [[package]]
 name = "valence-splitter-library"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=21febf6#21febf69603a9a4687836e3df755ba6e174a9e15"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9268,7 +9299,7 @@ dependencies = [
 [[package]]
 name = "valence-strategist-utils"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=21febf6#21febf69603a9a4687836e3df755ba6e174a9e15"
 dependencies = [
  "async-trait",
  "cosmwasm-std",
@@ -9282,7 +9313,7 @@ dependencies = [
 [[package]]
 name = "valence-supervaults-lper"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=21febf6#21febf69603a9a4687836e3df755ba6e174a9e15"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9297,11 +9328,11 @@ dependencies = [
 [[package]]
 name = "valence-supervaults-utils"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=21febf6#21febf69603a9a4687836e3df755ba6e174a9e15"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
- "mmvault",
+ "mmvault 0.1.6 (git+https://github.com/neutron-org/slinky-vault)",
  "neutron-std 5.1.2",
  "valence-account-utils",
  "valence-library-utils",
@@ -9310,7 +9341,7 @@ dependencies = [
 [[package]]
 name = "valence-supervaults-withdrawer"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=21febf6#21febf69603a9a4687836e3df755ba6e174a9e15"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9325,7 +9356,7 @@ dependencies = [
 [[package]]
 name = "valence-verification-gateway"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?branch=neutron-vaults#9a9881eff4c827280a2dee348ef388eda9b5a174"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=21febf6#21febf69603a9a4687836e3df755ba6e174a9e15"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9536,7 +9567,7 @@ dependencies = [
  "env_logger",
  "hex",
  "log",
- "mmvault",
+ "mmvault 0.1.6 (git+https://github.com/neutron-org/slinky-vault?rev=b2e2ff4)",
  "packages",
  "serde",
  "serde_json",
@@ -9633,7 +9664,7 @@ version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf221c93e13a30d793f7645a0e7762c55d169dbb0a49671918a2319d289b10bb"
 dependencies = [
- "windows-sys 0.48.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
