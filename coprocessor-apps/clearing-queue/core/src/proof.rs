@@ -1,5 +1,5 @@
 use alloc::vec::Vec;
-use alloy_primitives::U256;
+use alloy_primitives::{FixedBytes, U256};
 use alloy_rlp::Encodable as _;
 use alloy_rpc_types_eth::{Account, EIP1186AccountProofResponse};
 use alloy_serde::JsonStorageKey;
@@ -12,7 +12,7 @@ pub fn verify_proof(
     withdraw: &WithdrawRequest,
     state_root: &[u8],
 ) -> anyhow::Result<()> {
-    let state_root = TryFrom::try_from(state_root)?;
+    let state_root: FixedBytes<32> = TryFrom::try_from(state_root)?;
     let key = Nibbles::unpack(VAULT_ADDRESS_HASH);
 
     let mut account = Vec::new();
