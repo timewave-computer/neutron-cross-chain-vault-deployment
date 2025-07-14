@@ -1876,16 +1876,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "clearing-queue-domain"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "serde_json",
- "valence-coprocessor 0.3.4",
- "valence-coprocessor-wasm",
-]
-
-[[package]]
 name = "coins-bip32"
 version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2881,16 +2871,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",
- "serde_json",
- "valence-coprocessor 0.3.4",
- "valence-coprocessor-wasm",
-]
-
-[[package]]
-name = "eureka-transfer-domain"
-version = "0.1.0"
-dependencies = [
- "anyhow",
  "serde_json",
  "valence-coprocessor 0.3.4",
  "valence-coprocessor-wasm",
@@ -4621,16 +4601,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",
- "serde_json",
- "valence-coprocessor 0.3.4",
- "valence-coprocessor-wasm",
-]
-
-[[package]]
-name = "lombard-transfer-domain"
-version = "0.1.0"
-dependencies = [
- "anyhow",
  "serde_json",
  "valence-coprocessor 0.3.4",
  "valence-coprocessor-wasm",

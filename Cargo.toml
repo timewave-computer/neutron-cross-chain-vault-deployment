@@ -15,14 +15,11 @@ members = [
   "strategies/btc_lst/types",
   "coprocessor-apps/clearing-queue/circuit",
   "coprocessor-apps/clearing-queue/controller",
-  "coprocessor-apps/clearing-queue/domain",
   "coprocessor-apps/clearing-queue/core",
   "coprocessor-apps/lombard-transfer/circuit",
   "coprocessor-apps/lombard-transfer/controller",
-  "coprocessor-apps/lombard-transfer/domain",
   "coprocessor-apps/eureka-transfer/circuit",
   "coprocessor-apps/eureka-transfer/controller",
-  "coprocessor-apps/eureka-transfer/domain",
 ]
 resolver = "2"
 
