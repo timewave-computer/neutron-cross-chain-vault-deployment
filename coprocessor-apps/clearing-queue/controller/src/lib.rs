@@ -11,7 +11,7 @@ use valence_coprocessor::{StateProof, Witness};
 use valence_coprocessor_wasm::abi;
 
 const NETWORK: &str = "eth-mainnet";
-const DOMAIN: &str = "ethereum-alpha";
+const DOMAIN: &str = "ethereum-electra-alpha";
 
 /// Fn selector defined as Keccak256("withdrawRequests(uint64)")[..4]
 const FN_SELECTOR: &[u8] = &[0x94, 0xba, 0x2b, 0x8d];
