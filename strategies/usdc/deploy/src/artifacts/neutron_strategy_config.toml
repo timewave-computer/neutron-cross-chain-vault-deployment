@@ -20,4 +20,4 @@ supervault_lper = "neutron1caf34pkayjtt2mrtht8qjrjnz99mxqhf0f97kztxpklqldzrqkwqn
 clearing_queue  = "neutron18dsl9523cvdj7dgn5ayev2kz09dhrha7fhsndv4p0urzetzvnyhsjsd3u4"
 
 [coprocessor_app_ids]
-clearing_queue = "d285c75c5b41e731f0fd0b3c6279557d178fd15c1be978e98d5f5f3f1fcf73a4"
+clearing_queue = "32b604525846f8646f853a3de6cf2f7ace1c8adf8be17072bca5296d5f3d06ff"

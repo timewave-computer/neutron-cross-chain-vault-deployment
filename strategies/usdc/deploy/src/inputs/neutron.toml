@@ -13,4 +13,4 @@ supervault_asset2              = "ibc/B559A80D62249C8AA07A380E2A2BEA6E5CA9A6F079
 supervault_lp_denom            = "factory/neutron1z4qky902yes9zl5eruwgdd2pgtlyeglunc0escf0a7n2xeyw97gqcr7u5u/BTC-USDC"
 
 [coprocessor_app]
-clearing_queue_coprocessor_app_id = "d285c75c5b41e731f0fd0b3c6279557d178fd15c1be978e98d5f5f3f1fcf73a4"
+clearing_queue_coprocessor_app_id = "32b604525846f8646f853a3de6cf2f7ace1c8adf8be17072bca5296d5f3d06ff"
