@@ -1834,7 +1834,7 @@ dependencies = [
  "serde_json",
  "valence-authorization-utils",
  "valence-clearing-queue-supervaults",
- "valence-coprocessor 0.3.5",
+ "valence-coprocessor 0.3.7",
  "valence-library-utils",
 ]
 
@@ -1852,7 +1852,7 @@ dependencies = [
  "hex",
  "serde",
  "serde_json",
- "valence-coprocessor 0.3.5",
+ "valence-coprocessor 0.3.7",
  "valence-coprocessor-wasm",
 ]
 
@@ -1871,7 +1871,7 @@ dependencies = [
  "rlp 0.6.1",
  "serde",
  "serde_json",
- "valence-coprocessor 0.3.5",
+ "valence-coprocessor 0.3.7",
  "valence-coprocessor-wasm",
 ]
 
@@ -2862,7 +2862,7 @@ version = "0.1.0"
 dependencies = [
  "alloy-primitives 0.8.25",
  "alloy-sol-types 0.8.25",
- "valence-coprocessor 0.3.5",
+ "valence-coprocessor 0.3.7",
 ]
 
 [[package]]
@@ -2872,7 +2872,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "serde_json",
- "valence-coprocessor 0.3.5",
+ "valence-coprocessor 0.3.7",
  "valence-coprocessor-wasm",
 ]
 
@@ -4592,7 +4592,7 @@ dependencies = [
  "alloy-sol-types 0.8.25",
  "anyhow",
  "serde_json",
- "valence-coprocessor 0.3.5",
+ "valence-coprocessor 0.3.7",
 ]
 
 [[package]]
@@ -4602,7 +4602,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "serde_json",
- "valence-coprocessor 0.3.5",
+ "valence-coprocessor 0.3.7",
  "valence-coprocessor-wasm",
 ]
 
@@ -8994,8 +8994,8 @@ dependencies = [
 
 [[package]]
 name = "valence-coprocessor"
-version = "0.3.5"
-source = "git+https://github.com/timewave-computer/valence-coprocessor.git?tag=v0.3.5#4fa2cb08f164e6ed710ff6f2987de00738debfe6"
+version = "0.3.7"
+source = "git+https://github.com/timewave-computer/valence-coprocessor.git?tag=v0.3.7#5e169394898e805d6d7cac3a548c93ae7d6a0356"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -9040,15 +9040,15 @@ dependencies = [
 
 [[package]]
 name = "valence-coprocessor-wasm"
-version = "0.3.5"
-source = "git+https://github.com/timewave-computer/valence-coprocessor.git?tag=v0.3.5#4fa2cb08f164e6ed710ff6f2987de00738debfe6"
+version = "0.3.7"
+source = "git+https://github.com/timewave-computer/valence-coprocessor.git?tag=v0.3.7#5e169394898e805d6d7cac3a548c93ae7d6a0356"
 dependencies = [
  "anyhow",
  "lru 0.14.0",
  "msgpacker",
  "serde_json",
  "tracing",
- "valence-coprocessor 0.3.5",
+ "valence-coprocessor 0.3.7",
 ]
 
 [[package]]
