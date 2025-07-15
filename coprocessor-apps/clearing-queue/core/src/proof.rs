@@ -93,7 +93,18 @@ pub fn verify_proof(
         };
         let key = alloy_primitives::keccak256(key);
         let key = Nibbles::unpack(key);
-        let value = rlp::encode(&withdraw.receiver).to_vec();
+
+        // Create 32-byte slot with string data and length encoding
+        let mut slot_value = [0u8; 32];
+        let receiver_bytes = withdraw.receiver.as_bytes();
+
+        // Copy string data to the left side of the slot
+        slot_value[..receiver_bytes.len()].copy_from_slice(receiver_bytes);
+
+        // Encode length in the rightmost byte (length * 2)
+        slot_value[31] = (len * 2) as u8;
+
+        let value = rlp::encode(&slot_value.to_vec()).to_vec();
         alloy_trie::proof::verify_proof(root, key, Some(value), &p.proof)
             .map_err(|e| anyhow::anyhow!("storage proof failed: {e}"))?;
     } else {
