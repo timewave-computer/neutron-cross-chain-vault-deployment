@@ -1317,6 +1317,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "bincode"
+version = "2.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "36eaf5d7b090263e8150820482d5d93cd964a81e4019913c972f4edcc6edb740"
+dependencies = [
+ "serde",
+ "unty",
+]
+
+[[package]]
 name = "bindgen"
 version = "0.70.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1515,7 +1525,7 @@ version = "0.1.0"
 dependencies = [
  "alloy",
  "anyhow",
- "bincode",
+ "bincode 1.3.3",
  "btc_lst_types",
  "cosmrs",
  "cosmwasm-std",
@@ -1817,11 +1827,14 @@ name = "clearing-queue-circuit"
 version = "0.1.0"
 dependencies = [
  "alloy-primitives 0.8.25",
+ "alloy-rpc-types-eth",
+ "bincode 2.0.1",
+ "clearing-queue-core",
  "cosmwasm-std",
  "serde_json",
  "valence-authorization-utils",
  "valence-clearing-queue-supervaults",
- "valence-coprocessor",
+ "valence-coprocessor 0.3.7",
  "valence-library-utils",
 ]
 
@@ -1830,22 +1843,35 @@ name = "clearing-queue-controller"
 version = "0.1.0"
 dependencies = [
  "alloy-primitives 0.8.25",
+ "alloy-rpc-types-eth",
  "alloy-sol-types 0.8.25",
+ "alloy-trie",
  "anyhow",
- "ethereum",
+ "bincode 2.0.1",
+ "clearing-queue-core",
  "hex",
+ "serde",
  "serde_json",
- "valence-coprocessor",
+ "valence-coprocessor 0.3.7",
  "valence-coprocessor-wasm",
 ]
 
 [[package]]
-name = "clearing-queue-domain"
+name = "clearing-queue-core"
 version = "0.1.0"
 dependencies = [
+ "alloy-primitives 0.8.25",
+ "alloy-rlp",
+ "alloy-rpc-types-eth",
+ "alloy-serde",
+ "alloy-sol-types 0.8.25",
+ "alloy-trie",
  "anyhow",
+ "hex",
+ "rlp 0.6.1",
+ "serde",
  "serde_json",
- "valence-coprocessor",
+ "valence-coprocessor 0.3.7",
  "valence-coprocessor-wasm",
 ]
 
@@ -1905,15 +1931,6 @@ name = "colorchoice"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b05b61dc5112cbb17e4b6cd61790d9845d13888356391624cbe7e41efeac1e75"
-
-[[package]]
-name = "common"
-version = "0.1.0"
-source = "git+https://github.com/timewave-computer/zk-merkle-proofs#f8071e33e53be4f01439d21e5e12154157cfb8b8"
-dependencies = [
- "anyhow",
- "serde",
-]
 
 [[package]]
 name = "console"
@@ -2840,34 +2857,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "ethereum"
-version = "0.1.0"
-source = "git+https://github.com/timewave-computer/zk-merkle-proofs#f8071e33e53be4f01439d21e5e12154157cfb8b8"
-dependencies = [
- "anyhow",
- "arrayvec",
- "bytes",
- "common",
- "const-hex",
- "hash-db",
- "hex-literal",
- "num-bigint 0.4.6",
- "nybbles",
- "serde",
- "serde_json",
- "sha3",
- "tracing",
- "tracing-subscriber",
- "triehash",
-]
-
-[[package]]
 name = "eureka-transfer-circuit"
 version = "0.1.0"
 dependencies = [
  "alloy-primitives 0.8.25",
  "alloy-sol-types 0.8.25",
- "valence-coprocessor",
+ "valence-coprocessor 0.3.7",
 ]
 
 [[package]]
@@ -2877,17 +2872,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "serde_json",
- "valence-coprocessor",
- "valence-coprocessor-wasm",
-]
-
-[[package]]
-name = "eureka-transfer-domain"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "serde_json",
- "valence-coprocessor",
+ "valence-coprocessor 0.3.7",
  "valence-coprocessor-wasm",
 ]
 
@@ -3311,12 +3296,6 @@ dependencies = [
  "rand_core 0.6.4",
  "rayon",
 ]
-
-[[package]]
-name = "hash-db"
-version = "0.15.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d23bd4e7b5eda0d0f3a307e8b381fdc8ba9000f26fbe912250c0a4cc3956364a"
 
 [[package]]
 name = "hash32"
@@ -4613,7 +4592,7 @@ dependencies = [
  "alloy-sol-types 0.8.25",
  "anyhow",
  "serde_json",
- "valence-coprocessor",
+ "valence-coprocessor 0.3.7",
 ]
 
 [[package]]
@@ -4623,17 +4602,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "serde_json",
- "valence-coprocessor",
- "valence-coprocessor-wasm",
-]
-
-[[package]]
-name = "lombard-transfer-domain"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "serde_json",
- "valence-coprocessor",
+ "valence-coprocessor 0.3.7",
  "valence-coprocessor-wasm",
 ]
 
@@ -4643,7 +4612,7 @@ version = "0.1.0"
 dependencies = [
  "alloy",
  "anyhow",
- "bincode",
+ "bincode 1.3.3",
  "cosmrs",
  "cosmwasm-std",
  "dotenv",
@@ -5042,7 +5011,6 @@ checksum = "a5e44f723f1133c9deac646763579fdb3ac745e418f2a7af9cd0c431da1f20b9"
 dependencies = [
  "num-integer",
  "num-traits",
- "serde",
 ]
 
 [[package]]
@@ -6534,6 +6502,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "rlp"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fa24e92bb2a83198bb76d661a71df9f7076b8c420b8696e4d3d97d50d94479e3"
+dependencies = [
+ "bytes",
+ "rustc-hex",
+]
+
+[[package]]
 name = "rmp"
 version = "0.8.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6586,7 +6564,7 @@ dependencies = [
  "proptest",
  "rand 0.8.5",
  "rand 0.9.1",
- "rlp",
+ "rlp 0.5.2",
  "ruint-macro",
  "serde",
  "valuable",
@@ -7306,7 +7284,7 @@ version = "5.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "291c086ca35f43725b33337a7a33c64418d89033d8d6e5586f82b9de2cf90dcb"
 dependencies = [
- "bincode",
+ "bincode 1.3.3",
  "bytemuck",
  "clap",
  "elf",
@@ -7345,7 +7323,7 @@ version = "5.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "236d063c38900e8346342af0b352a23d25b9806b624ee30fcae4c0cc7ddbed27"
 dependencies = [
- "bincode",
+ "bincode 1.3.3",
  "cbindgen",
  "cc",
  "cfg-if",
@@ -7401,7 +7379,7 @@ version = "5.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2c81ab46ba84d41e471351329a69ac43be7da1aa701ed29c70048c83c0fe28c"
 dependencies = [
- "bincode",
+ "bincode 1.3.3",
  "ctrlc",
  "prost 0.13.5",
  "serde",
@@ -7450,7 +7428,7 @@ version = "5.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d0fd8bc101e5603ccf2dc1836ea06410f25ce2298755b2dac626add9be2424b4"
 dependencies = [
- "bincode",
+ "bincode 1.3.3",
  "elliptic-curve",
  "serde",
  "sp1-primitives",
@@ -7462,7 +7440,7 @@ version = "5.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "699935774a5131c1a8b371108d0666c0c80c43611045fb77fae43f2f242676d5"
 dependencies = [
- "bincode",
+ "bincode 1.3.3",
  "blake3",
  "cfg-if",
  "hex",
@@ -7483,7 +7461,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f9381b478115137a435d02756dae7f3da01abaa0b1b9db8c0973389bd5bfaa9"
 dependencies = [
  "anyhow",
- "bincode",
+ "bincode 1.3.3",
  "clap",
  "dirs",
  "downloader",
@@ -7638,7 +7616,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d40fc06701180ce02d6079370d00ca74b8d86c84d85909a3684eddc8bfd8c1bf"
 dependencies = [
  "anyhow",
- "bincode",
+ "bincode 1.3.3",
  "bindgen",
  "cc",
  "cfg-if",
@@ -7665,7 +7643,7 @@ checksum = "d20372512858547350dc4fcbed57b9c6af3812da10aa9d497f7625b22bd564d2"
 dependencies = [
  "anyhow",
  "async-trait",
- "bincode",
+ "bincode 1.3.3",
  "cfg-if",
  "dirs",
  "eventsource-stream",
@@ -8707,16 +8685,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "triehash"
-version = "0.8.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1631b201eb031b563d2e85ca18ec8092508e262a3196ce9bd10a67ec87b9f5c"
-dependencies = [
- "hash-db",
- "rlp",
-]
-
-[[package]]
 name = "try-lock"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8831,6 +8799,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
 
 [[package]]
+name = "unty"
+version = "0.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6d49784317cd0d1ee7ec5c716dd598ec5b4483ea832a2dced265471cc0f690ae"
+
+[[package]]
 name = "url"
 version = "2.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8848,7 +8822,7 @@ dependencies = [
  "alloy",
  "anyhow",
  "bech32 0.11.0",
- "bincode",
+ "bincode 1.3.3",
  "cosmrs",
  "cosmwasm-std",
  "dotenv",
@@ -8955,7 +8929,7 @@ dependencies = [
 [[package]]
 name = "valence-account-utils"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?rev=87d434e#87d434e79ac08f9afd79a4ddab17a70bf278ab8e"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=849b3b0#849b3b040e6a1f4af17119f313f693f617f86d5b"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -8971,7 +8945,7 @@ dependencies = [
 [[package]]
 name = "valence-authorization-utils"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?rev=87d434e#87d434e79ac08f9afd79a4ddab17a70bf278ab8e"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=849b3b0#849b3b040e6a1f4af17119f313f693f617f86d5b"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -8986,7 +8960,7 @@ dependencies = [
 [[package]]
 name = "valence-clearing-queue-supervaults"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?rev=87d434e#87d434e79ac08f9afd79a4ddab17a70bf278ab8e"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=849b3b0#849b3b040e6a1f4af17119f313f693f617f86d5b"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9019,6 +8993,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "valence-coprocessor"
+version = "0.3.7"
+source = "git+https://github.com/timewave-computer/valence-coprocessor.git?tag=v0.3.7#5e169394898e805d6d7cac3a548c93ae7d6a0356"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "blake3",
+ "buf-fs",
+ "hashbrown 0.15.4",
+ "msgpacker",
+ "serde",
+ "serde_json",
+ "tracing",
+ "zerocopy",
+]
+
+[[package]]
 name = "valence-coprocessor-client"
 version = "0.3.1"
 source = "git+https://github.com/timewave-computer/valence-coprocessor.git?tag=v0.3.1#cefeac69e40ebd86cafebb3ade47f0f9e75b6061"
@@ -9031,7 +9022,7 @@ dependencies = [
  "tokio",
  "tracing",
  "uuid 1.17.0",
- "valence-coprocessor",
+ "valence-coprocessor 0.3.1",
 ]
 
 [[package]]
@@ -9043,21 +9034,21 @@ dependencies = [
  "hex",
  "msgpacker",
  "serde_json",
- "valence-coprocessor",
+ "valence-coprocessor 0.3.1",
  "valence-coprocessor-client",
 ]
 
 [[package]]
 name = "valence-coprocessor-wasm"
-version = "0.3.1"
-source = "git+https://github.com/timewave-computer/valence-coprocessor.git?tag=v0.3.1#cefeac69e40ebd86cafebb3ade47f0f9e75b6061"
+version = "0.3.7"
+source = "git+https://github.com/timewave-computer/valence-coprocessor.git?tag=v0.3.7#5e169394898e805d6d7cac3a548c93ae7d6a0356"
 dependencies = [
  "anyhow",
  "lru 0.14.0",
  "msgpacker",
  "serde_json",
  "tracing",
- "valence-coprocessor",
+ "valence-coprocessor 0.3.7",
 ]
 
 [[package]]
@@ -9090,7 +9081,7 @@ dependencies = [
 [[package]]
 name = "valence-dynamic-ratio-query-provider"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?rev=87d434e#87d434e79ac08f9afd79a4ddab17a70bf278ab8e"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=849b3b0#849b3b040e6a1f4af17119f313f693f617f86d5b"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9110,7 +9101,7 @@ dependencies = [
 [[package]]
 name = "valence-forwarder-library"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?rev=87d434e#87d434e79ac08f9afd79a4ddab17a70bf278ab8e"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=849b3b0#849b3b040e6a1f4af17119f313f693f617f86d5b"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9129,7 +9120,7 @@ dependencies = [
 [[package]]
 name = "valence-gmp-utils"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?rev=87d434e#87d434e79ac08f9afd79a4ddab17a70bf278ab8e"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=849b3b0#849b3b040e6a1f4af17119f313f693f617f86d5b"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9138,7 +9129,7 @@ dependencies = [
 [[package]]
 name = "valence-ibc-utils"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?rev=87d434e#87d434e79ac08f9afd79a4ddab17a70bf278ab8e"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=849b3b0#849b3b040e6a1f4af17119f313f693f617f86d5b"
 dependencies = [
  "cosmos-sdk-proto 0.20.0",
  "cosmwasm-schema",
@@ -9151,7 +9142,7 @@ dependencies = [
 [[package]]
 name = "valence-ica-ibc-transfer"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?rev=87d434e#87d434e79ac08f9afd79a4ddab17a70bf278ab8e"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=849b3b0#849b3b040e6a1f4af17119f313f693f617f86d5b"
 dependencies = [
  "cosmos-sdk-proto 0.26.1",
  "cosmwasm-schema",
@@ -9171,7 +9162,7 @@ dependencies = [
 [[package]]
 name = "valence-lending-utils"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?rev=87d434e#87d434e79ac08f9afd79a4ddab17a70bf278ab8e"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=849b3b0#849b3b040e6a1f4af17119f313f693f617f86d5b"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9180,7 +9171,7 @@ dependencies = [
 [[package]]
 name = "valence-library-base"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?rev=87d434e#87d434e79ac08f9afd79a4ddab17a70bf278ab8e"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=849b3b0#849b3b040e6a1f4af17119f313f693f617f86d5b"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9197,7 +9188,7 @@ dependencies = [
 [[package]]
 name = "valence-library-utils"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?rev=87d434e#87d434e79ac08f9afd79a4ddab17a70bf278ab8e"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=849b3b0#849b3b040e6a1f4af17119f313f693f617f86d5b"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9216,7 +9207,7 @@ dependencies = [
 [[package]]
 name = "valence-macros"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?rev=87d434e#87d434e79ac08f9afd79a4ddab17a70bf278ab8e"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=849b3b0#849b3b040e6a1f4af17119f313f693f617f86d5b"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9228,7 +9219,7 @@ dependencies = [
 [[package]]
 name = "valence-mars-lending"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?rev=87d434e#87d434e79ac08f9afd79a4ddab17a70bf278ab8e"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=849b3b0#849b3b040e6a1f4af17119f313f693f617f86d5b"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9247,7 +9238,7 @@ dependencies = [
 [[package]]
 name = "valence-maxbtc-issuer"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?rev=87d434e#87d434e79ac08f9afd79a4ddab17a70bf278ab8e"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=849b3b0#849b3b040e6a1f4af17119f313f693f617f86d5b"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9264,7 +9255,7 @@ dependencies = [
 [[package]]
 name = "valence-processor-utils"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?rev=87d434e#87d434e79ac08f9afd79a4ddab17a70bf278ab8e"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=849b3b0#849b3b040e6a1f4af17119f313f693f617f86d5b"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9279,7 +9270,7 @@ dependencies = [
 [[package]]
 name = "valence-splitter-library"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?rev=87d434e#87d434e79ac08f9afd79a4ddab17a70bf278ab8e"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=849b3b0#849b3b040e6a1f4af17119f313f693f617f86d5b"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9299,7 +9290,7 @@ dependencies = [
 [[package]]
 name = "valence-strategist-utils"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?rev=87d434e#87d434e79ac08f9afd79a4ddab17a70bf278ab8e"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=849b3b0#849b3b040e6a1f4af17119f313f693f617f86d5b"
 dependencies = [
  "async-trait",
  "cosmwasm-std",
@@ -9313,7 +9304,7 @@ dependencies = [
 [[package]]
 name = "valence-supervaults-lper"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?rev=87d434e#87d434e79ac08f9afd79a4ddab17a70bf278ab8e"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=849b3b0#849b3b040e6a1f4af17119f313f693f617f86d5b"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9328,7 +9319,7 @@ dependencies = [
 [[package]]
 name = "valence-supervaults-utils"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?rev=87d434e#87d434e79ac08f9afd79a4ddab17a70bf278ab8e"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=849b3b0#849b3b040e6a1f4af17119f313f693f617f86d5b"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9341,7 +9332,7 @@ dependencies = [
 [[package]]
 name = "valence-supervaults-withdrawer"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?rev=87d434e#87d434e79ac08f9afd79a4ddab17a70bf278ab8e"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=849b3b0#849b3b040e6a1f4af17119f313f693f617f86d5b"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9356,7 +9347,7 @@ dependencies = [
 [[package]]
 name = "valence-verification-gateway"
 version = "0.2.0"
-source = "git+https://github.com/timewave-computer/valence-protocol?rev=87d434e#87d434e79ac08f9afd79a4ddab17a70bf278ab8e"
+source = "git+https://github.com/timewave-computer/valence-protocol?rev=849b3b0#849b3b040e6a1f4af17119f313f693f617f86d5b"
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
@@ -9528,7 +9519,7 @@ version = "0.1.0"
 dependencies = [
  "alloy",
  "anyhow",
- "bincode",
+ "bincode 1.3.3",
  "cosmrs",
  "cosmwasm-std",
  "dotenv",

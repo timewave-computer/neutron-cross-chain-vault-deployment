@@ -19,7 +19,7 @@ To install:
 ```bash
 cargo install \
   --git https://github.com/timewave-computer/valence-coprocessor.git \
-  --tag v0.3.1 \
+  --tag v0.3.7 \
   --locked cargo-valence
 ```
 

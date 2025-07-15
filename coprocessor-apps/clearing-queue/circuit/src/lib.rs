@@ -2,11 +2,9 @@
 
 extern crate alloc;
 
-use alloc::{
-    string::{String, ToString},
-    vec::Vec,
-};
-use alloy_primitives::U256;
+use alloc::{string::ToString as _, vec::Vec};
+use alloy_rpc_types_eth::EIP1186AccountProofResponse;
+use clearing_queue_core::WithdrawRequest;
 use cosmwasm_std::{Uint64, Uint128, to_json_binary};
 use valence_authorization_utils::{
     authorization::{AtomicSubroutine, AuthorizationMsg, Priority, Subroutine},
@@ -20,46 +18,41 @@ use valence_clearing_queue_supervaults::msg::{FunctionMsgs, LibraryConfigUpdate}
 use valence_coprocessor::Witness;
 use valence_library_utils::{LibraryAccountType, msg::ExecuteMsg};
 
-const SCALE_FACTOR: u64 = 1000000;
+const SCALE_FACTOR: u128 = 100000000;
 const CLEARING_QUEUE_LIBRARY_ADDRESS: &str =
-    "neutron18dsl9523cvdj7dgn5ayev2kz09dhrha7fhsndv4p0urzetzvnyhsjsd3u4";
+    "neutron1pdp6mty3ykchjxksj9hakupma3atyrah27mtws3ph2matjkhg7qse70m8g";
 
 pub fn circuit(witnesses: Vec<Witness>) -> Vec<u8> {
-    let withdraw_request_id = witnesses[0].as_data().unwrap();
-    let withdraw_request_id = <[u8; 8]>::try_from(withdraw_request_id).unwrap();
-    let withdraw_request_id = u64::from_le_bytes(withdraw_request_id);
+    let state = witnesses[0].as_state_proof().unwrap();
+    let root = state.root;
+    let proof: EIP1186AccountProofResponse = serde_json::from_slice(&state.proof).unwrap();
 
-    // Shares amount (U256 - 32 bytes)
-    let withdraw_request_shares_amount = witnesses[1].as_data().unwrap();
-    let withdraw_request_shares_amount_array =
-        <[u8; 32]>::try_from(withdraw_request_shares_amount).unwrap();
-    let withdraw_request_shares_amount = U256::from_le_bytes(withdraw_request_shares_amount_array);
+    let withdraw = witnesses[1].as_data().unwrap();
+    let withdraw: WithdrawRequest =
+        bincode::serde::decode_from_slice(withdraw, bincode::config::standard())
+            .unwrap()
+            .0;
 
-    // Redemption rate (U256 - 32 bytes)
-    let withdraw_request_redemption_rate = witnesses[2].as_data().unwrap();
-    let withdraw_request_redemption_rate_array =
-        <[u8; 32]>::try_from(withdraw_request_redemption_rate).unwrap();
-    let withdraw_request_redemption_rate =
-        U256::from_le_bytes(withdraw_request_redemption_rate_array);
+    assert!(!withdraw.redemptionRate.is_zero());
 
-    let recipient = witnesses[3].as_data().unwrap();
-    let recipient = String::from_utf8(recipient.to_vec()).unwrap();
+    clearing_queue_core::verify_proof(&proof, &withdraw, &root).unwrap();
 
     // Calculate the amounts to be paid out by doing (shares × current_redemption_rate) / initial_redemption_rate
-    let withdraw_request_amount = (withdraw_request_shares_amount
-        * withdraw_request_redemption_rate)
-        / U256::from(SCALE_FACTOR);
-
-    let withdraw_request_amount_u128: u128 = withdraw_request_amount
-        .try_into()
-        .expect("U256 value too large to fit in u128");
+    let shares: u128 = withdraw.sharesAmount.try_into().unwrap();
+    let rate: u128 = withdraw.redemptionRate.try_into().unwrap();
+    let withdraw_request_amount = shares
+        .checked_mul(rate)
+        .unwrap()
+        .checked_div(SCALE_FACTOR)
+        .unwrap();
 
     let clearing_queue_msg: ExecuteMsg<FunctionMsgs, LibraryConfigUpdate> =
         ExecuteMsg::ProcessFunction(FunctionMsgs::RegisterObligation {
-            recipient,
-            payout_amount: Uint128::from(withdraw_request_amount_u128),
-            id: Uint64::from(withdraw_request_id),
+            recipient: withdraw.receiver,
+            payout_amount: Uint128::from(withdraw_request_amount),
+            id: Uint64::from(withdraw.id),
         });
+
     let processor_msg = ProcessorMessage::CosmwasmExecuteMsg {
         msg: to_json_binary(&clearing_queue_msg).unwrap(),
     };
@@ -75,6 +68,7 @@ pub fn circuit(witnesses: Vec<Witness>) -> Vec<u8> {
         },
         contract_address: LibraryAccountType::Addr(CLEARING_QUEUE_LIBRARY_ADDRESS.to_string()),
     };
+
     let subroutine = AtomicSubroutine {
         functions: Vec::from([function]),
         retry_logic: None,

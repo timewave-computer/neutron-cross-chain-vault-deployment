@@ -1,102 +1,120 @@
 #![no_std]
-
 extern crate alloc;
 
-use alloc::{format, string::ToString as _, vec::Vec};
+use alloc::{format, string::ToString as _, vec, vec::Vec};
 use alloy_primitives::U256;
-use alloy_sol_types::SolValue;
-use ethereum_merkle_proofs::merkle_lib::digest_keccak;
-use hex::encode;
+use alloy_rpc_types_eth::EIP1186AccountProofResponse;
+use alloy_sol_types::{SolCall, SolValue};
+use clearing_queue_core::{VAULT_ADDRESS, WithdrawRequest, withdrawRequestsCall};
 use serde_json::{Value, json};
-use valence_coprocessor::Witness;
-use valence_coprocessor_wasm::abi::{self};
+use valence_coprocessor::{StateProof, Witness};
+use valence_coprocessor_wasm::abi;
 
-/// Mainnet RPC endpoint for Ethereum network
-const MAINNET_RPC_URL: &str = "https://eth-mainnet.public.blastapi.io";
-const VAULT_ADDRESS: &str = "0x58e3e5eeae41c4ab8f954189dc9daef8ac7a17f9";
+const NETWORK: &str = "eth-mainnet";
+const DOMAIN: &str = "ethereum-electra-alpha";
+
+const FN_SELECTOR: [u8; 4] = withdrawRequestsCall::SELECTOR;
+
+/// slot value of the storageLayout of the ABI. Can be obtained via foundry.
+const WITHDRAWS_MAPPING_SLOT: u64 = 0xA;
 
 pub fn get_witnesses(args: Value) -> anyhow::Result<Vec<Witness>> {
+    let block =
+        abi::get_latest_block(DOMAIN)?.ok_or_else(|| anyhow::anyhow!("no valid domain block"))?;
+
+    let root = block.root;
+    let block = format!("{:#x}", block.number);
+
     let withdraw_request_id = args["withdraw_request_id"].as_u64().unwrap();
 
-    let rpc_request = build_eth_call_request(withdraw_request_id, VAULT_ADDRESS, MAINNET_RPC_URL);
-    let http_response = abi::http(&rpc_request)?;
+    let encoded = (withdraw_request_id).abi_encode();
+    let encoded = [FN_SELECTOR.as_slice(), &encoded].concat();
+    let encoded = hex::encode(encoded);
+    let encoded = ["0x", encoded.as_str()].concat();
 
-    let body_bytes: Vec<u8> = http_response["body"]
-        .as_array()
-        .ok_or_else(|| anyhow::anyhow!("No body in HTTP response"))?
-        .iter()
-        .map(|v| v.as_u64().unwrap_or(0) as u8)
-        .collect();
+    let data = abi::alchemy(
+        NETWORK,
+        "eth_call",
+        &json!(
+            [
+                {
+                    "to": VAULT_ADDRESS,
+                    "data": encoded,
+                },
+                block,
+            ]
+        ),
+    )?;
 
-    let json_rpc_response: Value = serde_json::from_slice(&body_bytes)?;
-    let response_result = json_rpc_response["result"]
+    let data = data
         .as_str()
-        .ok_or_else(|| anyhow::anyhow!("No result in JSON-RPC response"))?;
+        .and_then(|d| d.strip_prefix("0x"))
+        .ok_or_else(|| anyhow::anyhow!("invalid response"))?;
 
-    let hex_data = response_result
-        .strip_prefix("0x")
-        .ok_or_else(|| anyhow::anyhow!("Invalid hex format"))?;
+    let data = hex::decode(data).map_err(|e| anyhow::anyhow!("invalid response hex: {e}"))?;
+    let withdraw = WithdrawRequest::try_from_eth_call(&data)?;
 
-    let bytes =
-        hex::decode(hex_data).map_err(|e| anyhow::anyhow!("Failed to decode hex: {}", e))?;
+    let id = U256::from(withdraw_request_id).to_be_bytes::<32>();
+    let slot = U256::from(WITHDRAWS_MAPPING_SLOT).to_be_bytes::<32>();
+    let slot = [id, slot].concat();
+    let slot = alloy_primitives::keccak256(slot);
 
-    let decoded = <(u64, alloy_primitives::Address, U256, U256, U256)>::abi_decode(&bytes, false)?;
+    let slot_id_owner = U256::from_be_slice(slot.as_slice());
+    let slot_redemption_rate = slot_id_owner + U256::from(1);
+    let slot_shares_amount = slot_id_owner + U256::from(2);
+    let slot_receiver_pointer = slot_id_owner + U256::from(3);
 
-    let string_offset = decoded.4.to::<usize>();
-    let string_length = u32::from_be_bytes([
-        bytes[string_offset + 28],
-        bytes[string_offset + 29],
-        bytes[string_offset + 30],
-        bytes[string_offset + 31],
-    ]) as usize;
-    let string_data = &bytes[string_offset + 32..string_offset + 32 + string_length];
-    let receiver = alloc::string::String::from_utf8(string_data.to_vec())?;
+    let mut storage_keys_to_prove = vec![
+        slot_id_owner,
+        slot_redemption_rate,
+        slot_shares_amount,
+        slot_receiver_pointer,
+    ];
 
-    let withdraw_request_id_bytes = decoded.0.to_le_bytes().to_vec();
-    let withdraw_request_redemption_rate_bytes = decoded.2.to_le_bytes_vec();
-    let withdraw_request_shares_amount_bytes = decoded.3.to_le_bytes_vec();
-    let recipient_bytes = receiver.as_bytes().to_vec();
+    let receiver_slots = if withdraw.receiver.len() < 32 {
+        0
+    } else {
+        withdraw.receiver.len().div_ceil(32)
+    } as u64;
 
-    let witnesses = [
-        Witness::Data(withdraw_request_id_bytes),
-        Witness::Data(withdraw_request_shares_amount_bytes),
-        Witness::Data(withdraw_request_redemption_rate_bytes),
-        Witness::Data(recipient_bytes),
-    ]
-    .to_vec();
+    let slot = alloy_primitives::keccak256(slot_receiver_pointer.to_be_bytes::<32>());
+    let slot = U256::from_be_slice(slot.as_slice());
+    for i in 0..receiver_slots {
+        storage_keys_to_prove.push(slot + U256::from(i));
+    }
 
-    Ok(witnesses)
-}
+    let proof = abi::alchemy(
+        NETWORK,
+        "eth_getProof",
+        &json!([VAULT_ADDRESS, storage_keys_to_prove, block]),
+    )?;
 
-pub fn build_eth_call_request(
-    withdraw_request_id: u64,
-    vault_address: &str,
-    rpc_url: &str,
-) -> Value {
-    let function_sig = "withdrawRequests(uint64)";
-    let function_selector = &digest_keccak(function_sig.as_bytes())[0..4];
-    let encoded_params = (withdraw_request_id).abi_encode();
-    let call_data = [function_selector, &encoded_params].concat();
-    let call_data_hex = encode(call_data);
+    let proof: EIP1186AccountProofResponse = serde_json::from_value(proof)?;
 
-    let rpc_call = json!({
-        "jsonrpc": "2.0",
-        "method": "eth_call",
-        "params": [{
-            "to": vault_address,
-            "data": format!("0x{}", call_data_hex)
-        }, "latest"],
-        "id": 1
+    abi::log!(
+        "{}",
+        serde_json::to_string(&json!({
+            "withdraw": withdraw,
+            "account": VAULT_ADDRESS,
+            "proof": proof,
+            "block": block,
+            "root": format!("0x{}", hex::encode(root)),
+        }))
+        .unwrap_or_default()
+    )?;
+
+    let proof = serde_json::to_vec(&proof)?;
+    let withdraw = bincode::serde::encode_to_vec(withdraw, bincode::config::standard())?;
+
+    let proof = Witness::StateProof(StateProof {
+        domain: DOMAIN.into(),
+        root,
+        payload: Default::default(),
+        proof,
     });
+    let withdraw = Witness::Data(withdraw);
 
-    json!({
-        "url": rpc_url,
-        "method": "POST",
-        "headers": {
-            "Content-Type": "application/json"
-        },
-        "body": rpc_call.to_string()
-    })
+    Ok(vec![proof, withdraw])
 }
 
 pub fn entrypoint(args: Value) -> anyhow::Result<Value> {
@@ -121,66 +139,209 @@ pub fn entrypoint(args: Value) -> anyhow::Result<Value> {
     Ok(args)
 }
 
-#[cfg(test)]
-mod test {
-    use super::*;
+#[test]
+fn verification_long_string_works() {
+    use alloy_rpc_types_eth::EIP1186AccountProofResponse;
+    use serde_json::Value;
 
-    #[test]
-    fn test_get_witnesses() {
-        let result = "0x0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000d9a23b58e684b985f661ce7005aa8e10630150c100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000005f5e100000000000000000000000000000000000000000000000000000000000000003200000000000000000000000000000000000000000000000000000000000000c000000000000000000000000000000000000000000000000000000000000000426e657574726f6e316d32656d6339336d3967707767737273663276796c76397876677168363534363330763764667268726b6d7235736c6c79353373706738357776000000000000000000000000000000000000000000000000000000000000";
+    use crate::WithdrawRequest;
 
-        let hex_data = result.strip_prefix("0x").unwrap();
-        let bytes = hex::decode(hex_data).unwrap();
+    /*
+        How to get the witness:
+        curl -X POST http://prover.timewave.computer:37281/api/registry/controller/9c27c9c2d41e7e5952accdb03d90e358361bc9af24fe59a8cd34a52a1d58fa64/witnesses -H "Content-Type: application/json" -d '{"args": {"withdraw_request_id": 0}}' | jq '.log[0]' | jq -r
+    */
+    let data = r#"{
+        "account": "0x9fe5b9c7ddbd26d0dc93634e15eb1a5d34c85493",
+        "block": "0x15dc820",
+        "proof": {
+            "accountProof": [
+                "0xf90211a05cecc53bbb349790df3f97018b74fa52eae4882761bd380d73e7c2110c216fe3a0bbdae8c2167ec001b41ac2e3b244a6fa92ee76c2a8a73b4530bf5689697b6b0ba0632b09ead858dd0e51b906b3d50d056ec1910d30d1bee993b67ab6dacdeaab54a0cb63f99f4ae2b04198e30e0e317af3de7ddeb7e5127cff1edb5915f99de481e3a061d0ec0f27915426d7b76706ddb39f91d2669b2eb9e85343f5a84a6772a3ba15a011e99eb1a15cea1112d27e03f3df105ff1beb093b8d53e90d630af9c8c14f64fa071dcc79af09f7a65c37cf07305539f24e157f6e03c2c1f40c97d25f49ba4b3eda06954eaeb3629403a2587833a9f1784803870c495b8282a3caca77b2c45a3ed9ca02cdf15ef63c4ef383021683314f99caee88b75cc34594a2a6b2a38268c8c2e90a091518ae4f1b844f39aecaa8fed2f11ae52a29522c4ed2cb438bd6ec3884e61c4a049677f3cfb88187e770e4e3659f99109465959341751b89eba1a25baad597a4fa078e6f4e59938cf39f3e1c0e440d7343ca2458037972c92865d47dd598b8bf1b3a0e639ede680a5439a163bf233a0bffab181cd6369cf26ce43499428755677daeea0bb8e016df708d58b2249cce29469a877d33002ab91b79b4e188719f325668b97a088a6415da043cf8fcb6ddd2a9539845312533df63edcfb5857659ffecd16bac2a033cc8f2e0c7f1cb214e09ae1c6c219114c4d2f8d0a3171de4f87f00baba9f41080",
+                "0xf90211a0a113d241375afb3a16c05a9c868c60f857d6fa90733b16a57603d9044222615fa0b7ead8c744198d2bcc804848d99a32117eaee1b9a9165870126db5a5d61e7b19a01818bcdf62de6846d0417073751f806ba3da4d0854b0a8f052a16ad73bb5e5dda05c431f07fc3f3eb27d855c06699be905b9629f58ca1461129722a858596122ffa09aaa433926283f22efce7acd6c7915ac9cfab8302c13110ee1f9f1f34d46a09ea0d96c249df64b1e2f3e973fb3f2894b2f2bf6192975f98bfc620ae7d4c8f25049a07611d3a4f60e0254edf0f0c468ead2276fa33e74dd85b03026016a0bd036bb67a07526a880799f07ea455da6f34011387d6526cfbc0958bc1dee03a5e939a7e1bca0de51939fcbd0e6cd4577c85dd819b5cee7aaadbd00092143cf721102b45749d6a0e57ab7e491a2a1ee38f8cb8b6f01532a77fd39c29597592445d84643b1351325a02cb398f266aa20f7325d1ae56bc54a1f4b232dfbd848ca0c24891e9803af84f2a0f72c9cac229126f9aab3aa1e343ddb18b1eef33f27acbbaf6f250fbf058e17e9a0880bbf18676a1403d72b3b84ff83b415ecf1fcd9c8fa1faa09e8f361577705f5a09a036a15b410b882b4ee9ff6a420fab379356f12d11fe0a6f7d3dafa0f070f5ba07c15992e0953abc3063c8cf2f365901f53831267fd384ff41f2515c54e522146a0c41d5b2ba45a850b54d3581a83b99d556aa32d53e416d300ecea9ff082d6dd5080",
+                "0xf90211a06fe4e0bb20983a49032b01ba3f8e7769953d2019c1cab0e2758f5fb706d3c6a4a0e1f8f21548c19ef7552e8a6d7c008b8cffa8401e92be900fddc11f514b0e5ce1a0ca75636907f77d123329c1cefd3609d9420fafbb682feaf427c5504af8410c68a043f75cc4828150f73a162f1b07f63f95934b0c771b9e9c5e079dc8ee73b483c8a00a1e82002111dde47d9c5b3cc0aa7dc4b280db7127ce9cd95de7e8a73e9e5457a0e6225b686db87d624a1aff7aa12287d79f7bd116a5f9a75e1dcfbe1e539d60aba0ae24052ac448e2103beec5ba98930dd6cdbff27ad06ba3c550a5c59087b43ccfa043f0dec14e6ba42ae75162a25ae46d873d81daccc2d2cc11301e85b78fd82ab9a073ffd3b66bc9b983ee83866b118bc34663640dd7e2a6797668e3df9ce923f7a0a026a34c6d95dc69981ff18412da06fe44ee53a6985bb60485c5c8f3dcccb1fc54a0b05b507cff679ca4e2585e37b9e67912d4725f34d9a1464a1f209ad82cc69740a0c182e21aba8b366acbcd36a8fa20e19e3e7e410c1b5378e6037a82b66401cd97a0c9955f7e3cc1f4313eae1289896d5ed864926361d43002dbfefff2f1cf434aeca008900dc3649760421c03236bf5f2bb2a701f689d0b73cf76b60b0bece25aa697a012b2d683526a0af132069c2aa77ec5ba50ae5725a6e650c03fc4e5598030a9dda0d8b2306a5f282ff6a5e5485cd5956b038e35cd4d03c7996306b1e86d0d7b396980",
+                "0xf90211a09c6bf9da9defbcf069f54ca513624d90d5fe0a2460c55201d3281abacb65d5cca0f78ba03b888ef866689869e2b9546b54169dc007ed3fc75d8c4d980c286c90bca0b5520cd3142b82e0516047172ab7136fec3c2011f4e896ff77477eb5057590d6a0497e1ccf223b8a8e13c51ca49f78309679920285080f34c5c16d09be975b6fdea0daaf1af3e1f43a4142387d58e143828bf4402e22f32b392d1edee73197194127a0de247fde2990766cc844181b3ae74c9b3a3df730545506c791f5b0449ea36383a01daa704db7a28ad720d5510865feabb84185aab3ab36f32dc28a82453d8bad20a0e10caae843419620171d42fec3202b3cf42a88214f391157fcbb5d9109e37d5da0673609c8d23d84bcd6428f7fbc3f11217525bfb47de5ae080194a8aac3524065a0ea1e57e28b471659e2c6a5877beb077a5b7da5fafb2320afda1cbb4d0663e492a0375cc11c68191f2b6949fc251282976dc08ae9b0b0593d6781b25a155707ebe0a06c1e1d0b488b61eb0f494ba4b2a479bb6be6c1092b66813f9f644d9161244515a07c7fa6bf0472109f05a3f11b360b942d3d3df294cf0a929ffe929bb4eb9617a0a0db97e6cc8a8b9e553ce17b496e07b1740bd0f6518300a4891ee300d5f35a2689a0ceb22b78293875fbbda5faeb4c41abdeb517ede92d005566a0434c1b4623e506a0448ffde2e9e727fbbe3b87266b7dfbbba7e1f1848bcfaf729c048a8ab94ee8cc80",
+                "0xf90211a06d94af3e067707ac5c4c8d227a0ec57649aa799bc6a73957fe70d62258330012a0ae81257c21e640b48614efec2cf073e9285a1335284236432c7a5f882f6d6636a09d91e20a1b35856c27cc4d0f73a4d7ebca6f652196607736664f5771ecf6b966a0def998d29e242f61923d21584c0f3a1dab2d153a158bf1b53105fd2914b709d8a0d92eb0cc73004ed7ece3ecfe2ddd305b8f3ac28192f15eeea764fe9eef958d63a00448239a5e29c46403263f90ea8e88e64be9eda5cbf9ac54965ea0caf3429171a03bbb8c6111620fe1a3decf6ad40bfcf3d0680d12296e5b83ccfbd168f5419311a0dfcee3ce987a77b8a3fe4989052378a2386121b644219c3e7239e56187c0b679a0d95bcf0378c9eabde1c8b4733380499271b1b3354871824c0019c6e1b0c23f10a0b0f097bfd57edf071026339803074fc884c18f1f3f650623eb2e577afe26f29ba015fe673b29860fe9afa9035a87d9eecc34b3e43d0e95fc880ec68ba765128597a0a3a3f5f5d7c57d7b68c5d82ee8c02cabecf6d70c57eb264715a1dfa088413a0ea02bae4ffecfe62077e92af41382fce7df7753459b03529b1128e0d67eec75413ea0d03e04d9f94ce8a40593510077daa3dc7ae0970263507cd645facce9f1cf8d76a049f8046a3997cc455ade4afd3057c9c4e19483116baeb99e5a607d27ad23f0bfa08f40a4a99b46d8f7e74f11ae52486b9f0edad3f4562362e39efca404ed01446880",
+                "0xf90211a01b5b39ee676321d746eec5861ee020cf174aa078c394af882bd77e8fb57c098ba0fb3a9bc157ea5ca4d20de0f09bb1c89451b25a9c6dfca452a718daa49f593981a092aa32b62af092f8b644ef7dcdb675380b7517f975fedd917538e607e9d030e0a0846e6dbb70b4c2cf8a8beca3de59a9a584b29ad23087b6f51f67db62687e165ba003e5c0bbcf2cb0ce8c8f6edf581b368008ed0f444132b02554bebc3b4ced3c28a0839a0e4491332a6bb87824ebb3ffedf20f46f5bf5c885c02702b69ab7154de78a053c7607ca0eede1c0e96a5cee03934575e538ba4c261c143bd3ee5b5d0a3bde8a0cea6ddb3693d6f738a6109e255cf866829c650b3be0136569c840272039ae679a03c69cc0e5fbc6912821d4f3b4658eff96ff784a72becad6fea2bd3d6b8544b35a012da2efa5d88b9afebca22231a07fb54e819363b14f279ba47b7d91ad633e984a080b1ccda0b196e83df16fc567f85f49f254cd78ba8528fb3d7505e60ab5e01e0a047ada3d5a68c7b3d9c5408e88213eb874cfef3eeb7bf9c7719dcd853d78d70cda09ea9969a43951f4aa9f807ac142f008f0326250df85e0108b845f14f08dfbc6ba0deafedef5c0df35c4da64ba7c115dfc1ed270f280ccd05eff444eae8add6dfe3a01a70614f3f0b5134eb1062654a378acebb9c12e241c0ac6c0fdf7cb76dc160f8a086b14f191a93845b3e3f6d13615c29ffc5a6a4beffe6d0ae241225416e8e2b2180",
+                "0xf9019180a0b991ff928edfaf86c57439c18435610d32de451ee3fe439670cbe4dfb9fef13fa038931af30f182aab9278b45bd959716db47be99859d863aec7d172599642ee6580a068eae662efef3f9e7a6861fa4826007876ba3e0e34143227777022f5750ddb73a08e76fe31a672b144e290a3542779ab7083179d45e3f07c5a3fbb1a0aba1fae17a09489d4d84fdf371c4cbcf489cbd5919b6142f07239c5806a71a3971e36151a64a0f3be4091720b3a423a66865eb9c3acd1c549d33584dda237524c7365d623794d80a065220ca9cd302b62b4fe1777a9956bc9ffb9b6d95a420a91c257c6115f4aec88a0dc79194bca73fca9d7b0ef19a91e354894f98ef62d7163ed2c9bdb024949a84da065edaa30692af7484a9495794596ac975b1db5b56faec8d868b2855ffec920eaa0c11844106d15c500498555742833219e064ce3c5f6fdd3236c903244c4ebceafa07e5da078f15e1a6e3a5766436daf4ca00cde77a6950580cb64ace9b97ca840c380a02fbee9f80b94cff6b2af4d9b07e989650479bac49a873705bf5f1f6eb341394880",
+                "0xf8518080808080808080808080a0845c3b94f85446bcb7c4643ff4762cdbfb4c3d096bd090b9517f5b3e106580e9a0b0314dbf75c71c11abae3bb436b25d976ab431c1b6f7fde56f29a1107da6058e80808080",
+                "0xf8669d2079ddeecc69b3de64ae959228111cb9530e0580237ab72b8efb35b918b846f8440180a0f2fb332fdc6c2e935c431aef5a9547925c2fc43e9834d7260d958bf9afbdd146a04091afab2ffb5bb65bfad48f6fa23d9ccc0481cca8692102df677482093d7169"
+            ],
+            "address": "0x9fe5b9c7ddbd26d0dc93634e15eb1a5d34c85493",
+            "balance": "0x0",
+            "codeHash": "0x4091afab2ffb5bb65bfad48f6fa23d9ccc0481cca8692102df677482093d7169",
+            "nonce": "0x1",
+            "storageHash": "0xf2fb332fdc6c2e935c431aef5a9547925c2fc43e9834d7260d958bf9afbdd146",
+            "storageProof": [
+                {
+                    "key": "0x13da86008ba1c6922daee3e07db95305ef49ebced9f5467a0b8613fcc6b343e3",
+                    "proof": [
+                        "0xf901d1a00971f0a5ee816c956745ddaa451d2ec935cd1c613e67002c3ace24e7aba5d15380a06c306b7f0c26dd4592a3014d420575b0214e6f087d92093a3fcb639c00f0371fa009519669d88b0847545b390367fbb1d9f25b0e2fa9b41c450854db3655749873a027ed7a202fa1c14279c98861dcf5b2425e639e914550564c3838851bf17a52f5a0f09c0885547ac6ea87ad723305beb9131d4c84ba59e90bec886751d56d165304a0658a56ab09b05848be01bb4ba450b535e898518ab1a88840885c8604119fab73a0d38812229e6822be6d8997e2ce7e85685ebbde5998550650fb0439fc5eb5c66ba029e03eec53281466d7469acdde75446e96c9c4b2e2ebc493b7300ff4e8c2622080a0b0420d3e93e631647fbd24474769f4e03003d176a61f3d4012e5994062a17f3ea07cbec52b5dc0e0d89658341c33a116c275d5f456568d95078e77b15034a3d506a03a8ada671a9692038d8f53a72af5172f2c4e132f17d90f6b1de52f12a5d0946ba088b47fea56409a4dd1aac240eff2732b60ba5b97832a33ccd523e4976d3d36dda00d4d47a8da368574f54b0793919d4a6824a2c7833c4275e892788fe502bfca34a05d01c29cf03e50d7542f011d1b97d50a80936023d3cef64c152234abddbe1efb80",
+                        "0xf8918080a057d17cc3b6a9e09c9facac5b1fd193b8fdcdd79e87a75695b4efc308f85b844e8080a070746e202180578818d03f2185336a3a1902a1b48b07d6e51a2100444c348c97808080a0147aa959c5338492dd62cda8e4518601673c583f1c513cd6ec92dc44baaf1ca2808080a0e82cfc376f971743aa2cfcfe1b3e878848389b97c74327d1cb0450074a5f4bc9808080",
+                        "0xf83fa0203a0b972c470f18f842c35c712f9b9beaac1e8e838c1ba491d0d478900e81ca9d9c510c4a1d637ff374399826f421003b775dc3e8dc0000000000000000"
+                    ],
+                    "value": "0x510c4a1d637ff374399826f421003b775dc3e8dc0000000000000000"
+                },
+                {
+                    "key": "0x13da86008ba1c6922daee3e07db95305ef49ebced9f5467a0b8613fcc6b343e4",
+                    "proof": [
+                        "0xf901d1a00971f0a5ee816c956745ddaa451d2ec935cd1c613e67002c3ace24e7aba5d15380a06c306b7f0c26dd4592a3014d420575b0214e6f087d92093a3fcb639c00f0371fa009519669d88b0847545b390367fbb1d9f25b0e2fa9b41c450854db3655749873a027ed7a202fa1c14279c98861dcf5b2425e639e914550564c3838851bf17a52f5a0f09c0885547ac6ea87ad723305beb9131d4c84ba59e90bec886751d56d165304a0658a56ab09b05848be01bb4ba450b535e898518ab1a88840885c8604119fab73a0d38812229e6822be6d8997e2ce7e85685ebbde5998550650fb0439fc5eb5c66ba029e03eec53281466d7469acdde75446e96c9c4b2e2ebc493b7300ff4e8c2622080a0b0420d3e93e631647fbd24474769f4e03003d176a61f3d4012e5994062a17f3ea07cbec52b5dc0e0d89658341c33a116c275d5f456568d95078e77b15034a3d506a03a8ada671a9692038d8f53a72af5172f2c4e132f17d90f6b1de52f12a5d0946ba088b47fea56409a4dd1aac240eff2732b60ba5b97832a33ccd523e4976d3d36dda00d4d47a8da368574f54b0793919d4a6824a2c7833c4275e892788fe502bfca34a05d01c29cf03e50d7542f011d1b97d50a80936023d3cef64c152234abddbe1efb80",
+                        "0xf891a08ce402ebf4d6f9876083f7647b3c1a493e2c190e7a363c8285e364fe7ed0471c808080808080a07a0842085a92339e07c4f3d2ff3b7077c0ff6ce4734fbfa1c05eaead6205af4280a0a4d376e8a0398b515e452826f1e3d634fe73f7ebbb90104f17185930250235daa01862d45fdf8e1fe195497414025a3fbb599e45b07baae4594ec52ba341f258ca808080808080",
+                        "0xe7a0202059072c3780c0a828a160ab8d83723bf48c12015bec43b138f97107fdbc488584049e88a0"
+                    ],
+                    "value": "0x49e88a0"
+                },
+                {
+                    "key": "0x13da86008ba1c6922daee3e07db95305ef49ebced9f5467a0b8613fcc6b343e5",
+                    "proof": [
+                        "0xf901d1a00971f0a5ee816c956745ddaa451d2ec935cd1c613e67002c3ace24e7aba5d15380a06c306b7f0c26dd4592a3014d420575b0214e6f087d92093a3fcb639c00f0371fa009519669d88b0847545b390367fbb1d9f25b0e2fa9b41c450854db3655749873a027ed7a202fa1c14279c98861dcf5b2425e639e914550564c3838851bf17a52f5a0f09c0885547ac6ea87ad723305beb9131d4c84ba59e90bec886751d56d165304a0658a56ab09b05848be01bb4ba450b535e898518ab1a88840885c8604119fab73a0d38812229e6822be6d8997e2ce7e85685ebbde5998550650fb0439fc5eb5c66ba029e03eec53281466d7469acdde75446e96c9c4b2e2ebc493b7300ff4e8c2622080a0b0420d3e93e631647fbd24474769f4e03003d176a61f3d4012e5994062a17f3ea07cbec52b5dc0e0d89658341c33a116c275d5f456568d95078e77b15034a3d506a03a8ada671a9692038d8f53a72af5172f2c4e132f17d90f6b1de52f12a5d0946ba088b47fea56409a4dd1aac240eff2732b60ba5b97832a33ccd523e4976d3d36dda00d4d47a8da368574f54b0793919d4a6824a2c7833c4275e892788fe502bfca34a05d01c29cf03e50d7542f011d1b97d50a80936023d3cef64c152234abddbe1efb80",
+                        "0xf8d18080a05e7546db3694ea1694d2a401154ab5196dd7f74de4a6fa5c7bac043d9ec4350da068a4e97d2e458599c669c76b55a1ba282b33ced3afbeb387d3c313dfca81786580a0bc623156cae9abbe4c2a6074a06d4b89249168172f30e12e653d6ee93cbddef98080a0326b12875504f5c51c3d9c35d8ceee23060c9359818cd250ba9f4c20f8051e1a80a07bc8b0ba719ce964b67fa59ef79567b40ca8041b821f7b8c3fac7eecc39ff7f4a0933dda14169c00dab86c0d0351fd99bf4acc1951835ffeb14cdedf9e6cb2f3738080808080",
+                        "0xe5a0203cd70669dd7092ae1493528fe27f2a29c570eb58661e533ae5142c276acaea838226ab"
+                    ],
+                    "value": "0x26ab"
+                },
+                {
+                    "key": "0x13da86008ba1c6922daee3e07db95305ef49ebced9f5467a0b8613fcc6b343e6",
+                    "proof": [
+                        "0xf901d1a00971f0a5ee816c956745ddaa451d2ec935cd1c613e67002c3ace24e7aba5d15380a06c306b7f0c26dd4592a3014d420575b0214e6f087d92093a3fcb639c00f0371fa009519669d88b0847545b390367fbb1d9f25b0e2fa9b41c450854db3655749873a027ed7a202fa1c14279c98861dcf5b2425e639e914550564c3838851bf17a52f5a0f09c0885547ac6ea87ad723305beb9131d4c84ba59e90bec886751d56d165304a0658a56ab09b05848be01bb4ba450b535e898518ab1a88840885c8604119fab73a0d38812229e6822be6d8997e2ce7e85685ebbde5998550650fb0439fc5eb5c66ba029e03eec53281466d7469acdde75446e96c9c4b2e2ebc493b7300ff4e8c2622080a0b0420d3e93e631647fbd24474769f4e03003d176a61f3d4012e5994062a17f3ea07cbec52b5dc0e0d89658341c33a116c275d5f456568d95078e77b15034a3d506a03a8ada671a9692038d8f53a72af5172f2c4e132f17d90f6b1de52f12a5d0946ba088b47fea56409a4dd1aac240eff2732b60ba5b97832a33ccd523e4976d3d36dda00d4d47a8da368574f54b0793919d4a6824a2c7833c4275e892788fe502bfca34a05d01c29cf03e50d7542f011d1b97d50a80936023d3cef64c152234abddbe1efb80",
+                        "0xf8f180a0675d893f6365176414dacccc2fcfee7953dacc5c17c3deef7ef5f05f9f850dff80a054123f3c71216be9dd9d9786425eb6d2e154d63b1b9c5a985a139601a9d5fe3da06d2f474f3a58ceeb649ff70fec907712bfbaa5684bc11026d755a798ff7677f6a09f68b663d594cb87b914fa9c62468c8ed5d9056036e2a242b2c86bd9772e728280a001848a55098f7acee41d14af3a863c1aecf7438114b262bc109ea0b501a486a28080a0732ca824799ec5ad4ccc25fb88e6e482887993f3de3798f74a7861968e052588a0cadb7df489a4ff4a703774bff124bb433c513c1d0a21f7f8fc01bcec2c9b9dce8080808080",
+                        "0xe2a0205a850bd3eaa6019633d0f5c8a78c6c0c0de04d38b3fb3160af8e1b750e05695d"
+                    ],
+                    "value": "0x5d"
+                },
+                {
+                    "key": "0xb35a850bd3eaa6019633d0f5c8a78c6c0c0de04d38b3fb3160af8e1b750e0569",
+                    "proof": [
+                        "0xf901d1a00971f0a5ee816c956745ddaa451d2ec935cd1c613e67002c3ace24e7aba5d15380a06c306b7f0c26dd4592a3014d420575b0214e6f087d92093a3fcb639c00f0371fa009519669d88b0847545b390367fbb1d9f25b0e2fa9b41c450854db3655749873a027ed7a202fa1c14279c98861dcf5b2425e639e914550564c3838851bf17a52f5a0f09c0885547ac6ea87ad723305beb9131d4c84ba59e90bec886751d56d165304a0658a56ab09b05848be01bb4ba450b535e898518ab1a88840885c8604119fab73a0d38812229e6822be6d8997e2ce7e85685ebbde5998550650fb0439fc5eb5c66ba029e03eec53281466d7469acdde75446e96c9c4b2e2ebc493b7300ff4e8c2622080a0b0420d3e93e631647fbd24474769f4e03003d176a61f3d4012e5994062a17f3ea07cbec52b5dc0e0d89658341c33a116c275d5f456568d95078e77b15034a3d506a03a8ada671a9692038d8f53a72af5172f2c4e132f17d90f6b1de52f12a5d0946ba088b47fea56409a4dd1aac240eff2732b60ba5b97832a33ccd523e4976d3d36dda00d4d47a8da368574f54b0793919d4a6824a2c7833c4275e892788fe502bfca34a05d01c29cf03e50d7542f011d1b97d50a80936023d3cef64c152234abddbe1efb80",
+                        "0xf8d18080a05e7546db3694ea1694d2a401154ab5196dd7f74de4a6fa5c7bac043d9ec4350da068a4e97d2e458599c669c76b55a1ba282b33ced3afbeb387d3c313dfca81786580a0bc623156cae9abbe4c2a6074a06d4b89249168172f30e12e653d6ee93cbddef98080a0326b12875504f5c51c3d9c35d8ceee23060c9359818cd250ba9f4c20f8051e1a80a07bc8b0ba719ce964b67fa59ef79567b40ca8041b821f7b8c3fac7eecc39ff7f4a0933dda14169c00dab86c0d0351fd99bf4acc1951835ffeb14cdedf9e6cb2f3738080808080",
+                        "0xf843a0204551c6741dedb7cfd930aad28d2f1daa295d0fedadeb1176ea90b43d38315ea1a06e657574726f6e317a38716a736d746a78636433366a306c6132727332726673"
+                    ],
+                    "value": "0x6e657574726f6e317a38716a736d746a78636433366a306c6132727332726673"
+                },
+                {
+                    "key": "0xb35a850bd3eaa6019633d0f5c8a78c6c0c0de04d38b3fb3160af8e1b750e056a",
+                    "proof": [
+                        "0xf901d1a00971f0a5ee816c956745ddaa451d2ec935cd1c613e67002c3ace24e7aba5d15380a06c306b7f0c26dd4592a3014d420575b0214e6f087d92093a3fcb639c00f0371fa009519669d88b0847545b390367fbb1d9f25b0e2fa9b41c450854db3655749873a027ed7a202fa1c14279c98861dcf5b2425e639e914550564c3838851bf17a52f5a0f09c0885547ac6ea87ad723305beb9131d4c84ba59e90bec886751d56d165304a0658a56ab09b05848be01bb4ba450b535e898518ab1a88840885c8604119fab73a0d38812229e6822be6d8997e2ce7e85685ebbde5998550650fb0439fc5eb5c66ba029e03eec53281466d7469acdde75446e96c9c4b2e2ebc493b7300ff4e8c2622080a0b0420d3e93e631647fbd24474769f4e03003d176a61f3d4012e5994062a17f3ea07cbec52b5dc0e0d89658341c33a116c275d5f456568d95078e77b15034a3d506a03a8ada671a9692038d8f53a72af5172f2c4e132f17d90f6b1de52f12a5d0946ba088b47fea56409a4dd1aac240eff2732b60ba5b97832a33ccd523e4976d3d36dda00d4d47a8da368574f54b0793919d4a6824a2c7833c4275e892788fe502bfca34a05d01c29cf03e50d7542f011d1b97d50a80936023d3cef64c152234abddbe1efb80",
+                        "0xf8b180a0510fcf71326d98a9c5b9a45f6407dc3ce6959d0e108bb432ce2c2afe39a990e180a00bf5d9144ee88e66b9e83711295ae1c1f1b164a4ad109b2cd72f4d09fe458608808080808080a0c126cb8a53726df333e7a3d539524e8de5595f089eafd123511d8ec5e7faec74a001080472224688394a1525211b12f6a1fc618f046a1ed1cd88b2005cb0f5b64c808080a037199b8aa202d3422b1061a1b7709614cbc6e57c9b4aa7a534572d954e32fac380",
+                        "0xf843a02010056ea7655711a779f9e7125a88574457cbc2e124e9d9e9fd3fbce1753cb8a1a07466356e786d6164793268783861000000000000000000000000000000000000"
+                    ],
+                    "value": "0x7466356e786d6164793268783861000000000000000000000000000000000000"
+                }
+            ]
+        },
+        "root": "0xd7e41516d9a42e5af68fd314fdf3cd08e0dad223e787e43c9fe7c325b0e4fc7e",
+        "withdraw": {
+            "id": 0,
+            "owner": "0x510c4a1d637ff374399826f421003b775dc3e8dc",
+            "receiver": "neutron1z8qjsmtjxcd36j0la2rs2rfstf5nxmady2hx8a",
+            "redemptionRate": "0x49e88a0",
+            "sharesAmount": "0x26ab"
+        }
+    }"#;
 
-        // Test first field (works)
-        let first_field = <(u64,)>::abi_decode(&bytes, false).unwrap();
-        assert_eq!(first_field.0, 1);
+    let data: Value = serde_json::from_str(data).unwrap();
 
-        // Test first two fields
-        let two_fields = <(u64, alloy_primitives::Address)>::abi_decode(&bytes, false).unwrap();
-        assert_eq!(two_fields.0, 1);
+    let withdraw = data["withdraw"].clone();
+    let withdraw: WithdrawRequest = serde_json::from_value(withdraw).unwrap();
 
-        // Test first three fields
-        let three_fields =
-            <(u64, alloy_primitives::Address, bool)>::abi_decode(&bytes, false).unwrap();
-        assert_eq!(three_fields.0, 1);
-        assert!(three_fields.2);
+    let root = data["root"].as_str().unwrap().strip_prefix("0x").unwrap();
+    let root = hex::decode(root).unwrap();
 
-        // Test first four fields
-        let four_fields =
-            <(u64, alloy_primitives::Address, bool, U256)>::abi_decode(&bytes, false).unwrap();
-        assert_eq!(four_fields.0, 1);
-        assert_eq!(four_fields.3, U256::from(100000000u32));
+    let proof = data["proof"].clone();
+    let proof: EIP1186AccountProofResponse = serde_json::from_value(proof).unwrap();
 
-        // Test first five fields
-        let five_fields =
-            <(u64, alloy_primitives::Address, bool, U256, U256)>::abi_decode(&bytes, false)
-                .unwrap();
-        assert_eq!(five_fields.0, 1);
-        assert_eq!(five_fields.4, U256::from(50u32));
+    clearing_queue_core::verify_proof(&proof, &withdraw, &root).unwrap();
+}
 
-        // Now test all six fields - this is where it probably fails
-        let all_fields =
-            <(u64, alloy_primitives::Address, bool, U256, U256, U256)>::abi_decode(&bytes, false)
-                .unwrap();
+#[test]
+fn verification_short_invalid_string_works() {
+    use alloy_rpc_types_eth::EIP1186AccountProofResponse;
+    use serde_json::Value;
 
-        // Now we have the string offset in decoded.5
-        let string_offset = all_fields.5.to::<usize>();
+    use crate::WithdrawRequest;
 
-        // Extract string manually using the offset
-        let string_length: usize = u32::from_be_bytes([
-            bytes[string_offset + 28],
-            bytes[string_offset + 29],
-            bytes[string_offset + 30],
-            bytes[string_offset + 31],
-        ]) as usize;
+    /*
+        How to get the witness:
+        curl -X POST http://prover.timewave.computer:37281/api/registry/controller/c34f445a1e5cd395e40995cf4483467f6cc05288acb9ff0e6d2cdaafa82390a6/witnesses -H "Content-Type: application/json" -d '{"args": {"withdraw_request_id": 6}}' | jq '.log[0]' | jq -r
+    */
+    let data = r#"{
+        "account": "0x9fe5b9c7ddbd26d0dc93634e15eb1a5d34c85493",
+        "block": "0x15dccbb",
+        "proof": {
+            "accountProof": [
+                "0xf90211a08c176046e342873392a753a7059f116d9626b7636dca0011af6ab313356a4819a01ea6e48ef85d5b6f22b53e778858002963b133343ef18e39ffdbdb457d66f483a0bf4d0b462886bb4e0ec7878c9869fa96f3073594f25e6f4f73a2c9ecad284a58a089e7564e08dff9ba73aebc16f41a4aa07ecea663ceec57dd54e7b52f51183865a0d4f9329b4bce89b17658dccfd47cd45cbf6910387a36f4a665e566b7e48fa9f0a00fb1538975997d76d0e2efa77ebc7295d123780aac147f842e5c935bf254b622a07e04217f14717490aa14fcb37dbd8faf8feea6ebb5003672f2a4913fc8c72d85a0a0a37993b94bb65c55b105e64b4d8ef2ce6eb5be81f73d4616b2a03e72c5769ba008fb93fbc85c3c402f240078c78f9494259e677f4abebe8a14bb2278cb21d82aa0841e6ecc3948a4dab6a4d0ac452192b991256d3a76d4ff66adf92f3d97397a6ca09e2f6fccd55c996e88f6423fa7bb90024b921f1b9344538e05587d345549adf8a07879dc54d7b752fd5600173ea14996ee4cbcdaf4dabb0810d73b99abd038e7a2a08c073df641e1f3ae9b3dbafcd6f07c75224515c4ce66ef54e0493d5eee464f2ea0965fe481f488b716261a5efc5b8b52214c50f202e3a83e04ce4b6f69b0f50f8da0a3954cb01e7abaf3af712c9e8abc770c84d698a897eeb36a352bed8469423910a0aa85e44d72bf603ffcee92294d681c40946f6c7aff9a8953ebcc7ae27b35b90a80",
+                "0xf90211a0e15c3452d8199645790bd2e873c024d75b5860d843430bff1ff3294d7fb53f15a0176deaa93ae241135d379923c2a9793d5de489ce61cd198426626d0ba8d06c72a092894a2d5b94476c77bc9cebdfc14d3e592b98b90dee28e047715fcdb14acf5ea0657e6a55315471bcbae38599c5e546fa1bc348f4114eab98c8e597ca33255567a0dfa87d5628ff5af12439d150051c8df53f11d76c834bf5fd978d09a9349de4c6a00fa33a6aba6e1593b155a966b720031c7be5098c56bde6b4304c80b8a5b6c619a098c4a02231ca8df3adb75ced8b0fde5ca67fd99e2a2ed373b5686930b9fd16dfa0f7f74d5db9a35d7a7a9ef0c29a4990d9ec51bd934d76fc9e5fae38989f1495b3a089720e3f7ae11b37d35269439bf31be6fef2d1e6db5fc1b79999e22e19a9d993a00a90de89534d2ade245034bce01a3e03d4fc16783f8320c460f8617a755aa064a01d1ce055593a9ef22b1b886c585e2037b72d13cfbff0937ae85cfde054415b8da00775e5bc400c5be318815c5cd98af163b42b5ab58b1972bbc5d8d6e1aba6861ca09bf627a3c53a7bdbac743a9811aa690e22d3b9f8aa04aa8e64780186589a4451a0551a9f93bdeb18ba71480412dce6ee152741880564f8c4c066a4a9b8889a7effa01cf7d8e06396a5db22d7c7fc4dafc0065b084b77e8b0897121cb845594a3eef5a07875e689785f8c6ac2c7dc921595a8711fee7a3f2ba8b12f218ed80cfb83de8180",
+                "0xf90211a05a144d7d9c3ab01ad9cfa2de4e11062ba426289eb8df1f70869f80c24057f445a034255b49ed70b87284f9bf33d2335ccee438ff0367749aaa44f3bf6a19ba8403a056f927868cf35c44564194b8939ff4f3b3437c9db23ee852f9e046aaff13fe68a0fbcdbd3de748f8523ea56d3bf780b7f4c9b8d15ab4e406e3549f23f8d1327fe1a0432ba936ba7a56591df13dd0c46600593ad7f7e3efdbfc198f3fe281143e9416a0280372737ce4c7acae911b8ab436cd5441fed8159f516a0aa5142129b799e556a04cdd91ef645960f983836f6ff8cb366946ac386a254bddb998e65092716921f2a0cc003818c74989d484ce862fa725b0320cfbfe9e1a46208ff7cb1aee1f30d961a004717b063aa3cd87c74027309f00beb3afddb11d7595ed6ac0f18b87041d647fa0211a1e115127872afa90148af996596ca75891625a874671b4578040e4034caba08d04b1c90a50d21e07df7e3e7408b8a89d1efc4f564a725cce09dc46abf7a05da0792dfecd7bed8bf7156af6e25c479b73925ea87ee5f7d4a0f6dd62008e17ea00a047f0a3a782b5d8294047f50ca124ccb94ec37cf5592196f50d68773345ef7c71a06abdfb41ebdae0d38bf46b6df831e203aca5c6699ebf3bae33858533fb49d521a04a07541582f869ea22d15b766a20c2b90eeb8c650095f32bcf1f6d3f0ddd9ef7a0242b215575975c8c4e24ce7d1ffa08ec565db7b0f507e90642d3b892bd53d3d080",
+                "0xf90211a06cce22e75a1efad7e9036fbff0df54dcb99c4512072b23c8fd57b0135b83e538a04dc1966362c251f51f349a0688d487355f174022d4389a992752ebe1caff2c1ca0976e42807a6f9f7a31bb5d95369f589fa138714459eb6a670e7e7ece4df5297aa07f2369daf8bebb82ba70a9aab9e385e45855ccee8d8bc84c39223419e7009387a097d9f2089cdab7a50be9ac50b557ef9c220da48bbcad294088cc25da705ab1b6a0b7f5026c164fd96f327b95c9ed9c27832cbad704058ee9b2f1415048502a3cc3a0fc5733766a25b75f146e1810a54d30f743215dcb877952aebc480d99a1c9b8c9a0997b15f8d6547811f85a0f84bb814b40237851dc4facc858ee5a847c9023b1ada0673609c8d23d84bcd6428f7fbc3f11217525bfb47de5ae080194a8aac3524065a0eb7228233ea23fab0e3ba2e93a07cc0a6984cd7bea62ae9efcd7dedfead3f7fea01561c1944a95ba563204e2505562eb5e704e390e46f7cac2d9851e641b9a0da5a07bc1b6559da5853777b3e7ca6375e481efc802b90a34e14a956bfa54e5fc44dca0c7c493474c9e4cf76fd4d9e56ad93079eba706e5f4d66b5f996d7619f47b07fea0b694ca7663ff8e23d5aefe7881243e55dd60751d3eb8319f1c855347ec399d82a074c393f7344e36c26af3547e640b020f886d35ae07e1af6e323be8f4c28d41f3a0448ffde2e9e727fbbe3b87266b7dfbbba7e1f1848bcfaf729c048a8ab94ee8cc80",
+                "0xf90211a06d94af3e067707ac5c4c8d227a0ec57649aa799bc6a73957fe70d62258330012a0ae81257c21e640b48614efec2cf073e9285a1335284236432c7a5f882f6d6636a09d91e20a1b35856c27cc4d0f73a4d7ebca6f652196607736664f5771ecf6b966a0def998d29e242f61923d21584c0f3a1dab2d153a158bf1b53105fd2914b709d8a0d92eb0cc73004ed7ece3ecfe2ddd305b8f3ac28192f15eeea764fe9eef958d63a00448239a5e29c46403263f90ea8e88e64be9eda5cbf9ac54965ea0caf3429171a03bbb8c6111620fe1a3decf6ad40bfcf3d0680d12296e5b83ccfbd168f5419311a0dfcee3ce987a77b8a3fe4989052378a2386121b644219c3e7239e56187c0b679a0021a60e4d1396c941dd1520af1e9cd453d1cd035b558905359893f0f11b97032a0b0f097bfd57edf071026339803074fc884c18f1f3f650623eb2e577afe26f29ba015fe673b29860fe9afa9035a87d9eecc34b3e43d0e95fc880ec68ba765128597a0a3a3f5f5d7c57d7b68c5d82ee8c02cabecf6d70c57eb264715a1dfa088413a0ea02bae4ffecfe62077e92af41382fce7df7753459b03529b1128e0d67eec75413ea0d03e04d9f94ce8a40593510077daa3dc7ae0970263507cd645facce9f1cf8d76a049f8046a3997cc455ade4afd3057c9c4e19483116baeb99e5a607d27ad23f0bfa08f40a4a99b46d8f7e74f11ae52486b9f0edad3f4562362e39efca404ed01446880",
+                "0xf90211a01b5b39ee676321d746eec5861ee020cf174aa078c394af882bd77e8fb57c098ba0fb3a9bc157ea5ca4d20de0f09bb1c89451b25a9c6dfca452a718daa49f593981a092aa32b62af092f8b644ef7dcdb675380b7517f975fedd917538e607e9d030e0a0846e6dbb70b4c2cf8a8beca3de59a9a584b29ad23087b6f51f67db62687e165ba003e5c0bbcf2cb0ce8c8f6edf581b368008ed0f444132b02554bebc3b4ced3c28a0839a0e4491332a6bb87824ebb3ffedf20f46f5bf5c885c02702b69ab7154de78a053c7607ca0eede1c0e96a5cee03934575e538ba4c261c143bd3ee5b5d0a3bde8a0cea6ddb3693d6f738a6109e255cf866829c650b3be0136569c840272039ae679a03c69cc0e5fbc6912821d4f3b4658eff96ff784a72becad6fea2bd3d6b8544b35a012da2efa5d88b9afebca22231a07fb54e819363b14f279ba47b7d91ad633e984a080b1ccda0b196e83df16fc567f85f49f254cd78ba8528fb3d7505e60ab5e01e0a047ada3d5a68c7b3d9c5408e88213eb874cfef3eeb7bf9c7719dcd853d78d70cda09ea9969a43951f4aa9f807ac142f008f0326250df85e0108b845f14f08dfbc6ba0707ff0c61021464457c54e38103f924ac05f06f5139fb2dbf5569620a426e827a01a70614f3f0b5134eb1062654a378acebb9c12e241c0ac6c0fdf7cb76dc160f8a086b14f191a93845b3e3f6d13615c29ffc5a6a4beffe6d0ae241225416e8e2b2180",
+                "0xf9019180a0b991ff928edfaf86c57439c18435610d32de451ee3fe439670cbe4dfb9fef13fa038931af30f182aab9278b45bd959716db47be99859d863aec7d172599642ee6580a068eae662efef3f9e7a6861fa4826007876ba3e0e34143227777022f5750ddb73a08e76fe31a672b144e290a3542779ab7083179d45e3f07c5a3fbb1a0aba1fae17a09e641dba75e77511f6545091d012b398038a7265fe950e8a47404179a48fe166a0f3be4091720b3a423a66865eb9c3acd1c549d33584dda237524c7365d623794d80a065220ca9cd302b62b4fe1777a9956bc9ffb9b6d95a420a91c257c6115f4aec88a0dc79194bca73fca9d7b0ef19a91e354894f98ef62d7163ed2c9bdb024949a84da065edaa30692af7484a9495794596ac975b1db5b56faec8d868b2855ffec920eaa0c11844106d15c500498555742833219e064ce3c5f6fdd3236c903244c4ebceafa07e5da078f15e1a6e3a5766436daf4ca00cde77a6950580cb64ace9b97ca840c380a02fbee9f80b94cff6b2af4d9b07e989650479bac49a873705bf5f1f6eb341394880",
+                "0xf8518080808080808080808080a0845c3b94f85446bcb7c4643ff4762cdbfb4c3d096bd090b9517f5b3e106580e9a097231cec1b248561c4c97f26bedc6f21307d1a18608ffac00537bf2c057ad59d80808080",
+                "0xf8669d2079ddeecc69b3de64ae959228111cb9530e0580237ab72b8efb35b918b846f8440180a0344563a7af6240c81dfa2d75ca4ccad995dd4e8f1bc5668d1255586cfc8f0f51a04091afab2ffb5bb65bfad48f6fa23d9ccc0481cca8692102df677482093d7169"
+            ],
+            "address": "0x9fe5b9c7ddbd26d0dc93634e15eb1a5d34c85493",
+            "balance": "0x0",
+            "codeHash": "0x4091afab2ffb5bb65bfad48f6fa23d9ccc0481cca8692102df677482093d7169",
+            "nonce": "0x1",
+            "storageHash": "0x344563a7af6240c81dfa2d75ca4ccad995dd4e8f1bc5668d1255586cfc8f0f51",
+            "storageProof": [
+                {
+                    "key": "0x10d9dd018e4cae503383c9f804c1c1603ada5856ee7894375d9b97cd8c8b27db",
+                    "proof": [
+                        "0xf901d1a0e3ad265bfa36d24fc3b9fbb16eb46d91eaec04106e4f0c8f9654246480d5309880a06c306b7f0c26dd4592a3014d420575b0214e6f087d92093a3fcb639c00f0371fa0d57c78011f68279445a1d6b1c40130106141a52766f06f78ddb6a6185f49669da0acc3f5e894a1b9896a91b7480ddfb53ee66f253ed2209305f85d1ef5f0defc2da0d282449525ea9256aa567e286947c849dad1f8dca7c16fe83623d9922e6b60dba069ee61aeb5ed14fb077695614638fa2ce3c666df97a4c14c724aadde26af19b9a0c4b8c6dcc60eb9ca120ebfa9affb5090b9eb442e0f17fc9b2fb0e87c6b422609a01db7ea5c170b717f804d5e1d0117ad4d6da522f47149cd93ffc8c6df0e9d044480a0f41816bcec7c227e2a5f808815e0998808b8db746e910e10a7f094ba0cfaa563a00018a8d90db78c2c9d37fbddf350a540556eb8ae99636d9e41c53ca77d90de0ba03a8ada671a9692038d8f53a72af5172f2c4e132f17d90f6b1de52f12a5d0946ba0667d088b8190740e9b7365cf11b83c6681a1e3da1757b5f6ca00654715f59177a00d4d47a8da368574f54b0793919d4a6824a2c7833c4275e892788fe502bfca34a0e2cf19003646571e21fdfcc67591def18e4b8d828b73450b031ec6bfcb6103ca80",
+                        "0xf871808080808080808080808080a0d2c2f9dbb0cdecadcd287e5b79a877a26eb67966bfb858ccc183e62f151812bc80a0ad554e89ab226e97286df67d4e0feccbac7c8bfce939d30ab875d3250dde9052a0015e8ec95545bc4ca1bce52df6caea0cfa58d803d630b9540fc37978d951312080",
+                        "0xf83fa02080a166ce174b97730f1834f7b030fd07f12ab0bf57ccd0f1dffb43299c0ded9d9cd9a23b58e684b985f661ce7005aa8e10630150c10000000000000006"
+                    ],
+                    "value": "0xd9a23b58e684b985f661ce7005aa8e10630150c10000000000000006"
+                },
+                {
+                    "key": "0x10d9dd018e4cae503383c9f804c1c1603ada5856ee7894375d9b97cd8c8b27dc",
+                    "proof": [
+                        "0xf901d1a0e3ad265bfa36d24fc3b9fbb16eb46d91eaec04106e4f0c8f9654246480d5309880a06c306b7f0c26dd4592a3014d420575b0214e6f087d92093a3fcb639c00f0371fa0d57c78011f68279445a1d6b1c40130106141a52766f06f78ddb6a6185f49669da0acc3f5e894a1b9896a91b7480ddfb53ee66f253ed2209305f85d1ef5f0defc2da0d282449525ea9256aa567e286947c849dad1f8dca7c16fe83623d9922e6b60dba069ee61aeb5ed14fb077695614638fa2ce3c666df97a4c14c724aadde26af19b9a0c4b8c6dcc60eb9ca120ebfa9affb5090b9eb442e0f17fc9b2fb0e87c6b422609a01db7ea5c170b717f804d5e1d0117ad4d6da522f47149cd93ffc8c6df0e9d044480a0f41816bcec7c227e2a5f808815e0998808b8db746e910e10a7f094ba0cfaa563a00018a8d90db78c2c9d37fbddf350a540556eb8ae99636d9e41c53ca77d90de0ba03a8ada671a9692038d8f53a72af5172f2c4e132f17d90f6b1de52f12a5d0946ba0667d088b8190740e9b7365cf11b83c6681a1e3da1757b5f6ca00654715f59177a00d4d47a8da368574f54b0793919d4a6824a2c7833c4275e892788fe502bfca34a0e2cf19003646571e21fdfcc67591def18e4b8d828b73450b031ec6bfcb6103ca80",
+                        "0xf871808080808080808080808080a0d2c2f9dbb0cdecadcd287e5b79a877a26eb67966bfb858ccc183e62f151812bc80a0ad554e89ab226e97286df67d4e0feccbac7c8bfce939d30ab875d3250dde9052a0015e8ec95545bc4ca1bce52df6caea0cfa58d803d630b9540fc37978d951312080",
+                        "0xe7a02040974aec5a8c1c08a9b5b8044dda6e408b92942ad5b648fcb80c2fc37d0097858404164e60"
+                    ],
+                    "value": "0x4164e60"
+                },
+                {
+                    "key": "0x10d9dd018e4cae503383c9f804c1c1603ada5856ee7894375d9b97cd8c8b27dd",
+                    "proof": [
+                        "0xf901d1a0e3ad265bfa36d24fc3b9fbb16eb46d91eaec04106e4f0c8f9654246480d5309880a06c306b7f0c26dd4592a3014d420575b0214e6f087d92093a3fcb639c00f0371fa0d57c78011f68279445a1d6b1c40130106141a52766f06f78ddb6a6185f49669da0acc3f5e894a1b9896a91b7480ddfb53ee66f253ed2209305f85d1ef5f0defc2da0d282449525ea9256aa567e286947c849dad1f8dca7c16fe83623d9922e6b60dba069ee61aeb5ed14fb077695614638fa2ce3c666df97a4c14c724aadde26af19b9a0c4b8c6dcc60eb9ca120ebfa9affb5090b9eb442e0f17fc9b2fb0e87c6b422609a01db7ea5c170b717f804d5e1d0117ad4d6da522f47149cd93ffc8c6df0e9d044480a0f41816bcec7c227e2a5f808815e0998808b8db746e910e10a7f094ba0cfaa563a00018a8d90db78c2c9d37fbddf350a540556eb8ae99636d9e41c53ca77d90de0ba03a8ada671a9692038d8f53a72af5172f2c4e132f17d90f6b1de52f12a5d0946ba0667d088b8190740e9b7365cf11b83c6681a1e3da1757b5f6ca00654715f59177a00d4d47a8da368574f54b0793919d4a6824a2c7833c4275e892788fe502bfca34a0e2cf19003646571e21fdfcc67591def18e4b8d828b73450b031ec6bfcb6103ca80",
+                        "0xf8d1a0ffcd1b08cc7ca2e5b051da86cc3487dde893b5db5617e1542e544ae02814549d8080a0768b790500ecb36ab05e81ff37396188927ef31950d08e5991c8f1043d6347058080a0649e94dada816ea39bbf4fac28d2e8d6b77c3ff854527b359f723a18c910413480a094b0705322394dc0b6c0adeaf8493c68020fc9f2a35dee68fa30207e4142ed2280a0263296aff0fa077724507ec778767de71dd3d23b029c75853b21e6a76d32cd25a0635a2faeb7fb0e79634ac1fb168463016d9f33e0e547aaef4693fb5b36d8ede38080808080",
+                        "0xe5a0200ad15404c3af766330c09ccaca1eeeac8278c21ce41bde761fabe1fffe781b838203dd"
+                    ],
+                    "value": "0x3dd"
+                },
+                {
+                    "key": "0x10d9dd018e4cae503383c9f804c1c1603ada5856ee7894375d9b97cd8c8b27de",
+                    "proof": [
+                        "0xf901d1a0e3ad265bfa36d24fc3b9fbb16eb46d91eaec04106e4f0c8f9654246480d5309880a06c306b7f0c26dd4592a3014d420575b0214e6f087d92093a3fcb639c00f0371fa0d57c78011f68279445a1d6b1c40130106141a52766f06f78ddb6a6185f49669da0acc3f5e894a1b9896a91b7480ddfb53ee66f253ed2209305f85d1ef5f0defc2da0d282449525ea9256aa567e286947c849dad1f8dca7c16fe83623d9922e6b60dba069ee61aeb5ed14fb077695614638fa2ce3c666df97a4c14c724aadde26af19b9a0c4b8c6dcc60eb9ca120ebfa9affb5090b9eb442e0f17fc9b2fb0e87c6b422609a01db7ea5c170b717f804d5e1d0117ad4d6da522f47149cd93ffc8c6df0e9d044480a0f41816bcec7c227e2a5f808815e0998808b8db746e910e10a7f094ba0cfaa563a00018a8d90db78c2c9d37fbddf350a540556eb8ae99636d9e41c53ca77d90de0ba03a8ada671a9692038d8f53a72af5172f2c4e132f17d90f6b1de52f12a5d0946ba0667d088b8190740e9b7365cf11b83c6681a1e3da1757b5f6ca00654715f59177a00d4d47a8da368574f54b0793919d4a6824a2c7833c4275e892788fe502bfca34a0e2cf19003646571e21fdfcc67591def18e4b8d828b73450b031ec6bfcb6103ca80",
+                        "0xf8f180a0655f36ced123f6e52a9b7c3dc08a8c59009962e2e6ac5636433878cc54df6e7a80a054123f3c71216be9dd9d9786425eb6d2e154d63b1b9c5a985a139601a9d5fe3da06d2f474f3a58ceeb649ff70fec907712bfbaa5684bc11026d755a798ff7677f6a09f68b663d594cb87b914fa9c62468c8ed5d9056036e2a242b2c86bd9772e728280a001848a55098f7acee41d14af3a863c1aecf7438114b262bc109ea0b501a486a28080a0732ca824799ec5ad4ccc25fb88e6e482887993f3de3798f74a7861968e052588a0cadb7df489a4ff4a703774bff124bb433c513c1d0a21f7f8fc01bcec2c9b9dce8080808080",
+                        "0xf851a0cb9a2272a316aa7c458b1e4afd00ff35907c821e96a367afc4e81e4c2d9c4f79808080808080808080a0f93e614fea222f9bb59846f85533aebf4375851163cfe27416998b78385c61b5808080808080",
+                        "0xf8429f3c4f150770049785fec71e028af916aeba9595e8624a2d5e06b951a5a158dca1a06e657574726f6e31323300000000000000000000000000000000000000000014"
+                    ],
+                    "value": "0x6e657574726f6e31323300000000000000000000000000000000000000000014"
+                }
+            ]
+        },
+        "root": "0x7cc322abd434f944e22b506fdb9754067f064c2796cfc52892f90e95b15f18a7",
+        "withdraw": {
+            "id": 6,
+            "owner": "0xd9a23b58e684b985f661ce7005aa8e10630150c1",
+            "receiver": "neutron123",
+            "redemptionRate": "0x4164e60",
+            "sharesAmount": "0x3dd"
+        }
+    }"#;
 
-        let string_data = &bytes[string_offset + 32..string_offset + 32 + string_length];
-        let receiver = alloc::string::String::from_utf8(string_data.to_vec()).unwrap();
+    let data: Value = serde_json::from_str(data).unwrap();
 
-        assert_eq!(
-            receiver,
-            "neutron1m2emc93m9gpwgsrsf2vylv9xvgqh654630v7dfrhrkmr5slly53spg85wv"
-        )
-    }
+    let withdraw = data["withdraw"].clone();
+    let withdraw: WithdrawRequest = serde_json::from_value(withdraw).unwrap();
+
+    let root = data["root"].as_str().unwrap().strip_prefix("0x").unwrap();
+    let root = hex::decode(root).unwrap();
+
+    let proof = data["proof"].clone();
+    let proof: EIP1186AccountProofResponse = serde_json::from_value(proof).unwrap();
+
+    clearing_queue_core::verify_proof(&proof, &withdraw, &root).unwrap();
 }

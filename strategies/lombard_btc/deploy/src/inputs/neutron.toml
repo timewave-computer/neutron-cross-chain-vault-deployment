@@ -26,4 +26,4 @@ initial_split_percentage_to_supervault = 20
 initial_settlement_ratio_percentage = 80
 
 [coprocessor_app]
-clearing_queue_coprocessor_app_id = "17ce01c71c687c7599901b2f0a37bf3d8188c7d1bcde03abe7382b3824a6dfc8"
+clearing_queue_coprocessor_app_id = "077341f90e2faa8e710b1a7e6e575104da40beaf0787d22c49d9c53f965d5816"
