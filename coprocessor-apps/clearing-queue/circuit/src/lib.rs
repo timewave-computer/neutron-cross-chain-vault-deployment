@@ -25,14 +25,11 @@ const CLEARING_QUEUE_LIBRARY_ADDRESS: &str =
 pub fn circuit(witnesses: Vec<Witness>) -> Vec<u8> {
     let state = witnesses[0].as_state_proof().unwrap();
     let root = state.root;
-    let proof: EIP1186AccountProofResponse =
-        bincode::serde::decode_from_slice(&state.proof, bincode::config::standard())
-            .unwrap()
-            .0;
+    let proof: EIP1186AccountProofResponse = serde_json::from_slice(&state.proof).unwrap();
 
     let withdraw = witnesses[1].as_data().unwrap();
     let withdraw: WithdrawRequest =
-        bincode::serde::decode_from_slice(&withdraw, bincode::config::standard())
+        bincode::serde::decode_from_slice(withdraw, bincode::config::standard())
             .unwrap()
             .0;
 
