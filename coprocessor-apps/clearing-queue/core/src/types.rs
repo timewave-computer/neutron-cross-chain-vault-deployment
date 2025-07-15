@@ -11,6 +11,8 @@ alloy_sol_types::sol! {
         uint256 sharesAmount;
         string receiver;
     }
+
+    function withdrawRequests(uint64);
 }
 
 impl WithdrawRequest {

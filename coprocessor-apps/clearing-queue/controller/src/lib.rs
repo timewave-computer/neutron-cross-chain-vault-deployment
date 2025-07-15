@@ -4,8 +4,8 @@ extern crate alloc;
 use alloc::{format, string::ToString as _, vec, vec::Vec};
 use alloy_primitives::U256;
 use alloy_rpc_types_eth::EIP1186AccountProofResponse;
-use alloy_sol_types::SolValue;
-use clearing_queue_core::{VAULT_ADDRESS, WithdrawRequest};
+use alloy_sol_types::{SolCall, SolValue};
+use clearing_queue_core::{VAULT_ADDRESS, WithdrawRequest, withdrawRequestsCall};
 use serde_json::{Value, json};
 use valence_coprocessor::{StateProof, Witness};
 use valence_coprocessor_wasm::abi;
@@ -13,8 +13,7 @@ use valence_coprocessor_wasm::abi;
 const NETWORK: &str = "eth-mainnet";
 const DOMAIN: &str = "ethereum-electra-alpha";
 
-/// Fn selector defined as Keccak256("withdrawRequests(uint64)")[..4]
-const FN_SELECTOR: &[u8] = &[0x94, 0xba, 0x2b, 0x8d];
+const FN_SELECTOR: [u8; 4] = withdrawRequestsCall::SELECTOR;
 
 /// slot value of the storageLayout of the ABI. Can be obtained via foundry.
 const WITHDRAWS_MAPPING_SLOT: u64 = 0xA;
@@ -24,12 +23,12 @@ pub fn get_witnesses(args: Value) -> anyhow::Result<Vec<Witness>> {
         abi::get_latest_block(DOMAIN)?.ok_or_else(|| anyhow::anyhow!("no valid domain block"))?;
 
     let root = block.root;
-    let block = format!("0x{:x}", block.number);
+    let block = format!("{:#x}", block.number);
 
     let withdraw_request_id = args["withdraw_request_id"].as_u64().unwrap();
 
     let encoded = (withdraw_request_id).abi_encode();
-    let encoded = [FN_SELECTOR, &encoded].concat();
+    let encoded = [FN_SELECTOR.as_slice(), &encoded].concat();
     let encoded = hex::encode(encoded);
     let encoded = ["0x", encoded.as_str()].concat();
 
