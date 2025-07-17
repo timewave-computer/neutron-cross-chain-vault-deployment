@@ -4,28 +4,28 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-alloy                               = { workspace = true }
-serde                               = { workspace = true }
-valence-clearing-queue-supervaults  = { workspace = true }
-valence-domain-clients              = { workspace = true }
-valence-authorization-utils         = { workspace = true }
-cosmwasm-std                        = { workspace = true }
-valence-processor-utils             = { workspace = true }
-async-trait                         = { workspace = true }
-valence-lending-utils               = { workspace = true }
-mmvault                             = { workspace = true }
-log                                 = { workspace = true }
-env_logger                          = { workspace = true }
-multi_log                           = { workspace = true }
-opentelemetry_sdk                   = { workspace = true }
-opentelemetry-otlp                  = { workspace = true }
-opentelemetry-stdout                = { workspace = true }
-opentelemetry-appender-log          = { workspace = true }
-anyhow                              = { workspace = true }
-serde_json                          = { workspace = true }
-dotenv                               = { workspace = true }
-tokio                                = { workspace = true, features = ["full"] }
-toml                                 = { workspace = true }
+alloy                              = { workspace = true }
+serde                              = { workspace = true }
+valence-clearing-queue-supervaults = { workspace = true }
+valence-domain-clients             = { workspace = true }
+valence-authorization-utils        = { workspace = true }
+cosmwasm-std                       = { workspace = true }
+valence-processor-utils            = { workspace = true }
+async-trait                        = { workspace = true }
+valence-lending-utils              = { workspace = true }
+mmvault                            = { workspace = true }
+log                                = { workspace = true }
+env_logger                         = { workspace = true }
+multi_log                          = { workspace = true }
+opentelemetry_sdk                  = { workspace = true }
+opentelemetry-otlp                 = { workspace = true }
+opentelemetry-stdout               = { workspace = true }
+opentelemetry-appender-log         = { workspace = true }
+anyhow                             = { workspace = true }
+serde_json                         = { workspace = true }
+dotenv                             = { workspace = true }
+tokio                              = { workspace = true, features = ["full"] }
+toml                               = { workspace = true }
 
 [[bin]]
 name = "neutron_upload"
