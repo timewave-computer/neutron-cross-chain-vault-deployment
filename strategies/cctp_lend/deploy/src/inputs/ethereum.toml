@@ -4,9 +4,9 @@ owner   = "0xd9A23b58e684B985F661Ce7005AA8E10630150c1" # Neutron multisig addres
 
 [vault]
 deposit_token            = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" # USDC on Ethereum
-strategist               = "0x510c4a1d637ff374399826f421003b775dc3e8dc" # Address of the strategist
-platform_fee_account     = "0x510c4a1d637ff374399826f421003b775dc3e8dc" # Receiver of the platform fees portion
-strategist_fee_account   = "0x510c4a1d637ff374399826f421003b775dc3e8dc" # Receiver of the strategist fees portion
+strategist               = "0x8d41bb082C6050893d1eC113A104cc4C087F2a2a" # Address of the strategist
+platform_fee_account     = "0x8d41bb082C6050893d1eC113A104cc4C087F2a2a" # Receiver of the platform fees portion
+strategist_fee_account   = "0x8d41bb082C6050893d1eC113A104cc4C087F2a2a" # Receiver of the strategist fees portion
 strategist_fee_ratio_bps = 5000                                         # Strategist fee is 50%, rest goes to the platform (50%)
 scaling_factor           = "1000000000000"                              # scaling factor for rate updates
 deposit_cap              = "100000000000"                               # e.g. 100K USDC
