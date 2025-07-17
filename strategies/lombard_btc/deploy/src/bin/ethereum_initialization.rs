@@ -1,9 +1,6 @@
 use std::{env, fs};
 
-use alloy::{
-    hex::FromHex,
-    primitives::{Address, FixedBytes},
-};
+use alloy::{hex::FromHex, primitives::FixedBytes};
 use lombard_btc_deploy::{INPUTS_DIR, OUTPUTS_DIR};
 use lombard_btc_types::ethereum_config::EthereumStrategyConfig;
 use packages::types::{
