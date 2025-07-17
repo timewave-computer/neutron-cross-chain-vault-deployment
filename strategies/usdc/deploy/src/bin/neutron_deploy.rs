@@ -3,7 +3,7 @@ use std::{env, error::Error, fs, time::SystemTime};
 use cosmwasm_std::{Decimal, Uint128};
 use packages::{
     contracts::{PATH_NEUTRON_CODE_IDS, UploadedContracts},
-    types::inputs::ChainClientInputs,
+    types::inputs::{ChainClientInputs, ClearingQueueCoprocessorApp},
     verification::VALENCE_NEUTRON_VERIFICATION_GATEWAY,
 };
 use serde::Deserialize;
@@ -27,7 +27,7 @@ use valence_library_utils::LibraryAccountType;
 struct Parameters {
     general: General,
     program: Program,
-    coprocessor_app: CoprocessorApp,
+    coprocessor_app: ClearingQueueCoprocessorApp,
 }
 
 #[derive(Deserialize, Debug)]
@@ -45,11 +45,6 @@ struct Program {
     supervault_asset1: String,
     supervault_asset2: String,
     supervault_lp_denom: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct CoprocessorApp {
-    clearing_queue_coprocessor_app_id: String,
 }
 
 #[tokio::main]

@@ -14,7 +14,8 @@ use lombard_btc_types::{
     },
 };
 use packages::{
-    contracts::PATH_NEUTRON_CODE_IDS, types::inputs::ChainClientInputs,
+    contracts::{PATH_NEUTRON_CODE_IDS, UploadedContracts},
+    types::inputs::{ChainClientInputs, ClearingQueueCoprocessorApp},
     verification::VALENCE_NEUTRON_VERIFICATION_GATEWAY,
 };
 use serde::Deserialize;
@@ -30,16 +31,11 @@ use valence_library_utils::{LibraryAccountType, denoms::UncheckedDenom};
 use valence_splitter_library::msg::UncheckedSplitAmount;
 
 #[derive(Deserialize, Debug)]
-struct UploadedContracts {
-    code_ids: HashMap<String, u64>,
-}
-
-#[derive(Deserialize, Debug)]
 struct Parameters {
     general: General,
     ica: Ica,
     program: Program,
-    coprocessor_app: CoprocessorApp,
+    coprocessor_app: ClearingQueueCoprocessorApp,
 }
 
 #[derive(Deserialize, Debug)]
@@ -70,11 +66,6 @@ struct Program {
     initial_split_percentage_to_mars: u64,
     initial_split_percentage_to_supervault: u64,
     initial_settlement_ratio_percentage: u64,
-}
-
-#[derive(Deserialize, Debug)]
-struct CoprocessorApp {
-    clearing_queue_coprocessor_app_id: String,
 }
 
 #[tokio::main]

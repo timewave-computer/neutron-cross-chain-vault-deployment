@@ -11,7 +11,7 @@ use cctp_lend_types::{
 use cosmwasm_std::{Decimal, Uint128};
 use packages::{
     contracts::{PATH_NEUTRON_CODE_IDS, UploadedContracts},
-    types::inputs::ChainClientInputs,
+    types::inputs::{ChainClientInputs, ClearingQueueCoprocessorApp},
     verification::VALENCE_NEUTRON_VERIFICATION_GATEWAY,
 };
 use serde::Deserialize;
@@ -26,7 +26,7 @@ use valence_library_utils::LibraryAccountType;
 struct Parameters {
     general: General,
     program: Program,
-    coprocessor_app: CoprocessorApp,
+    coprocessor_app: ClearingQueueCoprocessorApp,
 }
 
 #[derive(Deserialize, Debug)]
@@ -41,11 +41,6 @@ struct General {
 struct Program {
     deposit_token_on_neutron_denom: String,
     mars_credit_manager: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct CoprocessorApp {
-    clearing_queue_coprocessor_app_id: String,
 }
 
 #[tokio::main]

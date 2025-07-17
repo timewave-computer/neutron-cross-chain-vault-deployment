@@ -3,9 +3,12 @@ use std::{env, fs};
 use btc_lst_deploy::{INPUTS_DIR, OUTPUTS_DIR};
 use btc_lst_types::neutron_config::NeutronStrategyConfig;
 use cosmwasm_std::{Binary, to_json_binary};
-use packages::labels::{
-    ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_LABEL, MARS_WITHDRAW_LABEL, PHASE_SHIFT_LABEL,
-    REGISTER_OBLIGATION_LABEL, SETTLE_OBLIGATION_LABEL,
+use packages::{
+    labels::{
+        ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_LABEL, MARS_WITHDRAW_LABEL,
+        PHASE_SHIFT_LABEL, REGISTER_OBLIGATION_LABEL, SETTLE_OBLIGATION_LABEL,
+    },
+    types::inputs::ClearingQueueCoprocessorApp,
 };
 use serde::Deserialize;
 use sp1_sdk::{HashableKey, SP1VerifyingKey};
@@ -27,18 +30,13 @@ use valence_library_utils::LibraryAccountType;
 #[derive(Deserialize, Debug)]
 struct Parameters {
     general: General,
-    coprocessor_app: CoprocessorApp,
+    coprocessor_app: ClearingQueueCoprocessorApp,
 }
 
 #[derive(Deserialize, Debug)]
 struct General {
     owner: String,
     strategist: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct CoprocessorApp {
-    clearing_queue_coprocessor_app_id: String,
 }
 
 #[tokio::main]

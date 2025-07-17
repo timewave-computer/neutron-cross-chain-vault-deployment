@@ -15,7 +15,7 @@ use btc_lst_types::{
 use cosmwasm_std::{Decimal, Uint64, Uint128};
 use packages::{
     contracts::{PATH_NEUTRON_CODE_IDS, UploadedContracts},
-    types::inputs::ChainClientInputs,
+    types::inputs::{ChainClientInputs, ClearingQueueCoprocessorApp},
     verification::VALENCE_NEUTRON_VERIFICATION_GATEWAY,
 };
 use serde::Deserialize;
@@ -35,7 +35,7 @@ struct Parameters {
     general: General,
     ica: Ica,
     program: Program,
-    coprocessor_app: CoprocessorApp,
+    coprocessor_app: ClearingQueueCoprocessorApp,
 }
 
 #[derive(Deserialize, Debug)]
@@ -66,11 +66,6 @@ struct Program {
     initial_split_percentage_to_mars: u64,
     initial_split_percentage_to_supervault: u64,
     initial_settlement_ratio_percentage: u64,
-}
-
-#[derive(Deserialize, Debug)]
-struct CoprocessorApp {
-    clearing_queue_coprocessor_app_id: String,
 }
 
 #[tokio::main]

@@ -7,3 +7,8 @@ pub struct ChainClientInputs {
     pub chain_id: String,
     pub chain_denom: String,
 }
+
+#[derive(Deserialize, Debug)]
+pub struct ClearingQueueCoprocessorApp {
+    pub clearing_queue_coprocessor_app_id: String,
+}
