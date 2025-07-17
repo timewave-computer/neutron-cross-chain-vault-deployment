@@ -15,6 +15,15 @@ pub struct VaultInput {
 }
 
 #[derive(Deserialize, Debug)]
+pub struct EurekaTransfer {
+    pub handler: Address,
+    pub recipient: String,
+    pub source_client: String,
+    pub timeout: u64,
+    pub ibc_transfer_threshold_amt: u64,
+}
+
+#[derive(Deserialize, Debug)]
 pub struct ClearingQueueCoprocessorApp {
     pub clearing_queue_coprocessor_app_id: String,
 }

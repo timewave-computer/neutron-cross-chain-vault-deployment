@@ -12,7 +12,7 @@ use lombard_btc_types::ethereum_config::{
 };
 use packages::{
     types::{
-        inputs::EurekaTransferCoprocessorApp,
+        inputs::{EurekaTransfer, EurekaTransferCoprocessorApp},
         sol_types::{
             Authorization, BaseAccount, ERC1967Proxy, IBCEurekaTransfer, IBCEurekaTransferConfig,
             OneWayVault::{self, FeeDistributionConfig, OneWayVaultConfig},
@@ -57,15 +57,6 @@ struct Vault {
     starting_rate: U256,
     min_rate_update_delay: u64,
     max_rate_update_delay: u64,
-}
-
-#[derive(Deserialize, Debug)]
-struct EurekaTransfer {
-    handler: Address,
-    recipient: String,
-    source_client: String,
-    timeout: u64,
-    ibc_transfer_threshold_amt: u64,
 }
 
 #[tokio::main]

@@ -1,9 +1,6 @@
 use std::{env, fs};
 
-use alloy::{
-    hex::FromHex,
-    primitives::{Address, FixedBytes},
-};
+use alloy::{hex::FromHex, primitives::FixedBytes};
 use packages::types::{
     inputs::{EurekaTransferCoprocessorApp, VaultInput},
     sol_types::Authorization,

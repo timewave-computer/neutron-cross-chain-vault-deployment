@@ -1,9 +1,6 @@
 use std::{env, error::Error, fs};
 
-use alloy::{
-    primitives::{Address, FixedBytes},
-    sol_types::SolCall,
-};
+use alloy::{primitives::FixedBytes, sol_types::SolCall};
 use packages::{
     labels::CCTP_TRANSFER_LABEL,
     types::{
