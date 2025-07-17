@@ -1729,6 +1729,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "cctp_lend_deploy"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "anyhow",
+ "bech32 0.11.0",
+ "bincode 1.3.3",
+ "cctp_lend_types",
+ "cosmrs",
+ "cosmwasm-std",
+ "dotenv",
+ "hex",
+ "packages",
+ "serde",
+ "sp1-sdk",
+ "tokio",
+ "toml",
+ "valence-account-utils",
+ "valence-authorization-utils",
+ "valence-clearing-queue-supervaults",
+ "valence-domain-clients",
+ "valence-ica-ibc-transfer",
+ "valence-library-utils",
+ "valence-mars-lending",
+ "valence-processor-utils",
+]
+
+[[package]]
 name = "cctp_lend_types"
 version = "0.1.0"
 dependencies = [

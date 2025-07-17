@@ -38,7 +38,7 @@ pub struct NeutronDenoms {
     /// e.g. WBTC
     pub deposit_token: String,
     /// gas fee denom
-    pub ntrn: String
+    pub ntrn: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
