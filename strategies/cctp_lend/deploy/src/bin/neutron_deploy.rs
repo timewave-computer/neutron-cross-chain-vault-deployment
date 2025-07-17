@@ -11,7 +11,6 @@ use cctp_lend_types::{
 use cosmwasm_std::{Decimal, Uint128};
 use packages::verification::VALENCE_NEUTRON_VERIFICATION_GATEWAY;
 use serde::Deserialize;
-use valence_clearing_queue_supervaults::msg::SupervaultSettlementInfo;
 use valence_domain_clients::{
     clients::neutron::NeutronClient,
     cosmos::{grpc_client::GrpcSigningClient, wasm_client::WasmClient},
@@ -192,7 +191,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             None,
         )
         .await?;
-    println!("Mars lper library instantiated: {mars_lending_library_address}");
+    println!("Mars lending library instantiated: {mars_lending_library_address}");
 
     // Finally instantiate the clearing queue library
     let clearing_config = valence_clearing_queue_supervaults::msg::LibraryConfig {

@@ -4,7 +4,8 @@ use cctp_lend_deploy::{INPUTS_DIR, OUTPUTS_DIR};
 use cctp_lend_types::neutron_config::NeutronStrategyConfig;
 use cosmwasm_std::Binary;
 use packages::labels::{
-    PROVIDE_LIQUIDIY_LABEL, REGISTER_OBLIGATION_LABEL, SETTLE_OBLIGATION_LABEL,
+    LEND_AND_PROVIDE_LIQUIDITY_LABEL, MARS_WITHDRAW_LABEL, REGISTER_OBLIGATION_LABEL,
+    SETTLE_OBLIGATION_LABEL,
 };
 use serde::Deserialize;
 use sp1_sdk::{HashableKey, SP1VerifyingKey};
@@ -79,7 +80,61 @@ async fn main() -> Result<(), Box<dyn Error>> {
             strategist.clone(),
         ]));
 
-    // TODO: fill in mars lend
+    // subroutine for mars lending
+    let lend_function = AtomicFunction {
+        domain: Domain::Main,
+        message_details: MessageDetails {
+            message_type: MessageType::CosmwasmExecuteMsg,
+            message: Message {
+                name: "process_function".to_string(),
+                params_restrictions: Some(vec![ParamRestriction::MustBeIncluded(vec![
+                    "process_function".to_string(),
+                    "lend".to_string(),
+                ])]),
+            },
+        },
+        contract_address: LibraryAccountType::Addr(
+            ntrn_strategy_config.libraries.mars_lending.clone(),
+        ),
+    };
+
+    let subroutine_lend_liquidity = AtomicSubroutineBuilder::new()
+        .with_function(lend_function)
+        .build();
+
+    let authorization_lending_and_providing_liquidity = AuthorizationBuilder::new()
+        .with_label(LEND_AND_PROVIDE_LIQUIDITY_LABEL)
+        .with_mode(authorization_permissioned_mode.clone())
+        .with_subroutine(subroutine_lend_liquidity)
+        .build();
+    authorizations.push(authorization_lending_and_providing_liquidity);
+
+    // Authorization for Mars withdrawing
+    let withdraw_function = AtomicFunction {
+        domain: Domain::Main,
+        message_details: MessageDetails {
+            message_type: MessageType::CosmwasmExecuteMsg,
+            message: Message {
+                name: "process_function".to_string(),
+                params_restrictions: Some(vec![ParamRestriction::MustBeIncluded(vec![
+                    "process_function".to_string(),
+                    "withdraw".to_string(),
+                ])]),
+            },
+        },
+        contract_address: LibraryAccountType::Addr(
+            ntrn_strategy_config.libraries.mars_lending.clone(),
+        ),
+    };
+    let subroutine_mars_withdraw = AtomicSubroutineBuilder::new()
+        .with_function(withdraw_function)
+        .build();
+    let authorization_mars_withdraw = AuthorizationBuilder::new()
+        .with_label(MARS_WITHDRAW_LABEL)
+        .with_mode(authorization_permissioned_mode.clone())
+        .with_subroutine(subroutine_mars_withdraw)
+        .build();
+    authorizations.push(authorization_mars_withdraw);
 
     // Authorization for settle obligation
     let settle_obligation_function = AtomicFunction {
