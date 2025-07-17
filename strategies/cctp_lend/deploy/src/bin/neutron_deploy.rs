@@ -1,19 +1,18 @@
 use std::{collections::HashMap, env, error::Error, fs, time::SystemTime};
 
-use cosmwasm_std::{Decimal, Uint128};
-use packages::{
-    contracts::PATH_NEUTRON_CODE_IDS, verification::VALENCE_NEUTRON_VERIFICATION_GATEWAY,
-};
-use serde::Deserialize;
-use usdc_deploy::{INPUTS_DIR, OUTPUTS_DIR, UUSDC_DENOM};
-use usdc_types::{
+use cctp_lend_deploy::{INPUTS_DIR, OUTPUTS_DIR, UUSDC_DENOM};
+use cctp_lend_types::{
     neutron_config::{
         NeutronAccounts, NeutronCoprocessorAppIds, NeutronDenoms, NeutronLibraries,
         NeutronStrategyConfig,
     },
     noble_config::NobleStrategyConfig,
 };
-use valence_clearing_queue_supervaults::msg::SupervaultSettlementInfo;
+use cosmwasm_std::{Decimal, Uint128};
+use packages::{
+    contracts::PATH_NEUTRON_CODE_IDS, verification::VALENCE_NEUTRON_VERIFICATION_GATEWAY,
+};
+use serde::Deserialize;
 use valence_domain_clients::{
     clients::neutron::NeutronClient,
     cosmos::{grpc_client::GrpcSigningClient, wasm_client::WasmClient},
@@ -44,10 +43,7 @@ struct General {
 #[derive(Deserialize, Debug)]
 struct Program {
     deposit_token_on_neutron_denom: String,
-    supervault: String,
-    supervault_asset1: String,
-    supervault_asset2: String,
-    supervault_lp_denom: String,
+    mars_credit_manager: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -90,7 +86,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Get all code IDs
     let code_id_authorization = *uploaded_contracts.code_ids.get("authorization").unwrap();
     let code_id_processor = *uploaded_contracts.code_ids.get("processor").unwrap();
-    let code_id_supervaults_lper = *uploaded_contracts.code_ids.get("supervaults_lper").unwrap();
+    let code_id_mars_lending = *uploaded_contracts.code_ids.get("mars_lending").unwrap();
     let code_id_clearing_queue = *uploaded_contracts
         .code_ids
         .get("clearing_queue_supervaults")
@@ -175,47 +171,36 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     // Instantiate supervaults lper library
-    let supervaults_lper_config = valence_supervaults_lper::msg::LibraryConfig {
+    let mars_lend_config = valence_mars_lending::msg::LibraryConfig {
         input_addr: LibraryAccountType::Addr(predicted_base_accounts[0].clone()),
         output_addr: LibraryAccountType::Addr(predicted_base_accounts[1].clone()),
-        vault_addr: params.program.supervault.clone(),
-        lp_config: valence_supervaults_lper::msg::LiquidityProviderConfig {
-            asset_data: valence_library_utils::liquidity_utils::AssetData {
-                asset1: params.program.supervault_asset1.clone(),
-                asset2: params.program.supervault_asset2.clone(),
-            },
-            lp_denom: params.program.supervault_lp_denom.clone(),
-        },
+        credit_manager_addr: params.program.mars_credit_manager.to_string(),
+        denom: params.program.deposit_token_on_neutron_denom.to_string(),
     };
 
-    let instantiate_supervaults_lper_msg = valence_library_utils::msg::InstantiateMsg::<
-        valence_supervaults_lper::msg::LibraryConfig,
-    > {
-        owner: processor_address.clone(),
-        processor: processor_address.clone(),
-        config: supervaults_lper_config,
-    };
-    let supervaults_lper_library_address = neutron_client
+    let instantiate_mars_lending_msg =
+        valence_library_utils::msg::InstantiateMsg::<valence_mars_lending::msg::LibraryConfig> {
+            owner: processor_address.clone(),
+            processor: processor_address.clone(),
+            config: mars_lend_config,
+        };
+    let mars_lending_library_address = neutron_client
         .instantiate(
-            code_id_supervaults_lper,
-            "supervaults_lper".to_string(),
-            instantiate_supervaults_lper_msg,
+            code_id_mars_lending,
+            "mars_lending".to_string(),
+            instantiate_mars_lending_msg,
             None,
         )
         .await?;
-    println!("Supervaults lper library instantiated: {supervaults_lper_library_address}");
+    println!("Mars lending library instantiated: {mars_lending_library_address}");
 
     // Finally instantiate the clearing queue library
     let clearing_config = valence_clearing_queue_supervaults::msg::LibraryConfig {
         settlement_acc_addr: LibraryAccountType::Addr(predicted_base_accounts[1].clone()),
         denom: params.program.deposit_token_on_neutron_denom.clone(),
         latest_id: None,
-        mars_settlement_ratio: Decimal::zero(), // 0% because there is no mars lending being done
-        supervaults_settlement_info: vec![SupervaultSettlementInfo {
-            supervault_addr: params.program.supervault.clone(),
-            supervault_sender: predicted_base_accounts[0].clone(), // Input account of supervaults lper library
-            settlement_ratio: Decimal::one(), // 100% because there is only one supervault and everything goes to it
-        }],
+        mars_settlement_ratio: Decimal::one(), // 100%, all goes to mars
+        supervaults_settlement_info: vec![],   // no supervaults positions
     };
     let instantiate_clearing_queue_msg = valence_library_utils::msg::InstantiateMsg::<
         valence_clearing_queue_supervaults::msg::LibraryConfig,
@@ -238,7 +223,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Now the rest
     let deposit_account = valence_account_utils::msg::InstantiateMsg {
         admin: params.general.owner.clone(),
-        approved_libraries: vec![supervaults_lper_library_address.clone()],
+        approved_libraries: vec![mars_lending_library_address.clone()],
     };
     let deposit_account_address = neutron_client
         .instantiate2(
@@ -272,7 +257,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let denoms = NeutronDenoms {
         deposit_token: params.program.deposit_token_on_neutron_denom,
         ntrn: "untrn".to_string(),
-        supervault_lp: params.program.supervault_lp_denom.clone(),
     };
 
     let accounts = NeutronAccounts {
@@ -281,7 +265,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let libraries = NeutronLibraries {
-        supervault_lper: supervaults_lper_library_address,
+        mars_lending: mars_lending_library_address,
         clearing_queue: clearing_queue_library_address,
     };
 
@@ -293,7 +277,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         grpc_url: params.general.grpc_url.clone(),
         grpc_port: params.general.grpc_port.clone(),
         chain_id: params.general.chain_id.clone(),
-        supervault: params.program.supervault.clone(),
+        mars_credit_manager: params.program.mars_credit_manager.clone(),
         denoms,
         accounts,
         libraries,

@@ -1,3 +1,4 @@
+pub mod contracts;
 pub mod ibc_eureka_chain_ids;
 pub mod labels;
 pub mod phases;

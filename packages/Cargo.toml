@@ -23,3 +23,10 @@ opentelemetry-stdout                = { workspace = true }
 opentelemetry-appender-log          = { workspace = true }
 anyhow                              = { workspace = true }
 serde_json                          = { workspace = true }
+dotenv                               = { workspace = true }
+tokio                                = { workspace = true, features = ["full"] }
+toml                                 = { workspace = true }
+
+[[bin]]
+name = "neutron_upload"
+path = "src/bin/neutron_upload.rs"

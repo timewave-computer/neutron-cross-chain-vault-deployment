@@ -1,6 +1,6 @@
 # Deploy instructions
 
-1. If the wasm blobs are not uploaded, run the `neutron_upload.rs` script which will upload all contracts in /packages/src/contracts/cw and output the code ids in `neutron_code_ids.toml`. This file will be used to instantiate the contracts.
+1. If the wasm blobs are not uploaded, run `just neutron-upload`. This will upload all contracts in /packages/src/contracts/cw and output the code ids in `neutron_code_ids.toml`. This file will be used to instantiate the contracts.
 
 2. Fill in all the information in `neutron.toml` except the coprocessor app fields at the end and run the `neutron_deploy.rs` script which will instantiate all the contracts, trigger the ICA creation and output all relevant addresses in `neutron_strategy_config.toml` and `gaia_strategy_config.toml` which will be used by the strategist.
 

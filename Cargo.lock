@@ -1729,6 +1729,44 @@ dependencies = [
 ]
 
 [[package]]
+name = "cctp_lend_deploy"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "anyhow",
+ "bech32 0.11.0",
+ "bincode 1.3.3",
+ "cctp_lend_types",
+ "cosmrs",
+ "cosmwasm-std",
+ "dotenv",
+ "hex",
+ "packages",
+ "serde",
+ "sp1-sdk",
+ "tokio",
+ "toml",
+ "valence-account-utils",
+ "valence-authorization-utils",
+ "valence-clearing-queue-supervaults",
+ "valence-domain-clients",
+ "valence-ica-ibc-transfer",
+ "valence-library-utils",
+ "valence-mars-lending",
+ "valence-processor-utils",
+]
+
+[[package]]
+name = "cctp_lend_types"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "cosmwasm-std",
+ "serde",
+ "valence-strategist-utils",
+]
+
+[[package]]
 name = "cexpr"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5610,6 +5648,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "cosmwasm-std",
+ "dotenv",
  "env_logger",
  "log",
  "mmvault 0.1.6 (git+https://github.com/neutron-org/slinky-vault?rev=b2e2ff4)",
@@ -5620,6 +5659,8 @@ dependencies = [
  "opentelemetry_sdk",
  "serde",
  "serde_json",
+ "tokio",
+ "toml",
  "valence-authorization-utils",
  "valence-clearing-queue-supervaults",
  "valence-domain-clients",

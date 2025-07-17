@@ -6,7 +6,9 @@ use std::{
 };
 
 use cosmwasm_std::{Decimal, Uint64, Uint128};
-use packages::verification::VALENCE_NEUTRON_VERIFICATION_GATEWAY;
+use packages::{
+    contracts::PATH_NEUTRON_CODE_IDS, verification::VALENCE_NEUTRON_VERIFICATION_GATEWAY,
+};
 use serde::Deserialize;
 use valence_clearing_queue_supervaults::msg::SupervaultSettlementInfo;
 use valence_domain_clients::{
@@ -125,9 +127,8 @@ async fn main() -> anyhow::Result<()> {
     let params: Parameters = toml::from_str(&parameters).expect("Failed to parse TOML");
 
     // Read code IDS from the code ids file
-    let code_ids_content =
-        fs::read_to_string(current_dir.join(format!("{OUTPUTS_DIR}/neutron_code_ids.toml")))
-            .expect("Failed to read code ids file");
+    let code_ids_content = fs::read_to_string(current_dir.join(PATH_NEUTRON_CODE_IDS))
+        .expect("Failed to read code ids file");
     let uploaded_contracts: UploadedContracts =
         toml::from_str(&code_ids_content).expect("Failed to parse code ids");
 

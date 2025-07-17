@@ -14,7 +14,7 @@ We will need to convert this new noble bech32 address into a bytes32 address and
 
 Set it also in `noble_strategy_config.toml` so that the strategist can query this account if needed.
 
-3. Deploy on Ethereum running `ethereum_deploy.rs`. 
+3. Deploy on Ethereum running `ethereum_deploy.rs`.
 
 4. Now that we have deployed on both Ethereum and Neutron we can finalize the Neutron coprocessor app and get the ID.
 

@@ -6,3 +6,6 @@ compile circuit:
     deploy circuit \
     --controller ./coprocessor-apps/{{circuit}}/controller \
     --circuit {{circuit}}-circuit
+
+neutron-upload:
+    cargo run --package packages --bin neutron_upload
