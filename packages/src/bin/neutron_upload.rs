@@ -1,17 +1,11 @@
 use std::{collections::HashMap, env, fs};
 
-use packages::contracts::PATH_NEUTRON_CODE_IDS;
-use serde::{Deserialize, Serialize};
+use packages::contracts::{UploadedContracts, PATH_NEUTRON_CODE_IDS};
 use valence_domain_clients::{clients::neutron::NeutronClient, cosmos::wasm_client::WasmClient};
 
 const GRPC_URL: &str = "http://rpc.neutron.quokkastake.io";
 const GRPC_PORT: &str = "9090";
 const CHAIN_ID: &str = "neutron-1";
-
-#[derive(Deserialize, Serialize)]
-struct UploadedContracts {
-    code_ids: HashMap<String, u64>,
-}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

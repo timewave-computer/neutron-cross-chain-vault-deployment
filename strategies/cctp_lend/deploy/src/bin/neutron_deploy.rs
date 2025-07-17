@@ -1,4 +1,4 @@
-use std::{collections::HashMap, env, error::Error, fs, time::SystemTime};
+use std::{env, error::Error, fs, time::SystemTime};
 
 use cctp_lend_deploy::{INPUTS_DIR, OUTPUTS_DIR, UUSDC_DENOM};
 use cctp_lend_types::{
@@ -10,7 +10,8 @@ use cctp_lend_types::{
 };
 use cosmwasm_std::{Decimal, Uint128};
 use packages::{
-    contracts::PATH_NEUTRON_CODE_IDS, verification::VALENCE_NEUTRON_VERIFICATION_GATEWAY,
+    contracts::{PATH_NEUTRON_CODE_IDS, UploadedContracts},
+    verification::VALENCE_NEUTRON_VERIFICATION_GATEWAY,
 };
 use serde::Deserialize;
 use valence_domain_clients::{
@@ -19,11 +20,6 @@ use valence_domain_clients::{
 };
 
 use valence_library_utils::LibraryAccountType;
-
-#[derive(Deserialize, Debug)]
-struct UploadedContracts {
-    code_ids: HashMap<String, u64>,
-}
 
 #[derive(Deserialize, Debug)]
 struct Parameters {
