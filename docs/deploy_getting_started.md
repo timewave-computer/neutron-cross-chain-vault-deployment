@@ -64,9 +64,9 @@ This step will produce the following:
 
 This script deploys the contracts on Ethereum.
 
-- **For `wbtc` and `lombard_btc`:** You must first copy the `ica_address` from the `gaia_strategy_config.toml` generated in the previous step into the `ethereum.toml` file.
+- **For `wbtc`:** You must first copy the `ica_address` from the `gaia_strategy_config.toml` generated in the previous step into the `ethereum.toml` file, placing it under `eureka_transfer.recipient`.
 
-- **For `usdc`:** The ICA address is passed differently (as bytes32), and the script handles the conversion.
+- **For `usdc` and `cctp_lend`:** The ICA address is passed differently (as bytes32), and the script handles the conversion.
 
 Once the configuration is ready, run the deployment script:
 
