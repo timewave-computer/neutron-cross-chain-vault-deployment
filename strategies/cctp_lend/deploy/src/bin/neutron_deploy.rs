@@ -1,6 +1,6 @@
 use std::{env, error::Error, fs, time::SystemTime};
 
-use cctp_lend_deploy::{INPUTS_DIR, OUTPUTS_DIR, UUSDC_DENOM};
+use cctp_lend_deploy::{INPUTS_DIR, OUTPUTS_DIR};
 use cctp_lend_types::{
     neutron_config::{
         NeutronAccounts, NeutronCoprocessorAppIds, NeutronDenoms, NeutronLibraries,
@@ -11,6 +11,7 @@ use cctp_lend_types::{
 use cosmwasm_std::{Decimal, Uint128};
 use packages::{
     contracts::{PATH_NEUTRON_CODE_IDS, UploadedContracts},
+    types::inputs::ChainClientInputs,
     verification::VALENCE_NEUTRON_VERIFICATION_GATEWAY,
 };
 use serde::Deserialize;
@@ -294,11 +295,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
     )
     .expect("Failed to write Neutron Strategy Config to file");
 
+    let noble_inputs = fs::read_to_string(current_dir.join(format!("{INPUTS_DIR}/noble.toml")))
+        .expect("Failed to read file");
+
+    let noble_inputs: ChainClientInputs =
+        toml::from_str(&noble_inputs).expect("Failed to parse noble toml inputs");
+
     let noble_cfg = NobleStrategyConfig {
-        grpc_url: "grpc_url".to_string(),
-        grpc_port: "grpc_port".to_string(),
-        chain_id: "chain_id".to_string(),
-        chain_denom: UUSDC_DENOM.to_string(),
+        grpc_url: noble_inputs.grpc_url.to_string(),
+        grpc_port: noble_inputs.grpc_port.to_string(),
+        chain_id: noble_inputs.chain_id.to_string(),
+        chain_denom: noble_inputs.chain_denom.to_string(),
         forwarding_account: "noble_forwarding_account".to_string(),
     };
 
