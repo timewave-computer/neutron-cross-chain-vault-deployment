@@ -42,11 +42,10 @@ Before deploying, you must configure the parameters for your chosen strategy.
 This step uploads the compiled smart contracts to Neutron. You only need to do this once if the contracts haven't changed.
 
 ```bash
-# Replace <strategy-name> with 'wbtc', 'lombard_btc', or 'usdc'
-cargo run --bin neutron_upload -p <strategy-name>-deploy
+just neutron-upload
 ```
 
-This command reads the contracts from `/packages/src/contracts/cw`, uploads them, and creates a `neutron_code_ids.toml` file in the strategy's deploy source folder with the resulting code IDs.
+This command reads the contracts from `/packages/src/contracts/cw`, uploads them, and creates a `neutron_code_ids.toml` file in the `packages/src/contracts` directory with the resulting code IDs. This file will be read by all strategies during the deployment phase as for the most part they rely on the same on-chain contracts.
 
 ### Step 3: Deploy on Neutron
 
