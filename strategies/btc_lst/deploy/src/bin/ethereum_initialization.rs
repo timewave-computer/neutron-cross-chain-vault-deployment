@@ -1,12 +1,12 @@
 use std::{env, fs};
 
-use alloy::{
-    hex::FromHex,
-    primitives::{Address, FixedBytes},
-};
+use alloy::{hex::FromHex, primitives::FixedBytes};
 use btc_lst_deploy::{INPUTS_DIR, OUTPUTS_DIR};
 use btc_lst_types::ethereum_config::EthereumStrategyConfig;
-use packages::types::{inputs::EurekaTransferCoprocessorApp, sol_types::Authorization};
+use packages::types::{
+    inputs::{EurekaTransferCoprocessorApp, VaultInput},
+    sol_types::Authorization,
+};
 use serde::Deserialize;
 use sp1_sdk::{HashableKey, SP1VerifyingKey};
 use valence_domain_clients::{
@@ -18,18 +18,13 @@ use valence_domain_clients::{
 #[derive(Deserialize, Debug)]
 struct Parameters {
     general: General,
-    vault: Vault,
+    vault: VaultInput,
     coprocessor_app: EurekaTransferCoprocessorApp,
 }
 
 #[derive(Deserialize, Debug)]
 struct General {
     rpc_url: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct Vault {
-    strategist: Address,
 }
 
 #[tokio::main]

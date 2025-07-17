@@ -6,9 +6,12 @@ use alloy::{
 };
 use packages::{
     labels::CCTP_TRANSFER_LABEL,
-    types::sol_types::{
-        Authorization::{self, AuthorizationData},
-        CCTPTransfer,
+    types::{
+        inputs::VaultInput,
+        sol_types::{
+            Authorization::{self, AuthorizationData},
+            CCTPTransfer,
+        },
     },
 };
 use serde::Deserialize;
@@ -22,17 +25,12 @@ use valence_domain_clients::{
 #[derive(Deserialize, Debug)]
 struct Parameters {
     general: General,
-    vault: Vault,
+    vault: VaultInput,
 }
 
 #[derive(Deserialize, Debug)]
 struct General {
     rpc_url: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct Vault {
-    strategist: Address,
 }
 
 #[tokio::main]

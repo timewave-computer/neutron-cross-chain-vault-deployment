@@ -1,3 +1,4 @@
+use alloy::primitives::Address;
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
@@ -6,6 +7,11 @@ pub struct ChainClientInputs {
     pub grpc_port: String,
     pub chain_id: String,
     pub chain_denom: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct VaultInput {
+    pub strategist: Address,
 }
 
 #[derive(Deserialize, Debug)]

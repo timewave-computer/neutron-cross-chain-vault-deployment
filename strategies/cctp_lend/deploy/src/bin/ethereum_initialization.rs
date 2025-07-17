@@ -1,16 +1,16 @@
 use std::{env, error::Error, fs};
 
-use alloy::{
-    primitives::{Address, FixedBytes},
-    sol_types::SolCall,
-};
+use alloy::{primitives::FixedBytes, sol_types::SolCall};
 use cctp_lend_deploy::{INPUTS_DIR, OUTPUTS_DIR};
 use cctp_lend_types::ethereum_config::EthereumStrategyConfig;
 use packages::{
     labels::CCTP_TRANSFER_LABEL,
-    types::sol_types::{
-        Authorization::{self, AuthorizationData},
-        CCTPTransfer,
+    types::{
+        inputs::VaultInput,
+        sol_types::{
+            Authorization::{self, AuthorizationData},
+            CCTPTransfer,
+        },
     },
 };
 use serde::Deserialize;
@@ -22,17 +22,12 @@ use valence_domain_clients::{
 #[derive(Deserialize, Debug)]
 struct Parameters {
     general: General,
-    vault: Vault,
+    vault: VaultInput,
 }
 
 #[derive(Deserialize, Debug)]
 struct General {
     rpc_url: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct Vault {
-    strategist: Address,
 }
 
 #[tokio::main]
