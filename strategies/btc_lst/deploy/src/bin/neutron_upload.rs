@@ -1,6 +1,6 @@
 use std::{collections::HashMap, env, fs};
 
-use btc_lst_deploy::OUTPUTS_DIR;
+use packages::contracts::PATH_NEUTRON_CODE_IDS;
 use serde::{Deserialize, Serialize};
 use valence_domain_clients::{clients::neutron::NeutronClient, cosmos::wasm_client::WasmClient};
 
@@ -50,7 +50,7 @@ async fn main() -> anyhow::Result<()> {
     let toml_content = toml::to_string_pretty(&uploaded_contracts)?;
     let current_dir = env::current_dir()?;
     fs::write(
-        current_dir.join(format!("{OUTPUTS_DIR}/neutron_code_ids.toml")),
+        current_dir.join(PATH_NEUTRON_CODE_IDS),
         toml_content.clone(),
     )?;
 

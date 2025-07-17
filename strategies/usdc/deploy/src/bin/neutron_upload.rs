@@ -1,7 +1,7 @@
 use std::{collections::HashMap, env, error::Error, fs};
 
+use packages::contracts::PATH_NEUTRON_CODE_IDS;
 use serde::{Deserialize, Serialize};
-use usdc_deploy::OUTPUTS_DIR;
 use valence_domain_clients::{clients::neutron::NeutronClient, cosmos::wasm_client::WasmClient};
 
 const GRPC_URL: &str = "http://rpc.neutron.quokkastake.io";
@@ -50,7 +50,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let toml_content = toml::to_string_pretty(&uploaded_contracts)?;
     let current_dir = env::current_dir()?;
     fs::write(
-        current_dir.join(format!("{OUTPUTS_DIR}/neutron_code_ids.toml")),
+        current_dir.join(PATH_NEUTRON_CODE_IDS),
         toml_content.clone(),
     )?;
 
