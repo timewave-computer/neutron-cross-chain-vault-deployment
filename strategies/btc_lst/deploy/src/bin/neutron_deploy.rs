@@ -15,6 +15,7 @@ use btc_lst_types::{
 use cosmwasm_std::{Decimal, Uint64, Uint128};
 use packages::{
     contracts::{PATH_NEUTRON_CODE_IDS, UploadedContracts},
+    types::inputs::ChainClientInputs,
     verification::VALENCE_NEUTRON_VERIFICATION_GATEWAY,
 };
 use serde::Deserialize;
@@ -697,11 +698,17 @@ async fn main() -> anyhow::Result<()> {
     };
     println!("ICA address: {ica_address}");
 
+    let gaia_inputs = fs::read_to_string(current_dir.join(format!("{INPUTS_DIR}/gaia.toml")))
+        .expect("Failed to read file");
+
+    let gaia_inputs: ChainClientInputs =
+        toml::from_str(&gaia_inputs).expect("Failed to parse gaia toml inputs");
+
     let gaia_cfg = GaiaStrategyConfig {
-        grpc_url: "grpc_url".to_string(),
-        grpc_port: "grpc_port".to_string(),
-        chain_id: "chain_id".to_string(),
-        chain_denom: "uatom".to_string(),
+        grpc_url: gaia_inputs.grpc_url.to_string(),
+        grpc_port: gaia_inputs.grpc_port.to_string(),
+        chain_id: gaia_inputs.chain_id.to_string(),
+        chain_denom: gaia_inputs.chain_denom.to_string(),
         deposit_denom: params.ica.deposit_token_on_hub_denom.clone(),
         ica_address,
     };

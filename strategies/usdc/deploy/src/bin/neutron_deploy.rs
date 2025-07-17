@@ -3,6 +3,7 @@ use std::{env, error::Error, fs, time::SystemTime};
 use cosmwasm_std::{Decimal, Uint128};
 use packages::{
     contracts::{PATH_NEUTRON_CODE_IDS, UploadedContracts},
+    types::inputs::ChainClientInputs,
     verification::VALENCE_NEUTRON_VERIFICATION_GATEWAY,
 };
 use serde::Deserialize;
@@ -49,14 +50,6 @@ struct Program {
 #[derive(Deserialize, Debug)]
 struct CoprocessorApp {
     clearing_queue_coprocessor_app_id: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct NobleInputs {
-    grpc_url: String,
-    grpc_port: String,
-    chain_id: String,
-    chain_denom: String,
 }
 
 #[tokio::main]
@@ -321,7 +314,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let noble_inputs = fs::read_to_string(current_dir.join(format!("{INPUTS_DIR}/noble.toml")))
         .expect("Failed to read file");
 
-    let noble_inputs: NobleInputs =
+    let noble_inputs: ChainClientInputs =
         toml::from_str(&noble_inputs).expect("Failed to parse noble toml inputs");
 
     let noble_cfg = NobleStrategyConfig {
