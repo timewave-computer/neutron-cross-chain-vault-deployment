@@ -12,3 +12,8 @@ pub struct ChainClientInputs {
 pub struct ClearingQueueCoprocessorApp {
     pub clearing_queue_coprocessor_app_id: String,
 }
+
+#[derive(Deserialize, Debug)]
+pub struct EurekaTransferCoprocessorApp {
+    pub eureka_transfer_coprocessor_app_id: String,
+}

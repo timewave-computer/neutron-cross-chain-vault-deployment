@@ -11,10 +11,13 @@ use lombard_btc_types::ethereum_config::{
     EthereumStrategyConfig,
 };
 use packages::{
-    types::sol_types::{
-        Authorization, BaseAccount, ERC1967Proxy, IBCEurekaTransfer, IBCEurekaTransferConfig,
-        OneWayVault::{self, FeeDistributionConfig, OneWayVaultConfig},
-        processor_contract::LiteProcessor,
+    types::{
+        inputs::EurekaTransferCoprocessorApp,
+        sol_types::{
+            Authorization, BaseAccount, ERC1967Proxy, IBCEurekaTransfer, IBCEurekaTransferConfig,
+            OneWayVault::{self, FeeDistributionConfig, OneWayVaultConfig},
+            processor_contract::LiteProcessor,
+        },
     },
     verification::VALENCE_ETHEREUM_VERIFICATION_GATEWAY,
 };
@@ -29,7 +32,7 @@ struct Parameters {
     general: General,
     vault: Vault,
     eureka_transfer: EurekaTransfer,
-    coprocessor_app: CoprocessorApp,
+    coprocessor_app: EurekaTransferCoprocessorApp,
 }
 
 #[derive(Deserialize, Debug)]
@@ -63,11 +66,6 @@ struct EurekaTransfer {
     source_client: String,
     timeout: u64,
     ibc_transfer_threshold_amt: u64,
-}
-
-#[derive(Deserialize, Debug)]
-struct CoprocessorApp {
-    eureka_transfer_coprocessor_app_id: String,
 }
 
 #[tokio::main]

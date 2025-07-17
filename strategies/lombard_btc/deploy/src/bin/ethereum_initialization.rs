@@ -6,7 +6,7 @@ use alloy::{
 };
 use lombard_btc_deploy::{INPUTS_DIR, OUTPUTS_DIR};
 use lombard_btc_types::ethereum_config::EthereumStrategyConfig;
-use packages::types::sol_types::Authorization;
+use packages::types::{inputs::EurekaTransferCoprocessorApp, sol_types::Authorization};
 use serde::Deserialize;
 use sp1_sdk::{HashableKey, SP1VerifyingKey};
 use valence_domain_clients::{
@@ -19,7 +19,7 @@ use valence_domain_clients::{
 struct Parameters {
     general: General,
     vault: Vault,
-    coprocessor_app: CoprocessorApp,
+    coprocessor_app: EurekaTransferCoprocessorApp,
 }
 
 #[derive(Deserialize, Debug)]
@@ -30,11 +30,6 @@ struct General {
 #[derive(Deserialize, Debug)]
 struct Vault {
     strategist: Address,
-}
-
-#[derive(Deserialize, Debug)]
-struct CoprocessorApp {
-    eureka_transfer_coprocessor_app_id: String,
 }
 
 #[tokio::main]
