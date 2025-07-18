@@ -700,10 +700,10 @@ async fn main() -> anyhow::Result<()> {
         toml::from_str(&gaia_inputs).expect("Failed to parse gaia toml inputs");
 
     let gaia_cfg = GaiaStrategyConfig {
-        grpc_url: gaia_inputs.grpc_url.to_string(),
-        grpc_port: gaia_inputs.grpc_port.to_string(),
-        chain_id: gaia_inputs.chain_id.to_string(),
-        chain_denom: gaia_inputs.chain_denom.to_string(),
+        grpc_url: gaia_inputs.grpc_url,
+        grpc_port: gaia_inputs.grpc_port,
+        chain_id: gaia_inputs.chain_id,
+        chain_denom: gaia_inputs.chain_denom,
         deposit_denom: params.ica.deposit_token_on_hub_denom.clone(),
         ica_address,
     };

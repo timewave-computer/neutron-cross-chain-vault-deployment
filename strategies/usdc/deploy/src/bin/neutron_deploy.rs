@@ -313,10 +313,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         toml::from_str(&noble_inputs).expect("Failed to parse noble toml inputs");
 
     let noble_cfg = NobleStrategyConfig {
-        grpc_url: noble_inputs.grpc_url.to_string(),
-        grpc_port: noble_inputs.grpc_port.to_string(),
-        chain_id: noble_inputs.chain_id.to_string(),
-        chain_denom: noble_inputs.chain_denom.to_string(),
+        grpc_url: noble_inputs.grpc_url,
+        grpc_port: noble_inputs.grpc_port,
+        chain_id: noble_inputs.chain_id,
+        chain_denom: noble_inputs.chain_denom,
         forwarding_account: "noble_forwarding_account".to_string(),
     };
 
