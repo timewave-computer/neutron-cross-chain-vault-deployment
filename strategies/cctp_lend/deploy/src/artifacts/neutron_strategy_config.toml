@@ -1,7 +1,6 @@
 grpc_url = "http://rpc.neutron.quokkastake.io"
 grpc_port = "9090"
 chain_id = "neutron-1"
-min_ibc_fee = "1"
 mars_credit_manager = "neutron1scjuh29rzffqzhgxusjd56f7qnf7r9e6rwxym6n65h9d3kkhfrqs0xm4dn"
 authorizations = "neutron1x63lhjd9et48ct6hygd2l03u27c4j409d0cw8tzxmau3yw0u8f6ql4usk6"
 processor = "neutron1tdpj4tjjvs32q670w460xmlf0zzlcfmvaaz5arej7yy47utaxdvquvzk63"
