@@ -8,7 +8,7 @@ use cctp_lend_types::{
     },
     noble_config::NobleStrategyConfig,
 };
-use cosmwasm_std::{Decimal, Uint128};
+use cosmwasm_std::Decimal;
 use packages::{
     contracts::{PATH_NEUTRON_CODE_IDS, UploadedContracts},
     types::inputs::{ChainClientInputs, ClearingQueueCoprocessorApp},
@@ -273,7 +273,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         denoms,
         accounts,
         libraries,
-        min_ibc_fee: Uint128::one(),
         authorizations: authorization_address,
         processor: processor_address,
         coprocessor_app_ids,

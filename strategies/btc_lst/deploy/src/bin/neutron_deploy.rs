@@ -646,7 +646,6 @@ async fn main() -> anyhow::Result<()> {
         denoms,
         accounts,
         libraries,
-        min_ibc_fee: Uint128::one(),
         authorizations: authorization_address,
         processor: processor_address,
         coprocessor_app_ids,
