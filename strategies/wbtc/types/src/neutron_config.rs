@@ -1,4 +1,3 @@
-use cosmwasm_std::Uint128;
 use serde::{Deserialize, Serialize};
 use valence_strategist_utils::worker::ValenceWorkerTomlSerde;
 
@@ -10,8 +9,6 @@ pub struct NeutronStrategyConfig {
     pub grpc_port: String,
     /// neutron chain id
     pub chain_id: String,
-    /// total amount of untrn required to initiate an ibc transfer from neutron
-    pub min_ibc_fee: Uint128,
 
     /// Mars protocol credit manager
     pub mars_credit_manager: String,
