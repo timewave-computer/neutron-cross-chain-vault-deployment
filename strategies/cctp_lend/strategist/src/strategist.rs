@@ -23,7 +23,7 @@ impl ValenceWorker for Strategy {
         info!(target: VALENCE_WORKER, "{}: Starting cycle...", self.get_name());
 
         // go into sentry (pre-flight) phase
-        // self.sentry().await?;
+        self.sentry().await?;
 
         let eth_rp: CustomProvider = self.eth_client.get_request_provider().await?;
 
