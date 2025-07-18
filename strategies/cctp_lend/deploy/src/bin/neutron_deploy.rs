@@ -1,6 +1,6 @@
-use std::{collections::HashMap, env, error::Error, fs, time::SystemTime};
+use std::{env, error::Error, fs, time::SystemTime};
 
-use cctp_lend_deploy::{INPUTS_DIR, OUTPUTS_DIR, UUSDC_DENOM};
+use cctp_lend_deploy::{INPUTS_DIR, OUTPUTS_DIR};
 use cctp_lend_types::{
     neutron_config::{
         NeutronAccounts, NeutronCoprocessorAppIds, NeutronDenoms, NeutronLibraries,
@@ -10,7 +10,9 @@ use cctp_lend_types::{
 };
 use cosmwasm_std::{Decimal, Uint128};
 use packages::{
-    contracts::PATH_NEUTRON_CODE_IDS, verification::VALENCE_NEUTRON_VERIFICATION_GATEWAY,
+    contracts::{PATH_NEUTRON_CODE_IDS, UploadedContracts},
+    types::inputs::{ChainClientInputs, ClearingQueueCoprocessorApp},
+    verification::VALENCE_NEUTRON_VERIFICATION_GATEWAY,
 };
 use serde::Deserialize;
 use valence_domain_clients::{
@@ -21,15 +23,10 @@ use valence_domain_clients::{
 use valence_library_utils::LibraryAccountType;
 
 #[derive(Deserialize, Debug)]
-struct UploadedContracts {
-    code_ids: HashMap<String, u64>,
-}
-
-#[derive(Deserialize, Debug)]
 struct Parameters {
     general: General,
     program: Program,
-    coprocessor_app: CoprocessorApp,
+    coprocessor_app: ClearingQueueCoprocessorApp,
 }
 
 #[derive(Deserialize, Debug)]
@@ -44,11 +41,6 @@ struct General {
 struct Program {
     deposit_token_on_neutron_denom: String,
     mars_credit_manager: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct CoprocessorApp {
-    clearing_queue_coprocessor_app_id: String,
 }
 
 #[tokio::main]
@@ -298,11 +290,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
     )
     .expect("Failed to write Neutron Strategy Config to file");
 
+    let noble_inputs = fs::read_to_string(current_dir.join(format!("{INPUTS_DIR}/noble.toml")))
+        .expect("Failed to read file");
+
+    let noble_inputs: ChainClientInputs =
+        toml::from_str(&noble_inputs).expect("Failed to parse noble toml inputs");
+
     let noble_cfg = NobleStrategyConfig {
-        grpc_url: "grpc_url".to_string(),
-        grpc_port: "grpc_port".to_string(),
-        chain_id: "chain_id".to_string(),
-        chain_denom: UUSDC_DENOM.to_string(),
+        grpc_url: noble_inputs.grpc_url,
+        grpc_port: noble_inputs.grpc_port,
+        chain_id: noble_inputs.chain_id,
+        chain_denom: noble_inputs.chain_denom,
         forwarding_account: "noble_forwarding_account".to_string(),
     };
 

@@ -1,6 +1,7 @@
 use std::{env, fs};
 
 use cosmwasm_std::Binary;
+use packages::types::inputs::ClearingQueueCoprocessorApp;
 use serde::Deserialize;
 use sp1_sdk::{HashableKey, SP1VerifyingKey};
 use valence_authorization_utils::{
@@ -31,18 +32,13 @@ use wbtc_types::{
 #[derive(Deserialize, Debug)]
 struct Parameters {
     general: General,
-    coprocessor_app: CoprocessorApp,
+    coprocessor_app: ClearingQueueCoprocessorApp,
 }
 
 #[derive(Deserialize, Debug)]
 struct General {
     owner: String,
     strategist: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct CoprocessorApp {
-    clearing_queue_coprocessor_app_id: String,
 }
 
 #[tokio::main]

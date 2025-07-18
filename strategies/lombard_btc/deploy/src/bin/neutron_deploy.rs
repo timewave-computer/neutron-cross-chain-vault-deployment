@@ -14,7 +14,9 @@ use lombard_btc_types::{
     },
 };
 use packages::{
-    contracts::PATH_NEUTRON_CODE_IDS, verification::VALENCE_NEUTRON_VERIFICATION_GATEWAY,
+    contracts::{PATH_NEUTRON_CODE_IDS, UploadedContracts},
+    types::inputs::{ChainClientInputs, ClearingQueueCoprocessorApp},
+    verification::VALENCE_NEUTRON_VERIFICATION_GATEWAY,
 };
 use serde::Deserialize;
 use valence_clearing_queue_supervaults::msg::SupervaultSettlementInfo;
@@ -29,16 +31,11 @@ use valence_library_utils::{LibraryAccountType, denoms::UncheckedDenom};
 use valence_splitter_library::msg::UncheckedSplitAmount;
 
 #[derive(Deserialize, Debug)]
-struct UploadedContracts {
-    code_ids: HashMap<String, u64>,
-}
-
-#[derive(Deserialize, Debug)]
 struct Parameters {
     general: General,
     ica: Ica,
     program: Program,
-    coprocessor_app: CoprocessorApp,
+    coprocessor_app: ClearingQueueCoprocessorApp,
 }
 
 #[derive(Deserialize, Debug)]
@@ -69,11 +66,6 @@ struct Program {
     initial_split_percentage_to_mars: u64,
     initial_split_percentage_to_supervault: u64,
     initial_settlement_ratio_percentage: u64,
-}
-
-#[derive(Deserialize, Debug)]
-struct CoprocessorApp {
-    clearing_queue_coprocessor_app_id: String,
 }
 
 #[tokio::main]
@@ -702,11 +694,17 @@ async fn main() -> anyhow::Result<()> {
     };
     println!("ICA address: {ica_address}");
 
+    let gaia_inputs = fs::read_to_string(current_dir.join(format!("{INPUTS_DIR}/gaia.toml")))
+        .expect("Failed to read file");
+
+    let gaia_inputs: ChainClientInputs =
+        toml::from_str(&gaia_inputs).expect("Failed to parse gaia toml inputs");
+
     let gaia_cfg = GaiaStrategyConfig {
-        grpc_url: "grpc_url".to_string(),
-        grpc_port: "grpc_port".to_string(),
-        chain_id: "chain_id".to_string(),
-        chain_denom: "uatom".to_string(),
+        grpc_url: gaia_inputs.grpc_url,
+        grpc_port: gaia_inputs.grpc_port,
+        chain_id: gaia_inputs.chain_id,
+        chain_denom: gaia_inputs.chain_denom,
         deposit_denom: params.ica.deposit_token_on_hub_denom.clone(),
         ica_address,
     };

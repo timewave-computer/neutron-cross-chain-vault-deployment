@@ -1,24 +1,31 @@
 use std::{collections::HashMap, env, fs};
 
-use packages::contracts::PATH_NEUTRON_CODE_IDS;
-use serde::{Deserialize, Serialize};
+use packages::{
+    contracts::{UploadedContracts, PATH_NEUTRON_CODE_IDS},
+    types::inputs::ChainClientInputs,
+};
 use valence_domain_clients::{clients::neutron::NeutronClient, cosmos::wasm_client::WasmClient};
-
-const GRPC_URL: &str = "http://rpc.neutron.quokkastake.io";
-const GRPC_PORT: &str = "9090";
-const CHAIN_ID: &str = "neutron-1";
-
-#[derive(Deserialize, Serialize)]
-struct UploadedContracts {
-    code_ids: HashMap<String, u64>,
-}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     dotenv::dotenv().ok();
-    let mnemonic = env::var("MNEMONIC").expect("mnemonic must be provided");
 
-    let neutron_client = NeutronClient::new(GRPC_URL, GRPC_PORT, &mnemonic, CHAIN_ID).await?;
+    let mnemonic = env::var("MNEMONIC").expect("mnemonic must be provided");
+    let current_dir = env::current_dir()?;
+
+    let neutron_inputs = fs::read_to_string(current_dir.join("neutron.toml"))
+        .expect("Failed to read neutron grpc config toml");
+
+    let neutron_inputs: ChainClientInputs =
+        toml::from_str(&neutron_inputs).expect("Failed to parse neutron toml inputs");
+
+    let neutron_client = NeutronClient::new(
+        &neutron_inputs.grpc_url,
+        &neutron_inputs.grpc_port,
+        &mnemonic,
+        &neutron_inputs.chain_id,
+    )
+    .await?;
 
     let mut uploaded_contracts = UploadedContracts {
         code_ids: HashMap::new(),

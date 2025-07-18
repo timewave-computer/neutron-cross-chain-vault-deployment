@@ -6,10 +6,13 @@ use alloy::{
 };
 use cosmwasm_std::Uint128;
 use packages::{
-    types::sol_types::{
-        Authorization, BaseAccount, ERC1967Proxy, IBCEurekaTransfer, IBCEurekaTransferConfig,
-        OneWayVault::{self, FeeDistributionConfig, OneWayVaultConfig},
-        processor_contract::LiteProcessor,
+    types::{
+        inputs::{EurekaTransfer, EurekaTransferCoprocessorApp},
+        sol_types::{
+            Authorization, BaseAccount, ERC1967Proxy, IBCEurekaTransfer, IBCEurekaTransferConfig,
+            OneWayVault::{self, FeeDistributionConfig, OneWayVaultConfig},
+            processor_contract::LiteProcessor,
+        },
     },
     verification::VALENCE_ETHEREUM_VERIFICATION_GATEWAY,
 };
@@ -29,7 +32,7 @@ struct Parameters {
     general: General,
     vault: Vault,
     eureka_transfer: EurekaTransfer,
-    coprocessor_app: CoprocessorApp,
+    coprocessor_app: EurekaTransferCoprocessorApp,
 }
 
 #[derive(Deserialize, Debug)]
@@ -54,20 +57,6 @@ struct Vault {
     starting_rate: U256,
     min_rate_update_delay: u64,
     max_rate_update_delay: u64,
-}
-
-#[derive(Deserialize, Debug)]
-struct EurekaTransfer {
-    handler: Address,
-    recipient: String,
-    source_client: String,
-    timeout: u64,
-    ibc_transfer_threshold_amt: u64,
-}
-
-#[derive(Deserialize, Debug)]
-struct CoprocessorApp {
-    eureka_transfer_coprocessor_app_id: String,
 }
 
 #[tokio::main]
