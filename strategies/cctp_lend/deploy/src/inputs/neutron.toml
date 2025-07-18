@@ -7,7 +7,7 @@ strategist = "neutron1m6w8n0hluq7avn40hj0n6jnj8ejhykfrwfnnjh" # Should be strate
 
 [program]
 deposit_token_on_neutron_denom = "ibc/B559A80D62249C8AA07A380E2A2BEA6E5CA9A6F079C912C3A9E9B494105E4F81" # USDC on Neutron
-mars_credit_manager = "neutron1scjuh29rzffqzhgxusjd56f7qnf7r9e6rwxym6n65h9d3kkhfrqs0xm4dn"              # Temporary Mars Credit Manager address
+mars_credit_manager = "neutron1qdzn3l4kn7gsjna2tfpg3g3mwd6kunx4p50lfya59k02846xas6qslgs3r"              # prod Mars Credit Manager address
 
 [coprocessor_app]
 clearing_queue_coprocessor_app_id = "4a522f0e8fcb9631dd95dd8ea8604f2213161931fe3c6d06958d94a8cf5e625b"
