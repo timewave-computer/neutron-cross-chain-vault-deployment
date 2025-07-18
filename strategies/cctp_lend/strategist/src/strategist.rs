@@ -28,19 +28,19 @@ impl ValenceWorker for Strategy {
         let eth_rp: CustomProvider = self.eth_client.get_request_provider().await?;
 
         // first we carry out the deposit flow
-        // self.deposit(&eth_rp).await?;
+        self.deposit(&eth_rp).await?;
 
         // after deposit flow is complete, we process the new obligations
-        // self.register_withdraw_obligations().await?;
+        self.register_withdraw_obligations().await?;
 
         // with new obligations registered into the clearing queue, we
         // carry out the settlements
-        // self.settlement().await?;
+        self.settlement().await?;
 
         // having processed all new exit requests after the deposit flow,
         // the epoch is ready to be concluded.
         // we perform the final accounting flow and post vault update.
-        // self.update(&eth_rp).await?;
+        self.update(&eth_rp).await?;
 
         Ok(())
     }
