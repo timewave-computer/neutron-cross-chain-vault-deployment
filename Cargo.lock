@@ -1757,6 +1757,39 @@ dependencies = [
 ]
 
 [[package]]
+name = "cctp_lend_strategist"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "anyhow",
+ "async-trait",
+ "cctp_lend_types",
+ "cosmwasm-std",
+ "dotenv",
+ "env_logger",
+ "hex",
+ "log",
+ "mmvault 0.1.6 (git+https://github.com/neutron-org/slinky-vault?rev=b2e2ff4)",
+ "packages",
+ "serde",
+ "serde_json",
+ "tokio",
+ "valence-account-utils",
+ "valence-authorization-utils",
+ "valence-clearing-queue-supervaults",
+ "valence-domain-clients",
+ "valence-forwarder-library",
+ "valence-ica-ibc-transfer",
+ "valence-lending-utils",
+ "valence-library-utils",
+ "valence-mars-lending",
+ "valence-processor-utils",
+ "valence-splitter-library",
+ "valence-strategist-utils",
+ "valence-supervaults-lper",
+]
+
+[[package]]
 name = "cctp_lend_types"
 version = "0.1.0"
 dependencies = [

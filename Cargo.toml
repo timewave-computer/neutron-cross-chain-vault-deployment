@@ -12,6 +12,7 @@ members = [
   "strategies/usdc/strategist",
   "strategies/cctp_lend/types",
   "strategies/cctp_lend/deploy",
+  "strategies/cctp_lend/strategist",
   "strategies/btc_lst/deploy",
   "strategies/btc_lst/strategist",
   "strategies/btc_lst/types",
