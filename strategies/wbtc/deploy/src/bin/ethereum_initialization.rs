@@ -1,6 +1,6 @@
 use std::{env, fs};
 
-use alloy::{hex::FromHex, primitives::FixedBytes};
+use alloy::{hex::FromHex, primitives::Bytes};
 use packages::types::{
     inputs::{EurekaTransferCoprocessorApp, VaultInput},
     sol_types::Authorization,
@@ -62,7 +62,7 @@ async fn main() -> anyhow::Result<()> {
         .await?;
 
     let sp1_program_vk: SP1VerifyingKey = bincode::deserialize(&program_vk)?;
-    let program_vk = FixedBytes::<32>::from_hex(sp1_program_vk.bytes32()).unwrap();
+    let program_vk = Bytes::from_hex(sp1_program_vk.bytes32()).unwrap();
     let registries = vec![0]; // Only one and IBC Eureka app will use registry 0
     let authorized_addresses = vec![parameters.vault.strategist];
     let vks = vec![program_vk];
