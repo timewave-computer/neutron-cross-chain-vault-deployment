@@ -1,8 +1,9 @@
 use std::{env, error::Error, fs};
 
 use cosmwasm_std::Binary;
-use packages::labels::{
-    PROVIDE_LIQUIDIY_LABEL, REGISTER_OBLIGATION_LABEL, SETTLE_OBLIGATION_LABEL,
+use packages::{
+    labels::{PROVIDE_LIQUIDIY_LABEL, REGISTER_OBLIGATION_LABEL, SETTLE_OBLIGATION_LABEL},
+    types::inputs::ClearingQueueCoprocessorApp,
 };
 use serde::Deserialize;
 use sp1_sdk::{HashableKey, SP1VerifyingKey};
@@ -26,17 +27,12 @@ use valence_library_utils::LibraryAccountType;
 #[derive(Deserialize, Debug)]
 struct Parameters {
     general: General,
-    coprocessor_app: CoprocessorApp,
+    coprocessor_app: ClearingQueueCoprocessorApp,
 }
 
 #[derive(Deserialize, Debug)]
 struct General {
     strategist: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct CoprocessorApp {
-    clearing_queue_coprocessor_app_id: String,
 }
 
 #[tokio::main]

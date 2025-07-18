@@ -7,7 +7,9 @@ use std::{
 
 use cosmwasm_std::{Decimal, Uint64, Uint128};
 use packages::{
-    contracts::PATH_NEUTRON_CODE_IDS, verification::VALENCE_NEUTRON_VERIFICATION_GATEWAY,
+    contracts::{PATH_NEUTRON_CODE_IDS, UploadedContracts},
+    types::inputs::ClearingQueueCoprocessorApp,
+    verification::VALENCE_NEUTRON_VERIFICATION_GATEWAY,
 };
 use serde::Deserialize;
 use valence_clearing_queue_supervaults::msg::SupervaultSettlementInfo;
@@ -30,16 +32,11 @@ use valence_library_utils::{LibraryAccountType, denoms::UncheckedDenom};
 use valence_splitter_library::msg::{UncheckedSplitAmount, UncheckedSplitConfig};
 
 #[derive(Deserialize, Debug)]
-struct UploadedContracts {
-    code_ids: HashMap<String, u64>,
-}
-
-#[derive(Deserialize, Debug)]
 struct Parameters {
     general: General,
     ica: Ica,
     program: Program,
-    coprocessor_app: CoprocessorApp,
+    coprocessor_app: ClearingQueueCoprocessorApp,
 }
 
 #[derive(Deserialize, Debug)]
@@ -107,11 +104,6 @@ struct Program {
     ebtc_denom: String,
     pumpbtc_denom: String,
     bedrockbtc_denom: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct CoprocessorApp {
-    clearing_queue_coprocessor_app_id: String,
 }
 
 #[tokio::main]

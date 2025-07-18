@@ -3,9 +3,12 @@ use std::{env, error::Error, fs};
 use cctp_lend_deploy::{INPUTS_DIR, OUTPUTS_DIR};
 use cctp_lend_types::neutron_config::NeutronStrategyConfig;
 use cosmwasm_std::Binary;
-use packages::labels::{
-    LEND_AND_PROVIDE_LIQUIDITY_LABEL, MARS_WITHDRAW_LABEL, REGISTER_OBLIGATION_LABEL,
-    SETTLE_OBLIGATION_LABEL,
+use packages::{
+    labels::{
+        LEND_AND_PROVIDE_LIQUIDITY_LABEL, MARS_WITHDRAW_LABEL, REGISTER_OBLIGATION_LABEL,
+        SETTLE_OBLIGATION_LABEL,
+    },
+    types::inputs::ClearingQueueCoprocessorApp,
 };
 use serde::Deserialize;
 use sp1_sdk::{HashableKey, SP1VerifyingKey};
@@ -27,17 +30,12 @@ use valence_library_utils::LibraryAccountType;
 #[derive(Deserialize, Debug)]
 struct Parameters {
     general: General,
-    coprocessor_app: CoprocessorApp,
+    coprocessor_app: ClearingQueueCoprocessorApp,
 }
 
 #[derive(Deserialize, Debug)]
 struct General {
     strategist: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct CoprocessorApp {
-    clearing_queue_coprocessor_app_id: String,
 }
 
 #[tokio::main]
