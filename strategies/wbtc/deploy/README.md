@@ -8,9 +8,11 @@
 
 4. Now that we have deployed on both Ethereum and Neutron we can finalize the coprocessor apps and get their relevant IDs.
 
-5. Run `neutron_initialization.rs` which will create all the authorizations including the ZK authorization.
+5. Add the IDs to `neutron_strategy_config.toml`, `neutron.toml`, `ethereum_strategy_config.toml` and `ethereum.toml` in the relevant fields.
 
-6. Run `ethereum_initialization.rs` which will create the relevant IBC Eureka ZK Authorization on the authorization contract that the strategist can execute.
+6. Run `neutron_initialization.rs` which will create all the authorizations including the ZK authorization.
+
+7. Run `ethereum_initialization.rs` which will create the relevant IBC Eureka ZK Authorization on the authorization contract that the strategist can execute.
 
 ### Notes for Strategist
 
