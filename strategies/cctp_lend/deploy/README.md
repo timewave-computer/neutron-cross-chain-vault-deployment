@@ -18,6 +18,8 @@ Set it also in `noble_strategy_config.toml` so that the strategist can query thi
 
 4. Now that we have deployed on both Ethereum and Neutron we can finalize the Neutron coprocessor app and get the ID.
 
-5. Run `neutron_initialization.rs` which will create all the authorizations including the ZK authorization.
+5. Add the ID to `neutron_strategy_config.toml` and `neutron.toml` in the relevant coprocessor_app_id field.
 
-6. Run `ethereum_initialization.rs` which will create the standard authorization. There's no ZK flow for Ethereum because we are using CCTP transfer.
+6. Run `neutron_initialization.rs` which will create all the authorizations including the ZK authorization.
+
+7. Run `ethereum_initialization.rs` which will create the standard authorization. There's no ZK flow for Ethereum because we are using CCTP transfer.
