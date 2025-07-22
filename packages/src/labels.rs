@@ -6,3 +6,4 @@ pub const REGISTER_OBLIGATION_LABEL: &str = "register_obligation6";
 pub const PHASE_SHIFT_LABEL: &str = "phase_shift";
 pub const PROVIDE_LIQUIDIY_LABEL: &str = "provide_liquidity";
 pub const CCTP_TRANSFER_LABEL: &str = "cctp_transfer";
+pub const MAXBTC_ISSUE_LABEL: &str = "maxbtc_issue";
