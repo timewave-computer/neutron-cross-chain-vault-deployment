@@ -17,6 +17,7 @@ members = [
   "strategies/btc_lst/strategist",
   "strategies/btc_lst/types",
   "strategies/maxbtc_mint/deploy",
+  "strategies/maxbtc_mint/strategist",
   "strategies/maxbtc_mint/types",
   "coprocessor-apps/clearing-queue/circuit",
   "coprocessor-apps/clearing-queue/controller",

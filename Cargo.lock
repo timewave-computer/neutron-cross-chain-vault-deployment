@@ -4831,6 +4831,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "maxbtc_mint_strategist"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "anyhow",
+ "async-trait",
+ "cosmwasm-std",
+ "dotenv",
+ "env_logger",
+ "hex",
+ "log",
+ "maxbtc_mint_types",
+ "mmvault 0.1.6 (git+https://github.com/neutron-org/slinky-vault?rev=b2e2ff4)",
+ "packages",
+ "serde",
+ "serde_json",
+ "tokio",
+ "valence-account-utils",
+ "valence-authorization-utils",
+ "valence-clearing-queue-supervaults",
+ "valence-domain-clients",
+ "valence-ica-ibc-transfer",
+ "valence-lending-utils",
+ "valence-library-utils",
+ "valence-maxbtc-issuer",
+ "valence-processor-utils",
+ "valence-strategist-utils",
+]
+
+[[package]]
 name = "maxbtc_mint_types"
 version = "0.1.0"
 dependencies = [
