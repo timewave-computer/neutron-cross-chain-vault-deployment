@@ -14,7 +14,7 @@ deposit_fee_bps          = 100                                          # 1% dep
 withdraw_fee_bps         = 100                                          # 1% withdraw fee
 max_rate_increment_bps   = 2000                                         # 20% maximum rate increment per update
 max_rate_decrement_bps   = 2000                                         # 20% maximum rate decrement per update
-starting_rate            = "100000000"                                  # 1e8 - bitcoin LST precision - 8 decimals
+starting_rate            = "100000000"                                  # Should be the maxBTC rate for the deposit token
 min_rate_update_delay    = 300                                          # 5 minutes - Minimum delay for rate updates - for testing purposes      
 max_rate_update_delay    = 345600                                       # 4 days in seconds - Maximum delay for rate updates before vault gets paused
 

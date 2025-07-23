@@ -1,5 +1,6 @@
 pub mod logging;
 pub mod mars;
+pub mod maxbtc;
 pub mod obligation;
 pub mod skip;
 pub mod supervaults;

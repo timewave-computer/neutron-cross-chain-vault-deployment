@@ -245,10 +245,10 @@ async fn main() -> anyhow::Result<()> {
 
     // Instantiate the clearing queue library
     // We are going to reuse the same clearing library even though we are not using mars nor supervaults
-    // We just need to payout everything in 1 denom from the settlement account, and this works.
+    // We just need to payout everything in 1 denom (maxBTC) from the settlement account, and this works.
     let clearing_config = valence_clearing_queue_supervaults::msg::LibraryConfig {
         settlement_acc_addr: LibraryAccountType::Addr(predicted_base_accounts[1].clone()),
-        denom: params.program.deposit_token_on_neutron_denom.clone(),
+        denom: params.program.maxbtc_denom.clone(),
         latest_id: None,
         mars_settlement_ratio: Decimal::percent(100),
         supervaults_settlement_info: vec![],
