@@ -1,13 +1,12 @@
 use alloy::{primitives::U256, providers::Provider};
 use anyhow::anyhow;
 use cosmwasm_std::{Decimal, Uint128};
-use log::{info, warn};
+use log::info;
 use packages::{
     phases::UPDATE_PHASE,
     types::sol_types::{BaseAccount, ERC20, OneWayVault},
-    utils::{self},
+    utils::{self, valence_core},
 };
-use std::cmp::Ordering;
 use valence_domain_clients::{
     cosmos::base_client::BaseClient,
     evm::base_client::{CustomProvider, EvmBaseClient},
@@ -53,8 +52,15 @@ impl Strategy {
 
         // validate that the newly calculated redemption rate does not exceed
         // the max rate update thresholds relative to the current rate
-        self.validate_new_redemption_rate(eth_rp, redemption_rate_sol_u256)
-            .await?;
+        valence_core::validate_new_redemption_rate(
+            self.cfg.ethereum.libraries.one_way_vault,
+            &self.eth_client,
+            eth_rp,
+            redemption_rate_sol_u256,
+            self.cfg.ethereum.max_rate_decrement_bps,
+            self.cfg.ethereum.max_rate_increment_bps,
+        )
+        .await?;
 
         info!(target: UPDATE_PHASE, "updating ethereum vault redemption rate");
         let update_request = one_way_vault_contract
@@ -66,82 +72,6 @@ impl Strategy {
         eth_rp
             .get_transaction_receipt(update_vault_exec_response.transaction_hash)
             .await?;
-
-        Ok(())
-    }
-
-    /// checks that the newly calculated redemption rate is within the acceptable
-    /// rate update bounds relative to the current rate. pauses the vault otherwise.
-    async fn validate_new_redemption_rate(
-        &self,
-        eth_rp: &CustomProvider,
-        new_redemption_rate: U256,
-    ) -> anyhow::Result<()> {
-        let one_way_vault_contract =
-            OneWayVault::new(self.cfg.ethereum.libraries.one_way_vault, &eth_rp);
-
-        let current_vault_rate = self
-            .eth_client
-            .query(one_way_vault_contract.redemptionRate())
-            .await?
-            ._0;
-
-        let current_rate_u128 = u128::try_from(current_vault_rate)?;
-        info!(target: UPDATE_PHASE, "pre_update_rate = {current_rate_u128}");
-
-        // get the ratio of newly calculated redemption rate over the previous rate
-        let redemption_rate_u128 = u128::try_from(new_redemption_rate)?;
-        info!(target: UPDATE_PHASE, "new_rate = {redemption_rate_u128}");
-
-        let rate_change_decimal =
-            Decimal::checked_from_ratio(redemption_rate_u128, current_rate_u128)?;
-
-        info!(target: UPDATE_PHASE, "new to old rate ratio = {rate_change_decimal}");
-
-        match rate_change_decimal.cmp(&Decimal::one()) {
-            // rate change is less than 1.0 -> redemption rate decreased
-            Ordering::Less => {
-                let rate_delta = Decimal::one() - rate_change_decimal;
-                info!(target: UPDATE_PHASE, "redemption rate epoch delta = -{rate_delta}");
-                let decrement_threshold = Decimal::bps(self.cfg.ethereum.max_rate_decrement_bps);
-                if rate_delta > decrement_threshold {
-                    warn!(target: UPDATE_PHASE, "rate delta exceeds the threshold of {decrement_threshold}; pausing the vault");
-                    let pause_request = one_way_vault_contract.pause().into_transaction_request();
-                    let pause_vault_exec_response =
-                        self.eth_client.sign_and_send(pause_request).await?;
-                    eth_rp
-                        .get_transaction_receipt(pause_vault_exec_response.transaction_hash)
-                        .await?;
-
-                    return Err(anyhow!(
-                        "newly calculated rate exceeds the rate update thresholds"
-                    ));
-                }
-            }
-            // rate change is exactly 1.0 -> redemption rate did not change
-            Ordering::Equal => {
-                info!(target: UPDATE_PHASE, "redemption rate epoch delta = 0.0");
-            }
-            // rate change is greater than 1.0 -> redemption rate increased
-            Ordering::Greater => {
-                let rate_delta = rate_change_decimal - Decimal::one();
-                info!(target: UPDATE_PHASE, "redemption rate epoch delta = +{rate_delta}");
-                let increment_threshold = Decimal::bps(self.cfg.ethereum.max_rate_increment_bps);
-                if rate_delta > increment_threshold {
-                    warn!(target: UPDATE_PHASE, "rate delta exceeds the threshold of {increment_threshold}; pausing the vault");
-                    let pause_request = one_way_vault_contract.pause().into_transaction_request();
-                    let pause_vault_exec_response =
-                        self.eth_client.sign_and_send(pause_request).await?;
-                    eth_rp
-                        .get_transaction_receipt(pause_vault_exec_response.transaction_hash)
-                        .await?;
-
-                    return Err(anyhow!(
-                        "newly calculated rate exceeds the rate update thresholds"
-                    ));
-                }
-            }
-        }
 
         Ok(())
     }
