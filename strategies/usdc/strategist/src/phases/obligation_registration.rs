@@ -45,13 +45,12 @@ impl Strategy {
             .query_vault_withdraw_requests(Some(start_id), true)
             .await?;
 
-        // if new_obligations.is_empty() {
-        //     info!(target: REGISTRATION_PHASE, "no new withdraw requests; concluding obligation registration phase...");
-        //     return Ok(());
-        // }
+        if new_obligations.is_empty() {
+            info!(target: REGISTRATION_PHASE, "no new withdraw requests; concluding obligation registration phase...");
+            return Ok(());
+        }
         info!(target: REGISTRATION_PHASE, "new_obligations = {new_obligations:#?}");
 
-        let new_obligations = vec![(3, true)];
         // process the new OneWayVault Withdraw events in order from the oldest
         // to the newest, posting them to the coprocessor to obtain a ZKP
         for (obligation_id, ..) in new_obligations {
