@@ -1905,7 +1905,7 @@ dependencies = [
  "serde_json",
  "valence-authorization-utils",
  "valence-clearing-queue-supervaults",
- "valence-coprocessor 0.3.7",
+ "valence-coprocessor",
  "valence-library-utils",
 ]
 
@@ -1923,7 +1923,7 @@ dependencies = [
  "hex",
  "serde",
  "serde_json",
- "valence-coprocessor 0.3.7",
+ "valence-coprocessor",
  "valence-coprocessor-wasm",
 ]
 
@@ -1942,7 +1942,7 @@ dependencies = [
  "rlp 0.6.1",
  "serde",
  "serde_json",
- "valence-coprocessor 0.3.7",
+ "valence-coprocessor",
  "valence-coprocessor-wasm",
 ]
 
@@ -2933,7 +2933,7 @@ version = "0.1.0"
 dependencies = [
  "alloy-primitives 0.8.25",
  "alloy-sol-types 0.8.25",
- "valence-coprocessor 0.3.7",
+ "valence-coprocessor",
 ]
 
 [[package]]
@@ -2943,7 +2943,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "serde_json",
- "valence-coprocessor 0.3.7",
+ "valence-coprocessor",
  "valence-coprocessor-wasm",
 ]
 
@@ -4663,7 +4663,7 @@ dependencies = [
  "alloy-sol-types 0.8.25",
  "anyhow",
  "serde_json",
- "valence-coprocessor 0.3.7",
+ "valence-coprocessor",
 ]
 
 [[package]]
@@ -4673,7 +4673,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "serde_json",
- "valence-coprocessor 0.3.7",
+ "valence-coprocessor",
  "valence-coprocessor-wasm",
 ]
 
@@ -9117,24 +9117,6 @@ dependencies = [
 
 [[package]]
 name = "valence-coprocessor"
-version = "0.3.1"
-source = "git+https://github.com/timewave-computer/valence-coprocessor.git?tag=v0.3.1#cefeac69e40ebd86cafebb3ade47f0f9e75b6061"
-dependencies = [
- "anyhow",
- "base64 0.22.1",
- "blake3",
- "buf-fs",
- "hashbrown 0.15.4",
- "msgpacker",
- "reqwest 0.12.22",
- "serde",
- "serde_json",
- "tracing",
- "zerocopy",
-]
-
-[[package]]
-name = "valence-coprocessor"
 version = "0.3.7"
 source = "git+https://github.com/timewave-computer/valence-coprocessor.git?tag=v0.3.7#5e169394898e805d6d7cac3a548c93ae7d6a0356"
 dependencies = [
@@ -9148,35 +9130,6 @@ dependencies = [
  "serde_json",
  "tracing",
  "zerocopy",
-]
-
-[[package]]
-name = "valence-coprocessor-client"
-version = "0.3.1"
-source = "git+https://github.com/timewave-computer/valence-coprocessor.git?tag=v0.3.1#cefeac69e40ebd86cafebb3ade47f0f9e75b6061"
-dependencies = [
- "anyhow",
- "hex",
- "reqwest 0.12.22",
- "serde",
- "serde_json",
- "tokio",
- "tracing",
- "uuid 1.17.0",
- "valence-coprocessor 0.3.1",
-]
-
-[[package]]
-name = "valence-coprocessor-domain-prover"
-version = "0.3.1"
-source = "git+https://github.com/timewave-computer/valence-coprocessor-domain-prover.git?tag=v0.3.1#926121faa8e62e4af22a050656ac32918f807e40"
-dependencies = [
- "anyhow",
- "hex",
- "msgpacker",
- "serde_json",
- "valence-coprocessor 0.3.1",
- "valence-coprocessor-client",
 ]
 
 [[package]]
@@ -9189,13 +9142,13 @@ dependencies = [
  "msgpacker",
  "serde_json",
  "tracing",
- "valence-coprocessor 0.3.7",
+ "valence-coprocessor",
 ]
 
 [[package]]
 name = "valence-domain-clients"
 version = "0.1.0"
-source = "git+https://github.com/timewave-computer/valence-domain-clients.git?tag=v1.0.0#167a7997bccd0c263ed8ed95c8194b86b75683fc"
+source = "git+https://github.com/timewave-computer/valence-domain-clients.git?branch=main#cc832132a9f5ed6115a3d62cf5a430b2746cdfd3"
 dependencies = [
  "alloy",
  "alloy-primitives 0.7.7",
@@ -9203,20 +9156,24 @@ dependencies = [
  "alloy-sol-types 0.7.7",
  "anyhow",
  "async-trait",
+ "base64 0.22.1",
  "bip32",
+ "bs58",
  "cosmos-sdk-proto 0.26.1",
  "cosmrs",
  "hex",
  "ibc",
  "log",
+ "msgpacker",
  "neutron-std 5.1.4",
  "prost 0.13.5",
+ "reqwest 0.12.22",
  "serde",
  "serde_json",
  "thiserror 1.0.69",
  "tokio",
  "tonic 0.12.3",
- "valence-coprocessor-domain-prover",
+ "uuid 1.17.0",
 ]
 
 [[package]]

@@ -1,5 +1,8 @@
 use log::info;
-use packages::{phases::REGISTRATION_PHASE, utils::valence_core};
+use packages::{
+    phases::REGISTRATION_PHASE,
+    utils::{self, valence_core},
+};
 use serde_json::json;
 use valence_domain_clients::{
     coprocessor::base_client::CoprocessorBaseClient, cosmos::wasm_client::WasmClient,
@@ -42,12 +45,13 @@ impl Strategy {
             .query_vault_withdraw_requests(Some(start_id), true)
             .await?;
 
-        if new_obligations.is_empty() {
-            info!(target: REGISTRATION_PHASE, "no new withdraw requests; concluding obligation registration phase...");
-            return Ok(());
-        }
+        // if new_obligations.is_empty() {
+        //     info!(target: REGISTRATION_PHASE, "no new withdraw requests; concluding obligation registration phase...");
+        //     return Ok(());
+        // }
         info!(target: REGISTRATION_PHASE, "new_obligations = {new_obligations:#?}");
 
+        let new_obligations = vec![(3, true)];
         // process the new OneWayVault Withdraw events in order from the oldest
         // to the newest, posting them to the coprocessor to obtain a ZKP
         for (obligation_id, ..) in new_obligations {
@@ -68,8 +72,8 @@ impl Strategy {
             info!(target: REGISTRATION_PHASE, "vault zkp resp: {vault_zkp_response:?}");
 
             // extract the program and domain parameters by decoding the zkp
-            let (proof_program, inputs_program) = vault_zkp_response.program.decode()?;
-            let (proof_domain, inputs_domain) = vault_zkp_response.domain.decode()?;
+            let (proof_program, inputs_program) = utils::decode(vault_zkp_response.program)?;
+            let (proof_domain, inputs_domain) = utils::decode(vault_zkp_response.domain)?;
 
             // submits the decoded zkp parameters to the program authorizations module
             valence_core::post_zkp_on_chain(
