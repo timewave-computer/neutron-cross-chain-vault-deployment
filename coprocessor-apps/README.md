@@ -19,7 +19,7 @@ To install:
 ```bash
 cargo install \
   --git https://github.com/timewave-computer/valence-coprocessor.git \
-  --tag v0.3.7 \
+  --tag v0.3.12 \
   --locked cargo-valence
 ```
 
@@ -40,7 +40,7 @@ just compile clearing-queue
 or alternatively
 
 ```bash
-    cargo-valence --socket prover.timewave.computer:37281 \
+    cargo-valence --socket https://service.coprocessor.valence.zone/ \
     deploy circuit \
     --controller ./coprocessor-apps/<app_name>/controller \
     --circuit <app_name>-circuit
