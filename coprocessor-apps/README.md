@@ -40,7 +40,7 @@ just compile clearing-queue
 or alternatively
 
 ```bash
-cargo-valence --socket https://service.coprocessor.valence.zone \
+    cargo-valence --socket https://service.coprocessor.valence.zone \
     deploy circuit \
     --controller ./coprocessor-apps/<app_name>/controller \
     --circuit <app_name>-circuit
