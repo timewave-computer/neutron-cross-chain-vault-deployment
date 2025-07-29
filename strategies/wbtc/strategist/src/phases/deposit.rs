@@ -8,7 +8,7 @@ use packages::{
     labels::ICA_TRANSFER_LABEL,
     phases::DEPOSIT_PHASE,
     types::sol_types::{Authorization, BaseAccount, ERC20},
-    utils::valence_core,
+    utils::{self, valence_core},
 };
 use serde_json::json;
 use valence_domain_clients::{
@@ -194,8 +194,8 @@ impl Strategy {
         info!(target: DEPOSIT_PHASE, "co_processor zkp post response: {skip_response_zkp:?}" );
 
         // extract the program and domain parameters by decoding the zkp
-        let (proof_program, inputs_program) = skip_response_zkp.program.decode()?;
-        let (proof_domain, inputs_domain) = skip_response_zkp.domain.decode()?;
+        let (proof_program, inputs_program) = utils::decode(skip_response_zkp.program)?;
+        let (proof_domain, inputs_domain) = utils::decode(skip_response_zkp.domain)?;
 
         // build the eureka transfer zk message from decoded params
         let auth_eureka_transfer_zk_msg = eth_auth_contract.executeZKMessage(

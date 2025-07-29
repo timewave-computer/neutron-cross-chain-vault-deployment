@@ -1,7 +1,10 @@
 use alloy::primitives::U256;
 use cosmwasm_std::Uint64;
 use log::info;
-use packages::{phases::REGISTRATION_PHASE, utils::valence_core};
+use packages::{
+    phases::REGISTRATION_PHASE,
+    utils::{self, valence_core},
+};
 use serde_json::json;
 use valence_domain_clients::{
     coprocessor::base_client::CoprocessorBaseClient, cosmos::wasm_client::WasmClient,
@@ -73,8 +76,8 @@ impl Strategy {
                 .await?;
 
             // extract the program and domain parameters by decoding the zkp
-            let (proof_program, inputs_program) = vault_zkp_response.program.decode()?;
-            let (proof_domain, inputs_domain) = vault_zkp_response.domain.decode()?;
+            let (proof_program, inputs_program) = utils::decode(vault_zkp_response.program)?;
+            let (proof_domain, inputs_domain) = utils::decode(vault_zkp_response.domain)?;
 
             // submits the decoded zkp parameters to the program authorizations module
             valence_core::post_zkp_on_chain(
