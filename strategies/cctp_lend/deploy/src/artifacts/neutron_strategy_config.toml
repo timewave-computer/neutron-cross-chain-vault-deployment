@@ -18,4 +18,4 @@ mars_lending = "neutron1ancfa9e5cnuk9z24c42at8y5mlysm0jf2y7w830y0fhcsw0m3q6qglpd
 clearing_queue = "neutron1fnx6khnc4g869ynzuesjmpchk9jde3s8698e39acp05nl0fhjlwqhcvx8x"
 
 [coprocessor_app_ids]
-clearing_queue = "4a522f0e8fcb9631dd95dd8ea8604f2213161931fe3c6d06958d94a8cf5e625b"
+clearing_queue = "366df6d8f0b2c9a3496d9c1398927551c46f38974274220da2ce5d0b8bf16618"
