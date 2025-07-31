@@ -1,5 +1,5 @@
 use anyhow::anyhow;
-use log::{info, warn};
+use log::info;
 use valence_domain_clients::{clients::neutron::NeutronClient, cosmos::wasm_client::WasmClient};
 use valence_lending_utils::mars::{Account, Positions, QueryMsg};
 
@@ -14,26 +14,23 @@ pub async fn query_mars_lending_denom_amount(
     // get the first credit account. while credit accounts are returned as a vec,
     // mars lending library should only ever create one credit account and re-use it
     // for all LP actions, so we get the [0]
-    let first_credit_account = query_mars_credit_accounts(client, credit_manager, acc_owner)
-        .await?
-        .into_iter()
-        .next()
+    let mars_credit_accounts =
+        query_mars_credit_accounts(client, credit_manager, acc_owner).await?;
+
+    info!(target: UPDATE_PHASE, "credit accounts: {:?}", mars_credit_accounts);
+
+    let first_credit_account = mars_credit_accounts
+        .first()
         .ok_or_else(|| anyhow!("no credit account found for owner {acc_owner}"))?;
 
-    let active_positions = match query_mars_credit_account_positions(
+    let active_positions = query_mars_credit_account_positions(
         client,
         credit_manager,
         first_credit_account.id.to_string(),
     )
-    .await
-    {
-        Ok(res) => res,
-        Err(e) => {
-            warn!(target: UPDATE_PHASE, "no credit account found for {acc_owner}: {e}");
-            info!(target: UPDATE_PHASE, "mars lending amount = 0");
-            return Ok(0);
-        }
-    };
+    .await?;
+
+    info!(target: UPDATE_PHASE, "active first credit account positions: {:?}", active_positions);
 
     // iterate over active lending positions until the target denom is found
     for lend in active_positions.lends {
@@ -42,8 +39,11 @@ pub async fn query_mars_lending_denom_amount(
         }
     }
 
-    // if target denom was not among the active lending positions, we return 0
-    Ok(0)
+    // if target denom was not among the active lending positions,
+    // we return an error to prevent incorrect accounting
+    Err(anyhow::format_err!(
+        "no {denom} active lending positions found"
+    ))
 }
 
 async fn query_mars_credit_accounts(
