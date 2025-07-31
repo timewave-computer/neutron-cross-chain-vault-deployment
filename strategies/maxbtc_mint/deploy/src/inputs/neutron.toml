@@ -14,8 +14,8 @@ ica_timeout                = 43200                                              
 
 [program]
 deposit_token_on_neutron_denom = "ibc/0E293A7622DC9A6439DB60E6D234B5AF446962E27CA3AB44D0590603DFF6968E" # Should be token denom on Neutron
-maxbtc_contract = "neutron1qh7fj57et5ac645k272pa6w089tlhj678a3dtr7k0lp523p37q2sase0td" # The contract address where maxBTC are minted from
-maxbtc_denom = "factory/neutron1qh7fj57et5ac645k272pa6w089tlhj678a3dtr7k0lp523p37q2sase0td/maxbtc" # Should be real maxBTC denom on Neutron
+maxbtc_contract = "neutron1hq65gh2rfh6d08hpk7u48u0fjly6qezdwp95t7dydvxxnv7r9zhstpct4v" # The contract address where maxBTC are minted from
+maxbtc_denom = "factory/neutron1hq65gh2rfh6d08hpk7u48u0fjly6qezdwp95t7dydvxxnv7r9zhstpct4v/maxbtc" # Should be real maxBTC denom on Neutron
 
 [coprocessor_app]
 clearing_queue_coprocessor_app_id = "" # TBD after deployment

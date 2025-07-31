@@ -1,11 +1,30 @@
-use valence_domain_clients::clients::neutron::NeutronClient;
+use cosmwasm_std::Uint128;
+use valence_domain_clients::{clients::neutron::NeutronClient, cosmos::wasm_client::WasmClient};
 
-pub async fn query_maxbtc_exchange_amount(
-    _client: &NeutronClient,
-    _maxbtc_contract: &str,
-    _amount: u128,
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[serde(rename_all = "snake_case")]
+enum QueryMsg {
+    SimulateDeposit { amount: Uint128 },
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug)]
+#[serde(rename_all = "snake_case")]
+struct SimulateDepositResponse {
+    minted_amount: Uint128,
+}
+
+pub async fn query_maxbtc_simulate_deposit(
+    client: &NeutronClient,
+    maxbtc_contract: &str,
+    amount: u128,
 ) -> anyhow::Result<u128> {
-    // TODO: Implement the logic to query how much maxBTC we would get for depositing a certain amount into the maxBTC contract
-    // This query is not available yet but will be soon
-    Ok(0)
+    let simulate_deposit = QueryMsg::SimulateDeposit {
+        amount: Uint128::new(amount),
+    };
+
+    let response: SimulateDepositResponse = client
+        .query_contract_state(maxbtc_contract, simulate_deposit)
+        .await?;
+
+    Ok(response.minted_amount.u128())
 }
