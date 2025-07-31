@@ -5,7 +5,7 @@ use log::info;
 use packages::{
     phases::UPDATE_PHASE,
     types::sol_types::{BaseAccount, ERC20, OneWayVault},
-    utils::{maxbtc::query_maxbtc_exchange_amount, valence_core},
+    utils::{maxbtc::query_maxbtc_simulate_deposit, valence_core},
 };
 use valence_domain_clients::{
     cosmos::base_client::BaseClient,
@@ -158,7 +158,7 @@ impl Strategy {
             .await?;
         info!(target: UPDATE_PHASE, "neutron_settlement_acc_maxbtc_balance={neutron_settlement_acc_maxbtc_balance}");
 
-        let deposit_token_balance_in_maxbtc = query_maxbtc_exchange_amount(
+        let deposit_token_balance_in_maxbtc = query_maxbtc_simulate_deposit(
             &self.neutron_client,
             &self.cfg.neutron.maxbtc_contract,
             deposit_token_balance_total,
