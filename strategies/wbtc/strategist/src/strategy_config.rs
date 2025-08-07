@@ -7,8 +7,8 @@ use valence_domain_clients::clients::{
     valence_indexer::OneWayVaultIndexerClient,
 };
 use wbtc_types::{
-    coprocessor_config::CoprocessorStrategyConfig, ethereum_config::EthereumStrategyConfig,
-    gaia_config::GaiaStrategyConfig, neutron_config::NeutronStrategyConfig,
+    ethereum_config::EthereumStrategyConfig, gaia_config::GaiaStrategyConfig,
+    neutron_config::NeutronStrategyConfig,
 };
 
 use serde::{Deserialize, Serialize};
@@ -20,7 +20,6 @@ pub struct StrategyConfig {
     pub ethereum: EthereumStrategyConfig,
     pub neutron: NeutronStrategyConfig,
     pub gaia: GaiaStrategyConfig,
-    pub coprocessor: CoprocessorStrategyConfig,
 }
 
 // main strategy struct that wraps around the StrategyConfig
@@ -127,7 +126,6 @@ impl Strategy {
         neutron_path: P,
         gaia_path: P,
         eth_path: P,
-        coprocessor_path: P,
     ) -> anyhow::Result<Self> {
         let neutron_cfg = NeutronStrategyConfig::from_file(neutron_path)
             .map_err(|e| anyhow::anyhow!("invalid neutron config: {:?}", e))?;
@@ -135,14 +133,11 @@ impl Strategy {
             .map_err(|e| anyhow::anyhow!("invalid ethereum config: {:?}", e))?;
         let gaia_cfg = GaiaStrategyConfig::from_file(gaia_path)
             .map_err(|e| anyhow::anyhow!("invalid gaia config: {:?}", e))?;
-        let coprocessor_cfg = CoprocessorStrategyConfig::from_file(coprocessor_path)
-            .map_err(|e| anyhow::anyhow!("invalid coprocessor config: {:?}", e))?;
 
         let strategy_cfg = StrategyConfig {
             ethereum: eth_cfg,
             neutron: neutron_cfg,
             gaia: gaia_cfg,
-            coprocessor: coprocessor_cfg,
         };
 
         Self::new(strategy_cfg).await
