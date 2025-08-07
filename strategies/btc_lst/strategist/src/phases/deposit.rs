@@ -200,13 +200,12 @@ impl Strategy {
 
         // extract the program and domain parameters by decoding the zkp
         let (proof_program, inputs_program) = utils::decode(skip_response_zkp.program)?;
-        let (proof_domain, inputs_domain) = utils::decode(skip_response_zkp.domain)?;
+        let (proof_domain, _) = utils::decode(skip_response_zkp.domain)?;
 
         // build the eureka transfer zk message from decoded params
         let auth_eureka_transfer_zk_msg = eth_auth_contract.executeZKMessage(
             Bytes::from(inputs_program),
             Bytes::from(proof_program),
-            Bytes::from(inputs_domain),
             Bytes::from(proof_domain),
         );
 

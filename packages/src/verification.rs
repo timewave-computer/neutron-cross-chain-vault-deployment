@@ -1,4 +1,5 @@
-pub const VALENCE_NEUTRON_VERIFICATION_GATEWAY: &str =
-    "neutron1l3fgzcqse0xw84hdpytg7vcp04kcdm95wes2zd6ap8kpujmv9cwsv45wwk";
-pub const VALENCE_ETHEREUM_VERIFICATION_GATEWAY: &str =
-    "0xDe3f1195C54b74F9cAD78869f13C3A8C980abe02";
+pub const VALENCE_NEUTRON_VERIFICATION_ROUTER: &str =
+    "neutron1qef59cy20tf89mfhcj7mwnl22tq6ff9cmppqm4xm4d3u0s5hrsms4x5wlz";
+pub const VALENCE_ETHEREUM_VERIFICATION_ROUTER: &str = "0xb340bce9e0b06d572529582f3ab5b5633d38324b";
+// TODO: Update this when newest route is added
+pub const VERIFICATION_ROUTE: &str = "0000/sp1/5.0.8/groth16";

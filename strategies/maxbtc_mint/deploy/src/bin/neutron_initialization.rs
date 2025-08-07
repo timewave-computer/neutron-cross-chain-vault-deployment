@@ -8,6 +8,7 @@ use packages::{
         ICA_TRANSFER_LABEL, MAXBTC_ISSUE_LABEL, REGISTER_OBLIGATION_LABEL, SETTLE_OBLIGATION_LABEL,
     },
     types::inputs::ClearingQueueCoprocessorApp,
+    verification::VERIFICATION_ROUTE,
 };
 use serde::Deserialize;
 use sp1_sdk::{HashableKey, SP1VerifyingKey};
@@ -245,7 +246,9 @@ async fn main() -> anyhow::Result<()> {
         mode: authorization_permissioned_mode,
         registry: 0,
         vk: Binary::from(sp1_program_vk.bytes32().as_bytes()),
+        verification_route: VERIFICATION_ROUTE.to_string(),
         validate_last_block_execution: false,
+        metadata_hash: Binary::default(),
     };
 
     let create_zk_authorization = valence_authorization_utils::msg::ExecuteMsg::PermissionedAction(

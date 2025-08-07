@@ -1,11 +1,17 @@
 use std::{env, fs};
 
-use alloy::{hex::FromHex, primitives::Bytes};
+use alloy::{
+    hex::FromHex,
+    primitives::{Bytes, FixedBytes},
+};
 use lombard_btc_deploy::{INPUTS_DIR, OUTPUTS_DIR};
 use lombard_btc_types::ethereum_config::EthereumStrategyConfig;
-use packages::types::{
-    inputs::{EurekaTransferCoprocessorApp, VaultInput},
-    sol_types::Authorization,
+use packages::{
+    types::{
+        inputs::{EurekaTransferCoprocessorApp, VaultInput},
+        sol_types::Authorization::{self, ZkAuthorizationData},
+    },
+    verification::{VALENCE_ETHEREUM_VERIFICATION_ROUTER, VERIFICATION_ROUTE},
 };
 use serde::Deserialize;
 use sp1_sdk::{HashableKey, SP1VerifyingKey};
@@ -51,6 +57,14 @@ async fn main() -> anyhow::Result<()> {
 
     let authorization = Authorization::new(eth_stg_cfg.authorizations, &rp);
 
+    let set_verification_router_tx = authorization
+        .setVerificationRouter(VALENCE_ETHEREUM_VERIFICATION_ROUTER.parse()?)
+        .into_transaction_request();
+
+    // Send the transaction
+    eth_client.sign_and_send(set_verification_router_tx).await?;
+    println!("Verification router set successfully");
+
     // Get the VK for the coprocessor app
     let coprocessor_client = CoprocessorClient::default();
     let program_vk = coprocessor_client
@@ -65,11 +79,18 @@ async fn main() -> anyhow::Result<()> {
     let program_vk = Bytes::from_hex(sp1_program_vk.bytes32()).unwrap();
     let registries = vec![0]; // Only one and IBC Eureka app will use registry 0
     let authorized_addresses = vec![parameters.vault.strategist];
-    let vks = vec![program_vk];
+
+    let zk_authorization_data = ZkAuthorizationData {
+        allowedExecutionAddresses: authorized_addresses.clone(),
+        vk: program_vk,
+        route: VERIFICATION_ROUTE.to_string(),
+        validateBlockNumberExecution: false,
+        metadataHash: FixedBytes::default(),
+    };
 
     // Remember we send arrays because we allow  multiple registries added at once
     let tx = authorization
-        .addRegistries(registries, vec![authorized_addresses], vks, vec![false])
+        .addRegistries(registries, vec![zk_authorization_data])
         .into_transaction_request();
 
     // Send the transaction

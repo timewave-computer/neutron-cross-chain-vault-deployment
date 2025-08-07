@@ -12,7 +12,7 @@ use cosmwasm_std::Decimal;
 use packages::{
     contracts::{PATH_NEUTRON_CODE_IDS, UploadedContracts},
     types::inputs::{ChainClientInputs, ClearingQueueCoprocessorApp},
-    verification::VALENCE_NEUTRON_VERIFICATION_GATEWAY,
+    verification::VALENCE_NEUTRON_VERIFICATION_ROUTER,
 };
 use serde::Deserialize;
 use valence_domain_clients::{
@@ -134,8 +134,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // Set the verification gateway address on the authorization contract
     let set_verification_gateway_msg =
         valence_authorization_utils::msg::ExecuteMsg::PermissionedAction(
-            valence_authorization_utils::msg::PermissionedMsg::SetVerificationGateway {
-                verification_gateway: VALENCE_NEUTRON_VERIFICATION_GATEWAY.to_string(),
+            valence_authorization_utils::msg::PermissionedMsg::SetVerificationRouter {
+                address: VALENCE_NEUTRON_VERIFICATION_ROUTER.to_string(),
             },
         );
 

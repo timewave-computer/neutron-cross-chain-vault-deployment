@@ -86,16 +86,15 @@ pub async fn post_zkp_on_chain(
     client: &NeutronClient,
     authorizations: &str,
     (proof_program, inputs_program): (Vec<u8>, Vec<u8>),
-    (proof_domain, inputs_domain): (Vec<u8>, Vec<u8>),
+    proof_domain: Vec<u8>,
 ) -> anyhow::Result<()> {
     // construct the zk authorization registration message
     let execute_zk_authorization_msg =
         valence_authorization_utils::msg::PermissionlessMsg::ExecuteZkAuthorization {
             label: REGISTER_OBLIGATION_LABEL.to_string(),
-            message: Binary::from(inputs_program),
+            inputs: Binary::from(inputs_program),
             proof: Binary::from(proof_program),
-            domain_message: Binary::from(inputs_domain),
-            domain_proof: Binary::from(proof_domain),
+            payload: Binary::from(proof_domain),
         };
 
     // execute the zk authorization. this will perform the verification
