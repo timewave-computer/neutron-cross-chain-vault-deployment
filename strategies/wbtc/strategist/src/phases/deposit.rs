@@ -5,7 +5,7 @@ use alloy::{
 use cosmwasm_std::to_json_binary;
 use log::{info, warn};
 use packages::{
-    labels::{ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_LABEL},
+    labels::{ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_PHASE1_LABEL},
     phases::DEPOSIT_PHASE,
     types::sol_types::{Authorization, BaseAccount, ERC20},
     utils::{self, valence_core},
@@ -134,7 +134,7 @@ impl Strategy {
                     valence_core::enqueue_neutron(
                         &self.neutron_client,
                         &self.cfg.neutron.authorizations,
-                        LEND_AND_PROVIDE_LIQUIDITY_LABEL,
+                        LEND_AND_PROVIDE_LIQUIDITY_PHASE1_LABEL,
                         vec![
                             to_json_binary(&splitter_exec_msg)?,
                             to_json_binary(&mars_lending_exec_msg)?,
@@ -187,7 +187,10 @@ impl Strategy {
         info!(target: DEPOSIT_PHASE, "posting skip-api response to co-processor app id: {}", &self.cfg.ethereum.coprocessor_app_ids.ibc_eureka);
         let skip_response_zkp = self
             .coprocessor_client
-            .prove(&self.cfg.ethereum.coprocessor_app_ids.ibc_eureka, &coprocessor_input)
+            .prove(
+                &self.cfg.ethereum.coprocessor_app_ids.ibc_eureka,
+                &coprocessor_input,
+            )
             .await?;
 
         info!(target: DEPOSIT_PHASE, "co_processor zkp post response: {skip_response_zkp:?}" );

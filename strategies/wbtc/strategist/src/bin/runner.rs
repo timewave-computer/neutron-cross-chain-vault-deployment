@@ -27,12 +27,8 @@ async fn main() -> anyhow::Result<()> {
     info!(target: RUNNER, "  Gaia: {gaia_cfg_path}");
 
     // initialize the strategy from configuration files
-    let strategy = Strategy::from_files(
-        &neutron_cfg_path,
-        &gaia_cfg_path,
-        &ethereum_cfg_path,
-    )
-    .await?;
+    let strategy =
+        Strategy::from_files(&neutron_cfg_path, &gaia_cfg_path, &ethereum_cfg_path).await?;
 
     info!(target: RUNNER, "strategy initialized");
     info!(target: RUNNER, "starting the strategist");

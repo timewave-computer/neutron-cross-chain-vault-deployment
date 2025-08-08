@@ -7,8 +7,8 @@ use valence_domain_clients::clients::{
     valence_indexer::OneWayVaultIndexerClient,
 };
 use wbtc_types::{
-    ethereum_config::EthereumStrategyConfig,
-    gaia_config::GaiaStrategyConfig, neutron_config::NeutronStrategyConfig,
+    ethereum_config::EthereumStrategyConfig, gaia_config::GaiaStrategyConfig,
+    neutron_config::NeutronStrategyConfig,
 };
 
 use serde::{Deserialize, Serialize};

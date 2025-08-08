@@ -8,7 +8,6 @@ pub const PROVIDE_LIQUIDIY_LABEL: &str = "provide_liquidity";
 pub const CCTP_TRANSFER_LABEL: &str = "cctp_transfer";
 pub const MAXBTC_ISSUE_LABEL: &str = "maxbtc_issue";
 
-
 // migrated from wbtc strategy labels
 pub const LEND_AND_PROVIDE_LIQUIDITY_PHASE1_LABEL: &str = "lend_and_provide_liquidity_phase1";
 pub const LEND_AND_PROVIDE_LIQUIDITY_PHASE2_LABEL: &str = "lend_and_provide_liquidity_phase2";
