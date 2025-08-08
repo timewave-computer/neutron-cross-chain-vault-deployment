@@ -5,7 +5,6 @@ use alloy::{
 use cosmwasm_std::to_json_binary;
 use log::{info, warn};
 use packages::{
-    labels::{ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_LABEL},
     phases::DEPOSIT_PHASE,
     types::sol_types::{Authorization, BaseAccount, ERC20},
     utils::{self, valence_core},
@@ -17,6 +16,7 @@ use valence_domain_clients::{
     evm::base_client::{CustomProvider, EvmBaseClient},
 };
 use valence_library_utils::OptionUpdate;
+use wbtc_types::labels::{ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_PHASE1_LABEL};
 
 use crate::strategy_config::Strategy;
 
@@ -134,7 +134,7 @@ impl Strategy {
                     valence_core::enqueue_neutron(
                         &self.neutron_client,
                         &self.cfg.neutron.authorizations,
-                        LEND_AND_PROVIDE_LIQUIDITY_LABEL,
+                        LEND_AND_PROVIDE_LIQUIDITY_PHASE1_LABEL,
                         vec![
                             to_json_binary(&splitter_exec_msg)?,
                             to_json_binary(&mars_lending_exec_msg)?,
@@ -273,12 +273,6 @@ impl Strategy {
                 to_json_binary(&ica_ibc_transfer_update_msg)?,
                 to_json_binary(&ica_ibc_transfer_exec_msg)?,
             ],
-        )
-        .await?;
-
-        valence_core::ensure_neutron_account_fees_coverage(
-            &self.neutron_client,
-            &self.cfg.neutron.accounts.ica,
         )
         .await?;
 

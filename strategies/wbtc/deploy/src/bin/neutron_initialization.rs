@@ -1,15 +1,7 @@
 use std::{env, fs};
 
 use cosmwasm_std::Binary;
-use packages::{
-    labels::{
-        ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_PHASE1_LABEL,
-        LEND_AND_PROVIDE_LIQUIDITY_PHASE2_LABEL, MARS_WITHDRAW_LABEL, PHASE_SHIFT_STEP1_LABEL,
-        PHASE_SHIFT_STEP2_LABEL, PHASE_SHIFT_STEP3_LABEL, PHASE_SHIFT_STEP4_LABEL,
-        REGISTER_OBLIGATION_LABEL, SETTLE_OBLIGATION_LABEL,
-    },
-    types::inputs::ClearingQueueCoprocessorApp,
-};
+use packages::types::inputs::ClearingQueueCoprocessorApp;
 use serde::Deserialize;
 use sp1_sdk::{HashableKey, SP1VerifyingKey};
 use valence_authorization_utils::{
@@ -27,7 +19,15 @@ use valence_domain_clients::{
 };
 use valence_library_utils::LibraryAccountType;
 use wbtc_deploy::{INPUTS_DIR, OUTPUTS_DIR};
-use wbtc_types::neutron_config::NeutronStrategyConfig;
+use wbtc_types::{
+    labels::{
+        ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_PHASE1_LABEL,
+        LEND_AND_PROVIDE_LIQUIDITY_PHASE2_LABEL, MARS_WITHDRAW_LABEL, PHASE_SHIFT_STEP1_LABEL,
+        PHASE_SHIFT_STEP2_LABEL, PHASE_SHIFT_STEP3_LABEL, PHASE_SHIFT_STEP4_LABEL,
+        REGISTER_OBLIGATION_LABEL, SETTLE_OBLIGATION_LABEL,
+    },
+    neutron_config::NeutronStrategyConfig,
+};
 
 #[derive(Deserialize, Debug)]
 struct Parameters {
