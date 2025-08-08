@@ -72,7 +72,7 @@ impl Strategy {
             info!(target: REGISTRATION_PHASE, "posting proof request to coprocessor client: {withdraw_id_json}");
             let vault_zkp_response = self
                 .coprocessor_client
-                .prove(&self.cfg.coprocessor.vault_circuit_id, &withdraw_id_json)
+                .prove(&self.cfg.neutron.coprocessor_app_ids.clearing_queue, &withdraw_id_json)
                 .await?;
 
             // extract the program and domain parameters by decoding the zkp

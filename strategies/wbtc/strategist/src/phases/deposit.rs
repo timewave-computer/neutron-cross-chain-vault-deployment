@@ -5,7 +5,7 @@ use alloy::{
 use cosmwasm_std::to_json_binary;
 use log::{info, warn};
 use packages::{
-    labels::ICA_TRANSFER_LABEL,
+    labels::{ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_LABEL},
     phases::DEPOSIT_PHASE,
     types::sol_types::{Authorization, BaseAccount, ERC20},
     utils::{self, valence_core},
@@ -17,7 +17,6 @@ use valence_domain_clients::{
     evm::base_client::{CustomProvider, EvmBaseClient},
 };
 use valence_library_utils::OptionUpdate;
-use wbtc_types::labels::LEND_AND_PROVIDE_LIQUIDITY_PHASE1_LABEL;
 
 use crate::strategy_config::Strategy;
 
@@ -135,7 +134,7 @@ impl Strategy {
                     valence_core::enqueue_neutron(
                         &self.neutron_client,
                         &self.cfg.neutron.authorizations,
-                        LEND_AND_PROVIDE_LIQUIDITY_PHASE1_LABEL,
+                        LEND_AND_PROVIDE_LIQUIDITY_LABEL,
                         vec![
                             to_json_binary(&splitter_exec_msg)?,
                             to_json_binary(&mars_lending_exec_msg)?,
@@ -185,10 +184,10 @@ impl Strategy {
         // format the response in format expected by the coprocessor and post it
         // there for proof
         let coprocessor_input = json!({"skip_response": skip_api_response});
-        info!(target: DEPOSIT_PHASE, "posting skip-api response to co-processor app id: {}", &self.cfg.coprocessor.eureka_circuit_id);
+        info!(target: DEPOSIT_PHASE, "posting skip-api response to co-processor app id: {}", &self.cfg.ethereum.coprocessor_app_ids.ibc_eureka);
         let skip_response_zkp = self
             .coprocessor_client
-            .prove(&self.cfg.coprocessor.eureka_circuit_id, &coprocessor_input)
+            .prove(&self.cfg.ethereum.coprocessor_app_ids.ibc_eureka, &coprocessor_input)
             .await?;
 
         info!(target: DEPOSIT_PHASE, "co_processor zkp post response: {skip_response_zkp:?}" );
@@ -271,6 +270,12 @@ impl Strategy {
                 to_json_binary(&ica_ibc_transfer_update_msg)?,
                 to_json_binary(&ica_ibc_transfer_exec_msg)?,
             ],
+        )
+        .await?;
+
+        valence_core::ensure_neutron_account_fees_coverage(
+            &self.neutron_client,
+            &self.cfg.neutron.accounts.ica,
         )
         .await?;
 
