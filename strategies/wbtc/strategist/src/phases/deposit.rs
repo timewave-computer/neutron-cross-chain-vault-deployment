@@ -5,6 +5,7 @@ use alloy::{
 use cosmwasm_std::to_json_binary;
 use log::{info, warn};
 use packages::{
+    labels::{ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_PHASE1_LABEL},
     phases::DEPOSIT_PHASE,
     types::sol_types::{Authorization, BaseAccount, ERC20},
     utils::{self, valence_core},
@@ -16,7 +17,6 @@ use valence_domain_clients::{
     evm::base_client::{CustomProvider, EvmBaseClient},
 };
 use valence_library_utils::OptionUpdate;
-use wbtc_types::labels::{ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_PHASE1_LABEL};
 
 use crate::strategy_config::Strategy;
 
