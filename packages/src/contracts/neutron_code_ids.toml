@@ -10,5 +10,5 @@ supervaults_withdrawer       = 4310
 dynamic_ratio_query_provider = 3926
 interchain_account           = 3927
 supervaults_lper             = 4309
-authorization                = 3937
+authorization                = 4343
 base_account                 = 3930

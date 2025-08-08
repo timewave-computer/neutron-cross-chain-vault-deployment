@@ -55,21 +55,21 @@ opentelemetry-appender-log = "0.30.0"
 
 # valence-protocol
 valence-domain-clients               = { git = "https://github.com/timewave-computer/valence-domain-clients.git", branch = "main" }
-valence-authorization-utils          = { git = "https://github.com/timewave-computer/valence-protocol", rev = "b04f5c2" }
-valence-processor-utils              = { git = "https://github.com/timewave-computer/valence-protocol", rev = "b04f5c2" }
-valence-library-utils                = { git = "https://github.com/timewave-computer/valence-protocol", rev = "b04f5c2" }
-valence-account-utils                = { git = "https://github.com/timewave-computer/valence-protocol", rev = "b04f5c2" }
-valence-ica-ibc-transfer             = { git = "https://github.com/timewave-computer/valence-protocol", rev = "b04f5c2" }
-valence-mars-lending                 = { git = "https://github.com/timewave-computer/valence-protocol", rev = "b04f5c2" }
-valence-supervaults-lper             = { git = "https://github.com/timewave-computer/valence-protocol", rev = "b04f5c2" }
-valence-supervaults-withdrawer       = { git = "https://github.com/timewave-computer/valence-protocol", rev = "b04f5c2" }
-valence-clearing-queue-supervaults   = { git = "https://github.com/timewave-computer/valence-protocol", rev = "b04f5c2" }
-valence-dynamic-ratio-query-provider = { git = "https://github.com/timewave-computer/valence-protocol", rev = "b04f5c2" }
-valence-splitter-library             = { git = "https://github.com/timewave-computer/valence-protocol", rev = "b04f5c2" }
-valence-forwarder-library            = { git = "https://github.com/timewave-computer/valence-protocol", rev = "b04f5c2" }
-valence-strategist-utils             = { git = "https://github.com/timewave-computer/valence-protocol", rev = "b04f5c2" }
-valence-maxbtc-issuer                = { git = "https://github.com/timewave-computer/valence-protocol", rev = "b04f5c2" }
-valence-lending-utils                = { git = "https://github.com/timewave-computer/valence-protocol", rev = "b04f5c2" }
+valence-authorization-utils          = { git = "https://github.com/timewave-computer/valence-protocol", rev = "6bc9ebb" }
+valence-processor-utils              = { git = "https://github.com/timewave-computer/valence-protocol", rev = "6bc9ebb" }
+valence-library-utils                = { git = "https://github.com/timewave-computer/valence-protocol", rev = "6bc9ebb" }
+valence-account-utils                = { git = "https://github.com/timewave-computer/valence-protocol", rev = "6bc9ebb" }
+valence-ica-ibc-transfer             = { git = "https://github.com/timewave-computer/valence-protocol", rev = "6bc9ebb" }
+valence-mars-lending                 = { git = "https://github.com/timewave-computer/valence-protocol", rev = "6bc9ebb" }
+valence-supervaults-lper             = { git = "https://github.com/timewave-computer/valence-protocol", rev = "6bc9ebb" }
+valence-supervaults-withdrawer       = { git = "https://github.com/timewave-computer/valence-protocol", rev = "6bc9ebb" }
+valence-clearing-queue-supervaults   = { git = "https://github.com/timewave-computer/valence-protocol", rev = "6bc9ebb" }
+valence-dynamic-ratio-query-provider = { git = "https://github.com/timewave-computer/valence-protocol", rev = "6bc9ebb" }
+valence-splitter-library             = { git = "https://github.com/timewave-computer/valence-protocol", rev = "6bc9ebb" }
+valence-forwarder-library            = { git = "https://github.com/timewave-computer/valence-protocol", rev = "6bc9ebb" }
+valence-strategist-utils             = { git = "https://github.com/timewave-computer/valence-protocol", rev = "6bc9ebb" }
+valence-maxbtc-issuer                = { git = "https://github.com/timewave-computer/valence-protocol", rev = "6bc9ebb" }
+valence-lending-utils                = { git = "https://github.com/timewave-computer/valence-protocol", rev = "6bc9ebb" }
 
 # valence-coprocessor
 valence-coprocessor      = { git = "https://github.com/timewave-computer/valence-coprocessor.git", tag = "v0.3.12", default-features = false }

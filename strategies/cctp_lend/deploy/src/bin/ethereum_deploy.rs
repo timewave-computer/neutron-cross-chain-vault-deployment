@@ -155,8 +155,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         &rp,
         my_address, // We will be initial owners to eventually add the authorizations, then we need to transfer ownership
         processor_address,
-        Address::ZERO, // No verification gateway needed
-        true,          // Store callbacks
+        true, // Store callbacks
     );
 
     let authorization = eth_client
