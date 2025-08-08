@@ -276,12 +276,6 @@ impl Strategy {
         )
         .await?;
 
-        valence_core::ensure_neutron_account_fees_coverage(
-            &self.neutron_client,
-            &self.cfg.neutron.accounts.ica,
-        )
-        .await?;
-
         info!(target: DEPOSIT_PHASE, "tick: update & transfer");
         valence_core::tick_neutron(&self.neutron_client, &self.cfg.neutron.processor).await?;
 
