@@ -17,6 +17,8 @@ pub struct NeutronStrategyConfig {
     pub authorizations: String,
     /// processor coupled with the authorizations
     pub processor: String,
+    /// the supervault
+    pub supervault: String,
 
     /// all denoms relevant to the neutron-side of strategy
     pub denoms: NeutronDenoms,
@@ -38,6 +40,8 @@ pub struct NeutronDenoms {
     pub ntrn: String,
     /// maxBTC denom
     pub maxbtc: String,
+    /// supervault lp token
+    pub supervault_lp: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -45,7 +49,9 @@ pub struct NeutronAccounts {
     /// Valence ICA
     pub gaia_ica: String,
     /// deposit account where funds will arrive from cosmos hub
-    pub deposit: String,
+    pub ica_deposit: String,
+    /// account where maxbtc will be minted to and which will deposit to supervault
+    pub supervault_deposit: String,
     /// settlement account where funds will be sent to end users
     pub settlement: String,
 }
@@ -58,6 +64,8 @@ pub struct NeutronLibraries {
     pub clearing_queue: String,
     /// ICA transfer libraries
     pub ica_transfer_gaia: String,
+    /// supervault libraries
+    pub supervault_lper: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

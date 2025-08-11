@@ -4902,6 +4902,7 @@ dependencies = [
  "valence-library-utils",
  "valence-maxbtc-issuer",
  "valence-processor-utils",
+ "valence-supervaults-lper",
 ]
 
 [[package]]

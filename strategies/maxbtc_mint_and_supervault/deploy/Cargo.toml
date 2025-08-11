@@ -25,3 +25,4 @@ valence-clearing-queue-supervaults   = { workspace = true }
 valence-maxbtc-issuer                = { workspace = true }
 sp1-sdk                              = { workspace = true }
 bincode                              = { workspace = true }
+valence-supervaults-lper             = { workspace = true }

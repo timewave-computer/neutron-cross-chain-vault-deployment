@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, env, fs, time::SystemTime};
 
-use cosmwasm_std::{Decimal, Uint64, Uint128};
+use cosmwasm_std::{Decimal, Uint128, Uint64};
 use maxbtc_mint_and_supervault_deploy::{INPUTS_DIR, OUTPUTS_DIR};
 use maxbtc_mint_and_supervault_types::{
     gaia_config::GaiaStrategyConfig,
@@ -10,11 +10,12 @@ use maxbtc_mint_and_supervault_types::{
     },
 };
 use packages::{
-    contracts::{PATH_NEUTRON_CODE_IDS, UploadedContracts},
+    contracts::{UploadedContracts, PATH_NEUTRON_CODE_IDS},
     types::inputs::{ChainClientInputs, ClearingQueueCoprocessorApp},
     verification::VALENCE_NEUTRON_VERIFICATION_GATEWAY,
 };
 use serde::Deserialize;
+use valence_clearing_queue_supervaults::msg::SupervaultSettlementInfo;
 use valence_domain_clients::{
     clients::neutron::NeutronClient,
     cosmos::{grpc_client::GrpcSigningClient, wasm_client::WasmClient},
@@ -51,6 +52,10 @@ struct Program {
     deposit_token_on_neutron_denom: String,
     maxbtc_contract: String,
     maxbtc_denom: String,
+    supervault: String,
+    supervault_asset1: String,
+    supervault_asset2: String,
+    supervault_lp_denom: String,
 }
 
 #[tokio::main]
@@ -77,7 +82,7 @@ async fn main() -> anyhow::Result<()> {
         &mnemonic,
         &params.general.chain_id,
     )
-    .await?;
+        .await?;
 
     let my_address = neutron_client
         .get_signing_client()
@@ -100,6 +105,8 @@ async fn main() -> anyhow::Result<()> {
         .get("interchain_account")
         .unwrap();
     let code_id_maxbtc_issuer = *uploaded_contracts.code_ids.get("maxbtc_issuer").unwrap();
+    let code_id_supervaults_lper = *uploaded_contracts.code_ids.get("supervaults_lper").unwrap();
+
 
     let now = SystemTime::now();
     let salt_raw = now
@@ -164,10 +171,13 @@ async fn main() -> anyhow::Result<()> {
         )
         .await?;
 
-    // Predict all base accounts, we are going to store all salts for them as well. In total we need 2, a deposit account and a settlement account
+    // Predict all base accounts. We need 3:
+    // 1. ICA Deposit Account (receives from Gaia)
+    // 2. Supervault Deposit Account (receives minted maxBTC, deposits to supervault)
+    // 3. Settlement Account (receives LP tokens from supervault)
     let mut salts = vec![];
     let mut predicted_base_accounts = vec![];
-    for i in 0..2 {
+    for i in 0..3 {
         let salt = hex::encode(format!("{salt_raw}{i}").as_bytes());
         salts.push(salt.clone());
         let predicted_base_account_address = neutron_client
@@ -190,7 +200,7 @@ async fn main() -> anyhow::Result<()> {
         // The strategist needs to update this to the actual amount that needs to be transferred. There will be an authorization for this.
         amount: Uint128::one(),
         denom: params.ica.deposit_token_on_hub_denom.clone(),
-        receiver: predicted_base_accounts[0].clone(),
+        receiver: predicted_base_accounts[0].clone(), // Sends to ICA Deposit Account
         memo: "".to_string(),
         remote_chain_info: valence_ica_ibc_transfer::msg::RemoteChainInfo {
             channel_id: params.ica.channel_id,
@@ -221,7 +231,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Instantiate the maxBTC issuer library
     let maxbtc_issuer_config = valence_maxbtc_issuer::msg::LibraryConfig {
-        input_addr: LibraryAccountType::Addr(predicted_base_accounts[0].clone()),
+        input_addr: LibraryAccountType::Addr(predicted_base_accounts[0].clone()), // Input is ICA Deposit Account
         output_addr: LibraryAccountType::Addr(predicted_base_accounts[1].clone()),
         maxbtc_issuer_addr: params.program.maxbtc_contract.clone(),
         btc_denom: params.program.deposit_token_on_neutron_denom.clone(),
@@ -243,15 +253,48 @@ async fn main() -> anyhow::Result<()> {
         .await?;
     println!("MaxBTC Issuer library instantiated: {maxbtc_issuer_library_address}");
 
-    // Instantiate the clearing queue library
-    // We are going to reuse the same clearing library even though we are not using mars nor supervaults
-    // We just need to payout everything in 1 denom (maxBTC) from the settlement account, and this works.
+    // Instantiate supervaults lper library
+    let supervaults_lper_config = valence_supervaults_lper::msg::LibraryConfig {
+        input_addr: LibraryAccountType::Addr(predicted_base_accounts[1].clone()), // Input is Supervault Deposit Account
+        output_addr: LibraryAccountType::Addr(predicted_base_accounts[2].clone()), // Output is final Settlement Account
+        vault_addr: params.program.supervault.clone(),
+        lp_config: valence_supervaults_lper::msg::LiquidityProviderConfig {
+            asset_data: valence_library_utils::liquidity_utils::AssetData {
+                asset1: params.program.supervault_asset1.clone(),
+                asset2: params.program.supervault_asset2.clone(),
+            },
+            lp_denom: params.program.supervault_lp_denom.clone(),
+        },
+    };
+
+    let instantiate_supervaults_lper_msg = valence_library_utils::msg::InstantiateMsg::<
+        valence_supervaults_lper::msg::LibraryConfig,
+    > {
+        owner: processor_address.clone(),
+        processor: processor_address.clone(),
+        config: supervaults_lper_config,
+    };
+    let supervaults_lper_library_address = neutron_client
+        .instantiate(
+            code_id_supervaults_lper,
+            "supervaults_lper".to_string(),
+            instantiate_supervaults_lper_msg,
+            None,
+        )
+        .await?;
+    println!("Supervaults lper library instantiated: {supervaults_lper_library_address}");
+
+    // Instantiate the clearing queue library with supervault info
     let clearing_config = valence_clearing_queue_supervaults::msg::LibraryConfig {
-        settlement_acc_addr: LibraryAccountType::Addr(predicted_base_accounts[1].clone()),
+        settlement_acc_addr: LibraryAccountType::Addr(predicted_base_accounts[2].clone()), // Final settlement account
         denom: params.program.maxbtc_denom.clone(),
         latest_id: None,
-        mars_settlement_ratio: Decimal::percent(100),
-        supervaults_settlement_info: vec![],
+        mars_settlement_ratio: Decimal::zero(), // No Mars lending
+        supervaults_settlement_info: vec![SupervaultSettlementInfo {
+            supervault_addr: params.program.supervault.clone(),
+            supervault_sender: predicted_base_accounts[1].clone(), // Sender is the Supervault Deposit Account
+            settlement_ratio: Decimal::one(),                     // 100% to this supervault
+        }],
     };
     let instantiate_clearing_queue_msg = valence_library_utils::msg::InstantiateMsg::<
         valence_clearing_queue_supervaults::msg::LibraryConfig,
@@ -292,8 +335,8 @@ async fn main() -> anyhow::Result<()> {
         .await?;
     println!("Valence ICA instantiated: {valence_ica_address}");
 
-    // Now the rest
-    let ica_deposit_account = valence_account_utils::msg::InstantiateMsg {
+    // Now the rest of the accounts
+    let ica_deposit_account_msg = valence_account_utils::msg::InstantiateMsg {
         admin: params.general.owner.clone(),
         approved_libraries: vec![maxbtc_issuer_library_address.clone()],
     };
@@ -301,14 +344,31 @@ async fn main() -> anyhow::Result<()> {
         .instantiate2(
             code_id_base_account,
             "ica_deposit".to_string(),
-            ica_deposit_account,
+            ica_deposit_account_msg,
             Some(params.general.owner.clone()),
             salts[0].clone(),
         )
         .await?;
     println!("ICA deposit account instantiated: {ica_deposit_account_address}");
 
-    let settlement_account = valence_account_utils::msg::InstantiateMsg {
+    // Instantiate the new intermediate account for supervault deposits
+    let supervault_deposit_account_msg = valence_account_utils::msg::InstantiateMsg {
+        admin: params.general.owner.clone(),
+        approved_libraries: vec![supervaults_lper_library_address.clone()],
+    };
+    let supervault_deposit_account_address = neutron_client
+        .instantiate2(
+            code_id_base_account,
+            "supervault_deposit".to_string(),
+            supervault_deposit_account_msg,
+            Some(params.general.owner.clone()),
+            salts[1].clone(),
+        )
+        .await?;
+    println!("Supervault deposit account instantiated: {supervault_deposit_account_address}");
+
+
+    let settlement_account_msg = valence_account_utils::msg::InstantiateMsg {
         admin: params.general.owner.clone(),
         approved_libraries: vec![clearing_queue_library_address.clone()],
     };
@@ -316,22 +376,25 @@ async fn main() -> anyhow::Result<()> {
         .instantiate2(
             code_id_base_account,
             "settlement".to_string(),
-            settlement_account,
+            settlement_account_msg,
             Some(params.general.owner.clone()),
-            salts[1].clone(),
+            salts[2].clone(),
         )
         .await?;
     println!("Settlement account instantiated: {settlement_account_address}");
 
+    // Update Denoms, Accounts, and Libraries for the final config
     let denoms = NeutronDenoms {
         deposit_token: params.program.deposit_token_on_neutron_denom,
         ntrn: "untrn".to_string(),
         maxbtc: params.program.maxbtc_denom.clone(),
+        supervault_lp: params.program.supervault_lp_denom,
     };
 
     let accounts = NeutronAccounts {
         gaia_ica: valence_ica_address.clone(),
-        deposit: ica_deposit_account_address,
+        ica_deposit: ica_deposit_account_address,
+        supervault_deposit: supervault_deposit_account_address,
         settlement: settlement_account_address,
     };
 
@@ -339,6 +402,7 @@ async fn main() -> anyhow::Result<()> {
         maxbtc_issuer: maxbtc_issuer_library_address,
         clearing_queue: clearing_queue_library_address,
         ica_transfer_gaia: ica_ibc_transfer_library_address,
+        supervault_lper: supervaults_lper_library_address,
     };
 
     let coprocessor_app_ids = NeutronCoprocessorAppIds {
@@ -350,6 +414,7 @@ async fn main() -> anyhow::Result<()> {
         grpc_port: params.general.grpc_port.clone(),
         chain_id: params.general.chain_id.clone(),
         maxbtc_contract: params.program.maxbtc_contract.clone(),
+        supervault: params.program.supervault,
         denoms,
         accounts,
         libraries,
@@ -367,7 +432,7 @@ async fn main() -> anyhow::Result<()> {
         current_dir.join(format!("{OUTPUTS_DIR}/neutron_strategy_config.toml")),
         neutron_cfg_toml,
     )
-    .expect("Failed to write Neutron Strategy Config to file");
+        .expect("Failed to write Neutron Strategy Config to file");
 
     // Last thing we will do is register the ICA on the valence ICA
     let register_ica_msg = valence_account_utils::ica::ExecuteMsg::RegisterIca {};
@@ -420,7 +485,7 @@ async fn main() -> anyhow::Result<()> {
         gaia_cfg_path,
         toml::to_string(&gaia_cfg).expect("Failed to serialize Gaia strategy config"),
     )
-    .expect("Failed to write Gaia strategy config to file");
+        .expect("Failed to write Gaia strategy config to file");
 
     Ok(())
 }

@@ -142,7 +142,7 @@ impl Strategy {
         let neutron_deposit_acc_balance = self
             .neutron_client
             .query_balance(
-                &self.cfg.neutron.accounts.deposit,
+                &self.cfg.neutron.accounts.ica_deposit,
                 &self.cfg.neutron.denoms.deposit_token,
             )
             .await?;

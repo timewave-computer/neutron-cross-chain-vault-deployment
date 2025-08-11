@@ -83,7 +83,7 @@ impl Strategy {
             let neutron_deposit_bal = self
                 .neutron_client
                 .query_balance(
-                    &self.cfg.neutron.accounts.deposit,
+                    &self.cfg.neutron.accounts.ica_deposit,
                     &self.cfg.neutron.denoms.deposit_token,
                 )
                 .await?;
@@ -331,7 +331,7 @@ impl Strategy {
         let pre_routing_neutron_deposit_acc_bal = self
             .neutron_client
             .query_balance(
-                &self.cfg.neutron.accounts.deposit,
+                &self.cfg.neutron.accounts.ica_deposit,
                 &self.cfg.neutron.denoms.deposit_token,
             )
             .await?;
@@ -351,7 +351,7 @@ impl Strategy {
         // account
         self.neutron_client
             .poll_until_expected_balance(
-                &self.cfg.neutron.accounts.deposit,
+                &self.cfg.neutron.accounts.ica_deposit,
                 &self.cfg.neutron.denoms.deposit_token,
                 neutron_deposit_acc_expected_bal,
                 5,
