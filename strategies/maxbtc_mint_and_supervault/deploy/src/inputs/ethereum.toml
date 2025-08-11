@@ -1,0 +1,29 @@
+[general]
+rpc_url = "https://eth-mainnet.public.blastapi.io"
+owner   = "0xd9A23b58e684B985F661Ce7005AA8E10630150c1" # Neutron multisig address
+
+[vault]
+deposit_token            = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599" # Should be updated to correct deposit token address (e.g. WBTC)
+strategist               = "0xd9A23b58e684B985F661Ce7005AA8E10630150c1" # Address of the strategist
+platform_fee_account     = "0xd9A23b58e684B985F661Ce7005AA8E10630150c1" # Receiver of the platform fees portion
+strategist_fee_account   = "0xd9A23b58e684B985F661Ce7005AA8E10630150c1" # Receiver of the strategist fees portion
+strategist_fee_ratio_bps = 5000                                         # Strategist fee is 50%, rest goes to the platform (50%)
+scaling_factor           = "10000000000"                                # scaling factor for rate updates
+deposit_cap              = "10000000000000"                             # e.g. 10K BTC
+deposit_fee_bps          = 100                                          # 1% deposit fee
+withdraw_fee_bps         = 100                                          # 1% withdraw fee
+max_rate_increment_bps   = 2000                                         # 20% maximum rate increment per update
+max_rate_decrement_bps   = 2000                                         # 20% maximum rate decrement per update
+starting_rate            = "100000000"                                  # Should be the maxBTC rate for the deposit token
+min_rate_update_delay    = 300                                          # 5 minutes - Minimum delay for rate updates - for testing purposes      
+max_rate_update_delay    = 345600                                       # 4 days in seconds - Maximum delay for rate updates before vault gets paused
+
+[eureka_transfer]
+handler                    = "0xfc2d0487a0ae42ae7329a80dc269916a9184cf7c"
+recipient                  = "" # Eventual ICA address
+source_client              = "cosmoshub-0"
+timeout                    = 43200                                        # 12 hours in seconds
+ibc_transfer_threshold_amt = 1000000
+
+[coprocessor_app]
+eureka_transfer_coprocessor_app_id = "" # TBD after deployment

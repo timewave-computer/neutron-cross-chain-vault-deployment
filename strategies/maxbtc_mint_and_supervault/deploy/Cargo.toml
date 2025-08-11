@@ -1,0 +1,27 @@
+[package]
+name    = "maxbtc_mint_and_supervault_deploy"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+maxbtc_mint_and_supervault_types     = { path = "../types" }
+packages                             = { path = "../../../packages" }
+anyhow                               = { workspace = true }
+toml                                 = { workspace = true }
+serde                                = { workspace = true }
+cosmwasm-std                         = { workspace = true }
+cosmrs                               = { workspace = true }
+dotenv                               = { workspace = true }
+tokio                                = { workspace = true }
+valence-domain-clients               = { workspace = true }
+alloy                                = { workspace = true }
+hex                                  = { workspace = true }
+valence-authorization-utils          = { workspace = true }
+valence-processor-utils              = { workspace = true }
+valence-library-utils                = { workspace = true }
+valence-account-utils                = { workspace = true }
+valence-ica-ibc-transfer             = { workspace = true }
+valence-clearing-queue-supervaults   = { workspace = true }
+valence-maxbtc-issuer                = { workspace = true }
+sp1-sdk                              = { workspace = true }
+bincode                              = { workspace = true }
