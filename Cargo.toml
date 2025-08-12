@@ -72,5 +72,6 @@ valence-maxbtc-issuer                = { git = "https://github.com/timewave-comp
 valence-lending-utils                = { git = "https://github.com/timewave-computer/valence-protocol", rev = "6bc9ebb" }
 
 # valence-coprocessor
-valence-coprocessor      = { git = "https://github.com/timewave-computer/valence-coprocessor.git", tag = "v0.3.12", default-features = false }
-valence-coprocessor-wasm = { git = "https://github.com/timewave-computer/valence-coprocessor.git", tag = "v0.3.12", default-features = false }
+valence-coprocessor-ethereum = { git = "https://github.com/timewave-computer/valence-coprocessor-ethereum", tag = "v1.1.3", default-features = false }
+valence-coprocessor          = { git = "https://github.com/timewave-computer/valence-coprocessor.git", tag = "v0.4.5", default-features = false }
+valence-coprocessor-wasm     = { git = "https://github.com/timewave-computer/valence-coprocessor.git", tag = "v0.4.5", default-features = false }
