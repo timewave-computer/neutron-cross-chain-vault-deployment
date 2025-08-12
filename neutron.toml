@@ -1,0 +1,4 @@
+grpc_url      = "http://rpc.neutron.quokkastake.io"
+grpc_port     = "9090"
+chain_id      = "neutron-1"
+chain_denom = "untrn"
