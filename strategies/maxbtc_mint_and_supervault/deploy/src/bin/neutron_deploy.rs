@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, env, fs, time::SystemTime};
 
-use cosmwasm_std::{Decimal, Uint128, Uint64};
+use cosmwasm_std::{Decimal, Uint64, Uint128};
 use maxbtc_mint_and_supervault_deploy::{INPUTS_DIR, OUTPUTS_DIR};
 use maxbtc_mint_and_supervault_types::{
     gaia_config::GaiaStrategyConfig,
@@ -10,7 +10,7 @@ use maxbtc_mint_and_supervault_types::{
     },
 };
 use packages::{
-    contracts::{UploadedContracts, PATH_NEUTRON_CODE_IDS},
+    contracts::{PATH_NEUTRON_CODE_IDS, UploadedContracts},
     types::inputs::{ChainClientInputs, ClearingQueueCoprocessorApp},
     verification::VALENCE_NEUTRON_VERIFICATION_GATEWAY,
 };
@@ -82,7 +82,7 @@ async fn main() -> anyhow::Result<()> {
         &mnemonic,
         &params.general.chain_id,
     )
-        .await?;
+    .await?;
 
     let my_address = neutron_client
         .get_signing_client()
@@ -106,7 +106,6 @@ async fn main() -> anyhow::Result<()> {
         .unwrap();
     let code_id_maxbtc_issuer = *uploaded_contracts.code_ids.get("maxbtc_issuer").unwrap();
     let code_id_supervaults_lper = *uploaded_contracts.code_ids.get("supervaults_lper").unwrap();
-
 
     let now = SystemTime::now();
     let salt_raw = now
@@ -293,7 +292,7 @@ async fn main() -> anyhow::Result<()> {
         supervaults_settlement_info: vec![SupervaultSettlementInfo {
             supervault_addr: params.program.supervault.clone(),
             supervault_sender: predicted_base_accounts[1].clone(), // Sender is the Supervault Deposit Account
-            settlement_ratio: Decimal::one(),                     // 100% to this supervault
+            settlement_ratio: Decimal::one(),                      // 100% to this supervault
         }],
     };
     let instantiate_clearing_queue_msg = valence_library_utils::msg::InstantiateMsg::<
@@ -367,7 +366,6 @@ async fn main() -> anyhow::Result<()> {
         .await?;
     println!("Supervault deposit account instantiated: {supervault_deposit_account_address}");
 
-
     let settlement_account_msg = valence_account_utils::msg::InstantiateMsg {
         admin: params.general.owner.clone(),
         approved_libraries: vec![clearing_queue_library_address.clone()],
@@ -432,7 +430,7 @@ async fn main() -> anyhow::Result<()> {
         current_dir.join(format!("{OUTPUTS_DIR}/neutron_strategy_config.toml")),
         neutron_cfg_toml,
     )
-        .expect("Failed to write Neutron Strategy Config to file");
+    .expect("Failed to write Neutron Strategy Config to file");
 
     // Last thing we will do is register the ICA on the valence ICA
     let register_ica_msg = valence_account_utils::ica::ExecuteMsg::RegisterIca {};
@@ -485,7 +483,7 @@ async fn main() -> anyhow::Result<()> {
         gaia_cfg_path,
         toml::to_string(&gaia_cfg).expect("Failed to serialize Gaia strategy config"),
     )
-        .expect("Failed to write Gaia strategy config to file");
+    .expect("Failed to write Gaia strategy config to file");
 
     Ok(())
 }
