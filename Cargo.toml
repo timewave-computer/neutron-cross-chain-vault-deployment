@@ -33,6 +33,7 @@ members = [
 resolver = "2"
 
 [workspace.dependencies]
+rustls                     = { version = "0.23", features = ["aws-lc-rs"] }
 env_logger                 = "0.10.0"
 async-trait                = "0.1.77"
 cosmwasm-std               = { version = "2.1.3" }

@@ -4,6 +4,7 @@ use cosmwasm_std::Decimal;
 use packages::{
     contracts::{PATH_NEUTRON_CODE_IDS, UploadedContracts},
     types::inputs::{ChainClientInputs, ClearingQueueCoprocessorApp},
+    utils::crypto_provider::setup_crypto_provider,
     verification::VALENCE_NEUTRON_VERIFICATION_ROUTER,
 };
 use serde::Deserialize;
@@ -50,6 +51,9 @@ struct Program {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     dotenv::dotenv().ok();
+
+    setup_crypto_provider().await?;
+
     let mnemonic = env::var("MNEMONIC").expect("mnemonic must be provided");
 
     let current_dir = env::current_dir()?;
