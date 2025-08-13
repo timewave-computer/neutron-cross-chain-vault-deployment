@@ -8,6 +8,7 @@ use packages::{
         ICA_TRANSFER_LABEL, MAXBTC_ISSUE_LABEL, REGISTER_OBLIGATION_LABEL, SETTLE_OBLIGATION_LABEL,
     },
     types::inputs::ClearingQueueCoprocessorApp,
+    utils::crypto_provider::setup_crypto_provider,
     verification::VERIFICATION_ROUTE,
 };
 use serde::Deserialize;
@@ -41,6 +42,9 @@ struct General {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     dotenv::dotenv().ok();
+
+    setup_crypto_provider().await?;
+
     let mnemonic = env::var("MNEMONIC").expect("mnemonic must be provided");
 
     let current_dir = env::current_dir()?;

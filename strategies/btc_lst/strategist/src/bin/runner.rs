@@ -1,6 +1,6 @@
 use btc_lst_strategist::strategy_config::Strategy;
 use log::{info, warn};
-use packages::utils::logging::setup_logging;
+use packages::utils::{crypto_provider::setup_crypto_provider, logging::setup_logging};
 use std::env;
 use valence_strategist_utils::worker::ValenceWorker;
 
@@ -13,6 +13,7 @@ async fn main() -> anyhow::Result<()> {
     dotenv::from_path(env_path.as_path())?;
 
     setup_logging().await?;
+    setup_crypto_provider().await?;
 
     info!(target: RUNNER, "starting the strategist runner");
 

@@ -26,6 +26,7 @@ serde_json                         = { workspace = true }
 dotenv                             = { workspace = true }
 tokio                              = { workspace = true, features = ["full"] }
 toml                               = { workspace = true }
+rustls                             = { workspace = true }
 
 [[bin]]
 name = "neutron_upload"
