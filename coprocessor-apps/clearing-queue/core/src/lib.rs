@@ -3,22 +3,9 @@
 extern crate alloc;
 
 pub const VAULT_ADDRESS: &str = "0x9fe5b9c7ddbd26d0dc93634e15eb1a5d34c85493";
-pub const VAULT_ADDRESS_HASH: &[u8] = &[
-    0x32, 0x52, 0x8d, 0x6c, 0x79, 0xdd, 0xee, 0xcc, 0x69, 0xb3, 0xde, 0x64, 0xae, 0x95, 0x92, 0x28,
-    0x11, 0x1c, 0xb9, 0x53, 0x0e, 0x05, 0x80, 0x23, 0x7a, 0xb7, 0x2b, 0x8e, 0xfb, 0x35, 0xb9, 0x18,
-];
 
 mod proof;
 mod types;
 
 pub use proof::*;
 pub use types::*;
-
-#[test]
-fn vault_constants_are_consistent() {
-    let address = VAULT_ADDRESS.strip_prefix("0x").unwrap();
-    let address = hex::decode(address).unwrap();
-    let hash = alloy_primitives::keccak256(address);
-
-    assert_eq!(hash, VAULT_ADDRESS_HASH);
-}
