@@ -3,7 +3,6 @@
 extern crate alloc;
 
 use alloc::{string::ToString as _, vec::Vec};
-use alloy_rpc_types_eth::EIP1186AccountProofResponse;
 use clearing_queue_core::WithdrawRequest;
 use cosmwasm_std::{Uint64, Uint128, to_json_binary};
 use valence_authorization_utils::{
@@ -23,9 +22,7 @@ const CLEARING_QUEUE_LIBRARY_ADDRESS: &str =
     "neutron1pdp6mty3ykchjxksj9hakupma3atyrah27mtws3ph2matjkhg7qse70m8g";
 
 pub fn circuit(witnesses: Vec<Witness>) -> Vec<u8> {
-    let state = witnesses[0].as_state_proof().unwrap();
-    let root = state.root;
-    let proof: EIP1186AccountProofResponse = serde_json::from_slice(&state.proof).unwrap();
+    let state_proof = witnesses[0].as_state_proof().unwrap();
 
     let withdraw = witnesses[1].as_data().unwrap();
     let withdraw: WithdrawRequest =
@@ -35,7 +32,7 @@ pub fn circuit(witnesses: Vec<Witness>) -> Vec<u8> {
 
     assert!(!withdraw.redemptionRate.is_zero());
 
-    clearing_queue_core::verify_proof(&proof, &withdraw, &root).unwrap();
+    clearing_queue_core::verify_proof(state_proof, &withdraw).unwrap();
 
     // Calculate the amounts to be paid out by doing (shares × current_redemption_rate) / initial_redemption_rate
     let shares: u128 = withdraw.sharesAmount.try_into().unwrap();

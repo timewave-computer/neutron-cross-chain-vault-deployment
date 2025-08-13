@@ -21,9 +21,9 @@ use valence_library_utils::OptionUpdate;
 use crate::strategy_config::Strategy;
 
 /// minimum Valence account balance to perform a split.
-/// there are 6 supervaults, so we need at least 6 tokens
+/// there are 6 supervaults and 1 mars lending, so we need at least 7 tokens
 /// to be able to perform a split
-const MIN_SPLIT_BALANCE: u128 = 6;
+const MIN_SPLIT_BALANCE: u128 = 7;
 
 impl Strategy {
     /// carries out the steps needed to bring the new deposits from Ethereum to

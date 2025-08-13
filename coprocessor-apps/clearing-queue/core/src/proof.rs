@@ -1,152 +1,52 @@
 use alloc::vec::Vec;
-use alloy_primitives::{FixedBytes, U256};
-use alloy_rlp::Encodable as _;
-use alloy_rpc_types_eth::{Account, EIP1186AccountProofResponse};
-use alloy_serde::JsonStorageKey;
-use alloy_trie::Nibbles;
+use alloy_primitives::U256;
+use valence_coprocessor::DomainCircuit;
+use valence_coprocessor::StateProof;
+use valence_coprocessor_ethereum::{Ethereum, EthereumProvenAccount, EthereumStorageProofArg};
 
-use crate::{VAULT_ADDRESS_HASH, WithdrawRequest};
+use crate::VAULT_ADDRESS;
+use crate::WithdrawRequest;
 
 pub fn verify_proof(
-    proof: &EIP1186AccountProofResponse,
+    proof: &StateProof,
     withdraw: &WithdrawRequest,
-    state_root: &[u8],
-) -> anyhow::Result<()> {
-    let state_root: FixedBytes<32> = TryFrom::try_from(state_root)?;
-    let key = Nibbles::unpack(VAULT_ADDRESS_HASH);
+) -> anyhow::Result<Vec<EthereumStorageProofArg>> {
+    let EthereumProvenAccount {
+        account, storage, ..
+    } = Ethereum::verify(proof)?;
 
-    let mut account = Vec::new();
-    Account {
-        nonce: proof.nonce,
-        balance: proof.balance,
-        storage_root: proof.storage_hash,
-        code_hash: proof.code_hash,
-    }
-    .encode(&mut account);
-
-    alloy_trie::proof::verify_proof(state_root, key, Some(account), &proof.account_proof)
-        .map_err(|e| anyhow::anyhow!("account proof failed: {e}"))?;
-
-    let root = proof.storage_hash;
-    let mut proof = proof.storage_proof.iter();
-
-    // id+owner slot
-
-    let p = proof
-        .next()
-        .ok_or_else(|| anyhow::anyhow!("id/owner not available"))?;
-    let key = match p.key {
-        JsonStorageKey::Hash(b) => b,
-        JsonStorageKey::Number(_) => anyhow::bail!("invalid storage proof"),
-    };
-    let key = alloy_primitives::keccak256(key);
-    let key = Nibbles::unpack(key);
+    anyhow::ensure!(hex::encode(account) == &VAULT_ADDRESS[2..]); // strips "0x"
     let value = [&withdraw.owner.into_array()[..], &withdraw.id.to_be_bytes()].concat();
-    let value = rlp::encode(&value).to_vec();
-    alloy_trie::proof::verify_proof(root, key, Some(value), &p.proof)
-        .map_err(|e| anyhow::anyhow!("storage proof failed: {e}"))?;
+    anyhow::ensure!(Some(rlp::encode(&value).to_vec()) == storage[0].value);
 
-    // redemption rate
-
-    let p = proof
-        .next()
-        .ok_or_else(|| anyhow::anyhow!("redemption rate not available"))?;
-    let key = match p.key {
-        JsonStorageKey::Hash(b) => b,
-        JsonStorageKey::Number(_) => anyhow::bail!("invalid storage proof"),
-    };
-    let key = alloy_primitives::keccak256(key);
-    let key = Nibbles::unpack(key);
     let value = withdraw.redemptionRate.to_be_bytes_trimmed_vec();
-    let value = rlp::encode(&value).to_vec();
-    alloy_trie::proof::verify_proof(root, key, Some(value), &p.proof)
-        .map_err(|e| anyhow::anyhow!("storage proof failed: {e}"))?;
+    anyhow::ensure!(Some(rlp::encode(&value).to_vec()) == storage[1].value);
 
-    // shares amount
-
-    let p = proof
-        .next()
-        .ok_or_else(|| anyhow::anyhow!("shares amount not available"))?;
-    let key = match p.key {
-        JsonStorageKey::Hash(b) => b,
-        JsonStorageKey::Number(_) => anyhow::bail!("invalid storage proof"),
-    };
-    let key = alloy_primitives::keccak256(key);
-    let key = Nibbles::unpack(key);
     let value = withdraw.sharesAmount.to_be_bytes_trimmed_vec();
-    let value = rlp::encode(&value).to_vec();
-    alloy_trie::proof::verify_proof(root, key, Some(value), &p.proof)
-        .map_err(|e| anyhow::anyhow!("storage proof failed: {e}"))?;
+    anyhow::ensure!(Some(rlp::encode(&value).to_vec()) == storage[2].value);
 
-    // receiver
+    let receiver_len = withdraw.receiver.len() as u64;
+    if receiver_len <= 31 {
+        // Short string: packed with length in the same slot
+        let mut value = withdraw.receiver.as_bytes().to_vec();
+        value.resize(32, 0); // Pad to 32 bytes
+        // For short strings, the length is stored in the last byte (LSB)
+        value[31] = (receiver_len << 1) as u8; // Set length with the encoding bit
 
-    let mut len = withdraw.receiver.len();
-    let mut receiver = withdraw.receiver.as_str();
-    let p = proof
-        .next()
-        .ok_or_else(|| anyhow::anyhow!("receiver initial slot not available"))?;
-
-    if len < 32 {
-        let key = match p.key {
-            JsonStorageKey::Hash(b) => b,
-            JsonStorageKey::Number(_) => anyhow::bail!("invalid storage proof"),
-        };
-        let key = alloy_primitives::keccak256(key);
-        let key = Nibbles::unpack(key);
-
-        // Create 32-byte slot with string data and length encoding
-        let mut slot_value = [0u8; 32];
-        let receiver_bytes = withdraw.receiver.as_bytes();
-
-        // Copy string data to the left side of the slot
-        slot_value[..receiver_bytes.len()].copy_from_slice(receiver_bytes);
-
-        // Encode length in the rightmost byte (length * 2)
-        slot_value[31] = (len * 2) as u8;
-
-        let value = rlp::encode(&slot_value.to_vec()).to_vec();
-        alloy_trie::proof::verify_proof(root, key, Some(value), &p.proof)
-            .map_err(|e| anyhow::anyhow!("storage proof failed: {e}"))?;
+        anyhow::ensure!(Some(rlp::encode(&value).to_vec()) == storage[3].value);
     } else {
-        let key = match p.key {
-            JsonStorageKey::Hash(b) => b,
-            JsonStorageKey::Number(_) => anyhow::bail!("invalid storage proof"),
-        };
-        let key = alloy_primitives::keccak256(key);
-        let key = Nibbles::unpack(key);
-        let value = (len << 1) + 1;
-        let value = U256::from(value as u64).to_be_bytes_trimmed_vec();
-        let value = rlp::encode(&value).to_vec();
-        alloy_trie::proof::verify_proof(root, key, Some(value), &p.proof)
-            .map_err(|e| anyhow::anyhow!("storage proof failed: {e}"))?;
+        // Long string: length in slot 3, data in subsequent slots
+        let value = (receiver_len << 1) + 1;
+        let value = U256::from(value).to_be_bytes_trimmed_vec();
+        anyhow::ensure!(Some(rlp::encode(&value).to_vec()) == storage[3].value);
 
-        while len > 0 {
-            let value = len.saturating_sub(32);
-            let value = len - value;
-            let (curr, new) = receiver.split_at(value);
-
-            let p = proof
-                .next()
-                .ok_or_else(|| anyhow::anyhow!("receiver contents not available"))?;
-            let key = match p.key {
-                JsonStorageKey::Hash(b) => b,
-                JsonStorageKey::Number(_) => anyhow::bail!("invalid storage proof"),
-            };
-            let key = alloy_primitives::keccak256(key);
-            let key = Nibbles::unpack(key);
-
-            let mut value = curr.as_bytes().to_vec();
+        // Data chunks in subsequent slots
+        for (i, c) in withdraw.receiver.as_bytes().chunks(32).enumerate() {
+            let mut value = c.to_vec();
             value.resize(32, 0);
-
-            let value = rlp::encode(&value).to_vec();
-
-            alloy_trie::proof::verify_proof(root, key, Some(value), &p.proof)
-                .map_err(|e| anyhow::anyhow!("storage proof failed: {e}"))?;
-
-            receiver = new;
-            len = len.saturating_sub(32);
+            anyhow::ensure!(Some(rlp::encode(&value).to_vec()) == storage[4 + i].value);
         }
     }
 
-    Ok(())
+    Ok(storage)
 }
