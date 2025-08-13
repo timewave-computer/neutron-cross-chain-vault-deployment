@@ -1,0 +1,21 @@
+[general]
+grpc_url   = "http://rpc.neutron.quokkastake.io"
+grpc_port  = "9090"
+chain_id   = "neutron-1"
+owner      = "neutron14mlpd48k5vkeset4x7f78myz3m47jcax3ysjkp" # Should be Neutron multisig
+strategist = "neutron14mlpd48k5vkeset4x7f78myz3m47jcax3ysjkp" # Should be strategist address
+
+[ica]
+deposit_token_on_hub_denom = "ibc/D742E8566B0B8CC8F569D950051C09CF57988A88F0E45574BFB3079D41DE6462" # Should be token denom on Hub
+channel_id                 = "channel-569"                                                          # Hub -> Neutron channel
+ibc_transfer_timeout       = 600                                                                    # 10 minutes
+connection_id              = "connection-0"                                                         # Neutron -> Hub connection
+ica_timeout                = 43200                                                                  # 12 hours in seconds - Large value recommended: https://docs.neutron.org/neutron/modules/interchain-txs/messages
+
+[program]
+deposit_token_on_neutron_denom = "ibc/0E293A7622DC9A6439DB60E6D234B5AF446962E27CA3AB44D0590603DFF6968E" # Should be token denom on Neutron
+maxbtc_contract = "neutron1hq65gh2rfh6d08hpk7u48u0fjly6qezdwp95t7dydvxxnv7r9zhstpct4v" # The contract address where maxBTC are minted from
+maxbtc_denom = "factory/neutron1hq65gh2rfh6d08hpk7u48u0fjly6qezdwp95t7dydvxxnv7r9zhstpct4v/maxbtc" # Should be real maxBTC denom on Neutron
+
+[coprocessor_app]
+clearing_queue_coprocessor_app_id = "" # TBD after deployment
