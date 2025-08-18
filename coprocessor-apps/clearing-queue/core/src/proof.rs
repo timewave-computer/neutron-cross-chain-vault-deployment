@@ -23,7 +23,9 @@ pub fn verify_proof(
     anyhow::ensure!(Some(rlp::encode(&value).to_vec()) == storage[1].value);
 
     let value = withdraw.sharesAmount.to_be_bytes_trimmed_vec();
-    anyhow::ensure!(Some(rlp::encode(&value).to_vec()) == storage[2].value);
+    let encoded = rlp::encode(&value).to_vec();
+    let encoded = (encoded != [0x80]).then_some(encoded);
+    anyhow::ensure!(encoded == storage[2].value);
 
     let receiver_len = withdraw.receiver.len() as u64;
     if receiver_len <= 31 {
