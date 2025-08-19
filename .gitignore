@@ -1,6 +1,7 @@
 target/
 .env
 *.env
+.idea/
 
 # Output files
 strategies/*/deploy/src/ethereum_strategy_config.toml
@@ -10,5 +11,6 @@ strategies/*/deploy/src/coprocessor_strategy_config.toml
 
 strategies/lombard_btc/deploy/src/lombard_strategy_config.toml
 !strategies/*/strategist/*.example.env
+strategies/maxbtc_mint_and_supervault/strategist/maxbtc_mint_and_supervault.example.env
 !strategies/usdc/deploy/src/*.toml
 strategies/lombard_btc/deploy/src/artifacts/lombard_strategy_config.toml
