@@ -3,15 +3,15 @@ max_rate_increment_bps = 100000
 max_rate_decrement_bps = 10000
 ibc_transfer_threshold_amt = "0xa"
 rate_scaling_factor = "1000000000000"
-authorizations = "0xbcf62837d88991ab3bf3e3e050ad7ec6b9863042"
-processor = "0x399b97d04d860cd7300301ec527fa21d1dea51a7"
+authorizations = "0x83d152e519a49a2d224129dcf03ffbee612b1c78"
+processor = "0x888951ae741c0941d8b0196d8a730d2d2b158601"
 
 [denoms]
 deposit_token = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
 
 [accounts]
-deposit = "0xb077390dc03e98904bd4b0c23d1f41683cd249f0"
+deposit = "0xb32e55c5f23a1b8bf292dde3d8a0925b356adb67"
 
 [libraries]
-one_way_vault = "0x8e78915edc31b994b73ab388509901b2aad90744"
-cctp_transfer = "0x3ea83ebde76c43b7e79ceca43080d53dd01968fe"
+one_way_vault = "0xc12f57e9e3fe8fae9ab4ae07906e285bf7b39741"
+cctp_transfer = "0x0d76687a74ee31e0b8d25225f166ff509f505f3a"

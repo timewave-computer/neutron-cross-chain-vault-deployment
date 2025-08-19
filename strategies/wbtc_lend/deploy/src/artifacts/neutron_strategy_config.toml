@@ -1,5 +1,5 @@
-grpc_url = "http://rpc.neutron.quokkastake.io"
-grpc_port = "9090"
+grpc_url = "http://grpc-xyphion.neutron-1.neutron.org"
+grpc_port = "80"
 chain_id = "neutron-1"
 mars_credit_manager = "neutron1et4xza4pge3asumk8yxdx6qm85k9eplk0kathtkheln6znxsqheqfytsza"
 authorizations = "neutron1mrrucsjaq38wf7ph20ct0exp8gurlkegcslc7m23m6adxadmn20qxy5g9z"

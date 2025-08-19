@@ -20,6 +20,6 @@ max_rate_update_delay    = 345600                                       # 4 days
 
 [cctp_transfer]
 cctp_token_messenger        = "0xBd3fa81B58Ba92a82136038B25aDec7066af3155"                         # CCTP Token Messenger contract address
-recipient                   = "0x00000000000000000000000081AFA888ED26C45F0E045B2E4666687E1FFF9D1E" # Forwarding Account on Noble
+recipient                   = "0x000000000000000000000000409A273408D6F568ABE920B9A9B03E472D64FE4B" # Forwarding Account on Noble
 destination_domain          = 4                                                                    # Noble
 cctp_transfer_threshold_amt = 10
