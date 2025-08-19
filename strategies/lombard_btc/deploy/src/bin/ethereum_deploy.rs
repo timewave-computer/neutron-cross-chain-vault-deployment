@@ -10,16 +10,13 @@ use lombard_btc_types::ethereum_config::{
     EthereumAccounts, EthereumCoprocessorAppIds, EthereumDenoms, EthereumLibraries,
     EthereumStrategyConfig,
 };
-use packages::{
-    types::{
-        inputs::{EurekaTransfer, EurekaTransferCoprocessorApp},
-        sol_types::{
-            Authorization, BaseAccount, ERC1967Proxy, IBCEurekaTransfer, IBCEurekaTransferConfig,
-            OneWayVault::{self, FeeDistributionConfig, OneWayVaultConfig},
-            processor_contract::LiteProcessor,
-        },
+use packages::types::{
+    inputs::{EurekaTransfer, EurekaTransferCoprocessorApp},
+    sol_types::{
+        Authorization, BaseAccount, ERC1967Proxy, IBCEurekaTransfer, IBCEurekaTransferConfig,
+        OneWayVault::{self, FeeDistributionConfig, OneWayVaultConfig},
+        processor_contract::LiteProcessor,
     },
-    verification::VALENCE_ETHEREUM_VERIFICATION_GATEWAY,
 };
 use serde::Deserialize;
 use valence_domain_clients::{
@@ -155,7 +152,6 @@ async fn main() -> anyhow::Result<()> {
         &rp,
         my_address, // We will be initial owners to eventually add the authorizations, then we need to transfer ownership
         processor_address,
-        VALENCE_ETHEREUM_VERIFICATION_GATEWAY.parse()?,
         true, // Store callbacks
     );
 

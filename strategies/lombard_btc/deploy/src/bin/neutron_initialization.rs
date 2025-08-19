@@ -9,6 +9,8 @@ use packages::{
         PHASE_SHIFT_LABEL, REGISTER_OBLIGATION_LABEL, SETTLE_OBLIGATION_LABEL,
     },
     types::inputs::ClearingQueueCoprocessorApp,
+    utils::crypto_provider::setup_crypto_provider,
+    verification::VERIFICATION_ROUTE,
 };
 use serde::Deserialize;
 use sp1_sdk::{HashableKey, SP1VerifyingKey};
@@ -42,6 +44,9 @@ struct General {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     dotenv::dotenv().ok();
+
+    setup_crypto_provider().await?;
+
     let mnemonic = env::var("MNEMONIC").expect("mnemonic must be provided");
 
     let current_dir = env::current_dir()?;
@@ -531,7 +536,9 @@ async fn main() -> anyhow::Result<()> {
         mode: authorization_permissioned_mode,
         registry: 0,
         vk: Binary::from(sp1_program_vk.bytes32().as_bytes()),
+        verification_route: VERIFICATION_ROUTE.to_string(),
         validate_last_block_execution: false,
+        metadata_hash: Binary::default(),
     };
 
     let create_zk_authorization = valence_authorization_utils::msg::ExecuteMsg::PermissionedAction(

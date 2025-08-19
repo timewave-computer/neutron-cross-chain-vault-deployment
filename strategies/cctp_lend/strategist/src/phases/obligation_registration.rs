@@ -72,14 +72,14 @@ impl Strategy {
 
             // extract the program and domain parameters by decoding the zkp
             let (proof_program, inputs_program) = utils::decode(vault_zkp_response.program)?;
-            let (proof_domain, inputs_domain) = utils::decode(vault_zkp_response.domain)?;
+            let (proof_domain, _) = utils::decode(vault_zkp_response.domain)?;
 
             // submits the decoded zkp parameters to the program authorizations module
             valence_core::post_zkp_on_chain(
                 &self.neutron_client,
                 &self.cfg.neutron.authorizations,
                 (proof_program, inputs_program),
-                (proof_domain, inputs_domain),
+                proof_domain,
             )
             .await?;
 

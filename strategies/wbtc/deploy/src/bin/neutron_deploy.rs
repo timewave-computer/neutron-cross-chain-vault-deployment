@@ -9,7 +9,8 @@ use cosmwasm_std::{Decimal, Uint64, Uint128};
 use packages::{
     contracts::{PATH_NEUTRON_CODE_IDS, UploadedContracts},
     types::inputs::ClearingQueueCoprocessorApp,
-    verification::VALENCE_NEUTRON_VERIFICATION_GATEWAY,
+    utils::crypto_provider::setup_crypto_provider,
+    verification::VALENCE_NEUTRON_VERIFICATION_ROUTER,
 };
 use serde::Deserialize;
 use valence_clearing_queue_supervaults::msg::SupervaultSettlementInfo;
@@ -109,6 +110,9 @@ struct Program {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     dotenv::dotenv().ok();
+
+    setup_crypto_provider().await?;
+
     let mnemonic = env::var("MNEMONIC").expect("mnemonic must be provided");
 
     let current_dir = env::current_dir()?;
@@ -218,8 +222,8 @@ async fn main() -> anyhow::Result<()> {
     // Set the verification gateway address on the authorization contract
     let set_verification_gateway_msg =
         valence_authorization_utils::msg::ExecuteMsg::PermissionedAction(
-            valence_authorization_utils::msg::PermissionedMsg::SetVerificationGateway {
-                verification_gateway: VALENCE_NEUTRON_VERIFICATION_GATEWAY.to_string(),
+            valence_authorization_utils::msg::PermissionedMsg::SetVerificationRouter {
+                address: VALENCE_NEUTRON_VERIFICATION_ROUTER.to_string(),
             },
         );
 

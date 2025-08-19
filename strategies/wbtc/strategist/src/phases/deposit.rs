@@ -5,7 +5,7 @@ use alloy::{
 use cosmwasm_std::to_json_binary;
 use log::{info, warn};
 use packages::{
-    labels::{ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_LABEL},
+    labels::{ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_PHASE1_LABEL},
     phases::DEPOSIT_PHASE,
     types::sol_types::{Authorization, BaseAccount, ERC20},
     utils::{self, valence_core},
@@ -21,9 +21,9 @@ use valence_library_utils::OptionUpdate;
 use crate::strategy_config::Strategy;
 
 /// minimum Valence account balance to perform a split.
-/// there are 6 supervaults, so we need at least 6 tokens
+/// there are 6 supervaults and 1 mars lending, so we need at least 7 tokens
 /// to be able to perform a split
-const MIN_SPLIT_BALANCE: u128 = 6;
+const MIN_SPLIT_BALANCE: u128 = 7;
 
 impl Strategy {
     /// carries out the steps needed to bring the new deposits from Ethereum to
@@ -134,7 +134,7 @@ impl Strategy {
                     valence_core::enqueue_neutron(
                         &self.neutron_client,
                         &self.cfg.neutron.authorizations,
-                        LEND_AND_PROVIDE_LIQUIDITY_LABEL,
+                        LEND_AND_PROVIDE_LIQUIDITY_PHASE1_LABEL,
                         vec![
                             to_json_binary(&splitter_exec_msg)?,
                             to_json_binary(&mars_lending_exec_msg)?,
@@ -197,13 +197,12 @@ impl Strategy {
 
         // extract the program and domain parameters by decoding the zkp
         let (proof_program, inputs_program) = utils::decode(skip_response_zkp.program)?;
-        let (proof_domain, inputs_domain) = utils::decode(skip_response_zkp.domain)?;
+        let (proof_domain, _) = utils::decode(skip_response_zkp.domain)?;
 
         // build the eureka transfer zk message from decoded params
         let auth_eureka_transfer_zk_msg = eth_auth_contract.executeZKMessage(
             Bytes::from(inputs_program),
             Bytes::from(proof_program),
-            Bytes::from(inputs_domain),
             Bytes::from(proof_domain),
         );
 
@@ -273,12 +272,6 @@ impl Strategy {
                 to_json_binary(&ica_ibc_transfer_update_msg)?,
                 to_json_binary(&ica_ibc_transfer_exec_msg)?,
             ],
-        )
-        .await?;
-
-        valence_core::ensure_neutron_account_fees_coverage(
-            &self.neutron_client,
-            &self.cfg.neutron.accounts.ica,
         )
         .await?;
 

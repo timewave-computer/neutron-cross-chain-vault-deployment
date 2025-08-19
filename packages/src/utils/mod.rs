@@ -1,5 +1,6 @@
 use valence_domain_clients::coprocessor::base_client::{Base64, Proof};
 
+pub mod crypto_provider;
 pub mod logging;
 pub mod mars;
 pub mod maxbtc;
