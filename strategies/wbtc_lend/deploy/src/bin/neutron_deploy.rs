@@ -21,6 +21,7 @@ use valence_domain_clients::{
 };
 
 use valence_library_utils::LibraryAccountType;
+use packages::utils::crypto_provider::setup_crypto_provider;
 use wbtc_lend_types::gaia_config::GaiaStrategyConfig;
 
 #[derive(Deserialize, Debug)]
@@ -56,6 +57,8 @@ struct Ica {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    setup_crypto_provider().await?;
+    
     dotenv::dotenv().ok();
     let mnemonic = env::var("MNEMONIC").expect("mnemonic must be provided");
 
@@ -308,21 +311,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .await?;
     println!("ICA deposit account instantiated: {ica_deposit_account_address}");
 
-    let deposit_account = valence_account_utils::msg::InstantiateMsg {
-        admin: params.general.owner.clone(),
-        approved_libraries: vec![mars_lending_library_address.clone()],
-    };
-    let deposit_account_address = neutron_client
-        .instantiate2(
-            code_id_base_account,
-            "deposit".to_string(),
-            deposit_account,
-            Some(params.general.owner.clone()),
-            salts[0].clone(),
-        )
-        .await?;
-    println!("Deposit account instantiated: {deposit_account_address}");
-
     let settlement_account = valence_account_utils::msg::InstantiateMsg {
         admin: params.general.owner.clone(),
         approved_libraries: vec![
@@ -348,7 +336,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let accounts = NeutronAccounts {
         ica: valence_ica_address.clone(),
-        deposit: deposit_account_address,
+        deposit: ica_deposit_account_address,
         settlement: settlement_account_address,
     };
 
