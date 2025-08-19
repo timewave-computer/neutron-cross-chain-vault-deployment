@@ -60,4 +60,4 @@ phase_shift_pumpbtc_supervault_withdrawer = "neutron10vmlfqxprn3mhvxca95kq5gnwnv
 phase_shift_bedrockbtc_supervault_withdrawer = "neutron173knac3p7amj5jgy8zjr4r82948yz879he2s5dgq3wkqnyak52vs0sptrn"
 
 [coprocessor_app_ids]
-clearing_queue = "f1fa153bcfee041c9f167338446d1b587bff467b9d5c58562ea4036acfe9cff4"
+clearing_queue = "c979bf2a0d9057ecdc8bde11f8cfa98aca9f9e9b1bda6d7ae8443512bd138ce8"

@@ -1,21 +1,23 @@
 grpc_url = "http://rpc.neutron.quokkastake.io"
 grpc_port = "9090"
 chain_id = "neutron-1"
-mars_credit_manager = "neutron1qdzn3l4kn7gsjna2tfpg3g3mwd6kunx4p50lfya59k02846xas6qslgs3r"
-authorizations = "neutron1tpz4kplk9djcfkad5xq4rle6q5awz7pclt57dwgv6y75sdlq082qp6ww2n"
-processor = "neutron14f7papylk7n7rja3w0uurdmpfhe32p5yeqwfw3jhvgzyu39zwwuqs6hak0"
+mars_credit_manager = "neutron1et4xza4pge3asumk8yxdx6qm85k9eplk0kathtkheln6znxsqheqfytsza"
+authorizations = "neutron1psjr2qf8kf56yyfamjuu6wzkv2ghagun6u6sjny8yfju60s4ajqspc7a6g"
+processor = "neutron14h736vls3kh9hpxxrnh00sqfft9uucsx8hzsearmufa00r9jn5pq49agf7"
 
 [denoms]
-deposit_token = "ibc/B559A80D62249C8AA07A380E2A2BEA6E5CA9A6F079C912C3A9E9B494105E4F81"
+deposit_token = "ibc/0E293A7622DC9A6439DB60E6D234B5AF446962E27CA3AB44D0590603DFF6968E"
 ntrn = "untrn"
 
 [accounts]
-deposit = "neutron1k0kn6khfclj2klzpejtk847ejfhcajjsqtqcja3q5glue5g5x6ns5v6lqv"
-settlement = "neutron17a4c2tukmd9ylnwu4lgl9jrku8w380xzgcr8ajxh5vcfl909m39slanq6l"
+ica = "neutron1u9p7g2syzflrgwu5j96kd98xjy94wufz88n4gadg2gzx6pxpnscs3qkwke"
+deposit = "neutron1qfy4n8jkrw0m2n0cvffpgpcm8f745rraz7j34xaep93kujqv9wvquzm0dk"
+settlement = "neutron1m6l3kyp3qamr2sltptt8k57xe3d63qx3xc855txhzq7h8mn988hqedtchp"
 
 [libraries]
-mars_lending = "neutron10zkunyhd52qsw2hwy9cfxy3pm52r25t0p9425d5k89gunz3dnmgsmeclgt"
-clearing_queue = "neutron1qf8hjlh0zuhshnfx7jpjac3ershcqqjfmyjxzhtl3wwa445pzfjqzweajt"
+mars_lending = "neutron199xdey97m8xfc2xm50ffz5ngwcp4c4t996pgrhe4wgf0ydn7gwxqrnhyys"
+clearing_queue = "neutron12kyu48y4lmd0jqvec46s2samz30upyqge2fmj7yfe7ygqjkzll8sdf9ufe"
+ica_transfer = "neutron1wtty5ar0vmpzgeamwu748v79src5n37f0j3xqsza8k4cwaf8eg2skean6g"
 
 [coprocessor_app_ids]
-clearing_queue = "a354a79198fa96039a106c5cdae5c469e8371dd42b745e827fe063f66dd72fe5"
+clearing_queue = ""

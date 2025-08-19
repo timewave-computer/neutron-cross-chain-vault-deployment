@@ -14,7 +14,7 @@ ica_timeout                = 43200                                              
 
 [program]
 deposit_token_on_neutron_denom = "ibc/0E293A7622DC9A6439DB60E6D234B5AF446962E27CA3AB44D0590603DFF6968E"               # WBTC
-mars_credit_manager            = "neutron1scjuh29rzffqzhgxusjd56f7qnf7r9e6rwxym6n65h9d3kkhfrqs0xm4dn"                 # Need to figure this out, not sure if this one
+mars_credit_manager            = "neutron1et4xza4pge3asumk8yxdx6qm85k9eplk0kathtkheln6znxsqheqfytsza"                 # Need to figure this out, not sure if this one
 
 [coprocessor_app]
-clearing_queue_coprocessor_app_id = "a354a79198fa96039a106c5cdae5c469e8371dd42b745e827fe063f66dd72fe5"
+clearing_queue_coprocessor_app_id = ""
