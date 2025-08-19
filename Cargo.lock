@@ -5363,7 +5363,7 @@ dependencies = [
  "hex",
  "log",
  "maxbtc_mint_and_supervault_types",
- "mmvault 0.1.6",
+ "mmvault 2.0.0 (git+https://github.com/neutron-org/slinky-vault?rev=3a2537c846731b4752bdbee84eeb562e71273438)",
  "packages",
  "serde",
  "serde_json",

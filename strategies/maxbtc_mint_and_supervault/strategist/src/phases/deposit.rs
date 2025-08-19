@@ -113,6 +113,8 @@ impl Strategy {
                 .await?;
             info!(target: DEPOSIT_PHASE, "Neutron supervault deposit account balance = {supervault_deposit_bal}");
 
+            println!(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> {} {} ", &self.cfg.neutron.accounts.supervault_deposit, &self.cfg.neutron.denoms.maxbtc);
+
             // If there is maxBTC in the supervault deposit account, trigger the liquidity provision
             if supervault_deposit_bal > 0 {
                 info!(target: DEPOSIT_PHASE, "Supervault deposit account has maxBTC; triggering LP provision...");
@@ -273,13 +275,12 @@ impl Strategy {
 
         // extract the program and domain parameters by decoding the zkp
         let (proof_program, inputs_program) = utils::decode(skip_response_zkp.program)?;
-        let (proof_domain, inputs_domain) = utils::decode(skip_response_zkp.domain)?;
+        let (proof_domain, _) = utils::decode(skip_response_zkp.domain)?;
 
         // build the eureka transfer zk message from decoded params
         let auth_eureka_transfer_zk_msg = eth_auth_contract.executeZKMessage(
             Bytes::from(inputs_program),
             Bytes::from(proof_program),
-            Bytes::from(inputs_domain),
             Bytes::from(proof_domain),
         );
 

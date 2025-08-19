@@ -5,7 +5,7 @@ use maxbtc_mint_and_supervault_deploy::{INPUTS_DIR, OUTPUTS_DIR};
 use maxbtc_mint_and_supervault_types::neutron_config::NeutronStrategyConfig;
 use packages::{
     labels::{
-        ICA_TRANSFER_LABEL, MAXBTC_ISSUE_LABEL, REGISTER_OBLIGATION_LABEL, SETTLE_OBLIGATION_LABEL,
+        ICA_TRANSFER_LABEL, MAXBTC_ISSUE_LABEL, PROVIDE_LIQUIDIY_LABEL, REGISTER_OBLIGATION_LABEL, SETTLE_OBLIGATION_LABEL,
     },
     types::inputs::ClearingQueueCoprocessorApp,
 };
@@ -25,6 +25,7 @@ use valence_domain_clients::{
     cosmos::wasm_client::WasmClient,
 };
 use valence_library_utils::LibraryAccountType;
+use packages::verification::VERIFICATION_ROUTE;
 
 #[derive(Deserialize, Debug)]
 struct Parameters {
@@ -76,6 +77,34 @@ async fn main() -> anyhow::Result<()> {
         AuthorizationModeInfo::Permissioned(PermissionTypeInfo::WithoutCallLimit(vec![
             strategist.clone(),
         ]));
+
+    let provide_liquidity_function = AtomicFunction {
+        domain: Domain::Main,
+        message_details: MessageDetails {
+            message_type: MessageType::CosmwasmExecuteMsg,
+            message: Message {
+                name: "process_function".to_string(),
+                params_restrictions: Some(vec![ParamRestriction::MustBeIncluded(vec![
+                    "process_function".to_string(),
+                    "provide_liquidity".to_string(),
+                ])]),
+            },
+        },
+        contract_address: LibraryAccountType::Addr(
+            ntrn_strategy_config.libraries.supervault_lper.clone(),
+        ),
+    };
+
+    let subroutine_providing_liquidity = AtomicSubroutineBuilder::new()
+        .with_function(provide_liquidity_function)
+        .build();
+
+    let authorization_providing_liquidity = AuthorizationBuilder::new()
+        .with_label(PROVIDE_LIQUIDIY_LABEL)
+        .with_mode(authorization_permissioned_mode.clone())
+        .with_subroutine(subroutine_providing_liquidity)
+        .build();
+    authorizations.push(authorization_providing_liquidity);
 
     // Subroutine for ICA Transfer
     // Involves updating the amount and trigger the transfer
@@ -245,7 +274,9 @@ async fn main() -> anyhow::Result<()> {
         mode: authorization_permissioned_mode,
         registry: 0,
         vk: Binary::from(sp1_program_vk.bytes32().as_bytes()),
+        verification_route: VERIFICATION_ROUTE.to_string(),
         validate_last_block_execution: false,
+        metadata_hash: Binary::default(),
     };
 
     let create_zk_authorization = valence_authorization_utils::msg::ExecuteMsg::PermissionedAction(
