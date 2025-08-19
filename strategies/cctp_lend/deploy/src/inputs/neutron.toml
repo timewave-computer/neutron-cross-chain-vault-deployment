@@ -10,4 +10,4 @@ deposit_token_on_neutron_denom = "ibc/B559A80D62249C8AA07A380E2A2BEA6E5CA9A6F079
 mars_credit_manager = "neutron1qdzn3l4kn7gsjna2tfpg3g3mwd6kunx4p50lfya59k02846xas6qslgs3r"              # prod Mars Credit Manager address
 
 [coprocessor_app]
-clearing_queue_coprocessor_app_id = "a865408704b50176d07ec8d99da9f043368554581432ab58a17a4d76cfe755cf"
+clearing_queue_coprocessor_app_id = "78c43c62565739c6f1f4d78e74afed2b8daddc0a577e1145ffe6e29528f23940"

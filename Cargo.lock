@@ -2384,6 +2384,7 @@ dependencies = [
  "bincode 2.0.1",
  "clearing-queue-core",
  "cosmwasm-std",
+ "ed25519-zebra",
  "serde_json",
  "valence-authorization-utils",
  "valence-clearing-queue-supervaults",

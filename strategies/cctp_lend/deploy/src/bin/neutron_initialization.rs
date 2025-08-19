@@ -75,7 +75,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     )
     .await?;
 
-    // let mut authorizations = vec![];
+    let mut authorizations = vec![];
 
     // All authorizations except the phase shift one will be called by strategist
     let authorization_permissioned_mode =
@@ -83,99 +83,99 @@ async fn main() -> Result<(), Box<dyn Error>> {
             strategist.clone(),
         ]));
 
-    // // subroutine for mars lending
-    // let lend_function = AtomicFunction {
-    //     domain: Domain::Main,
-    //     message_details: MessageDetails {
-    //         message_type: MessageType::CosmwasmExecuteMsg,
-    //         message: Message {
-    //             name: "process_function".to_string(),
-    //             params_restrictions: Some(vec![ParamRestriction::MustBeIncluded(vec![
-    //                 "process_function".to_string(),
-    //                 "lend".to_string(),
-    //             ])]),
-    //         },
-    //     },
-    //     contract_address: LibraryAccountType::Addr(
-    //         ntrn_strategy_config.libraries.mars_lending.clone(),
-    //     ),
-    // };
-    //
-    // let subroutine_lend_liquidity = AtomicSubroutineBuilder::new()
-    //     .with_function(lend_function)
-    //     .build();
-    //
-    // let authorization_lending_and_providing_liquidity = AuthorizationBuilder::new()
-    //     .with_label(LEND_AND_PROVIDE_LIQUIDITY_LABEL)
-    //     .with_mode(authorization_permissioned_mode.clone())
-    //     .with_subroutine(subroutine_lend_liquidity)
-    //     .build();
-    // authorizations.push(authorization_lending_and_providing_liquidity);
-    //
-    // // Authorization for Mars withdrawing
-    // let withdraw_function = AtomicFunction {
-    //     domain: Domain::Main,
-    //     message_details: MessageDetails {
-    //         message_type: MessageType::CosmwasmExecuteMsg,
-    //         message: Message {
-    //             name: "process_function".to_string(),
-    //             params_restrictions: Some(vec![ParamRestriction::MustBeIncluded(vec![
-    //                 "process_function".to_string(),
-    //                 "withdraw".to_string(),
-    //             ])]),
-    //         },
-    //     },
-    //     contract_address: LibraryAccountType::Addr(
-    //         ntrn_strategy_config.libraries.mars_lending.clone(),
-    //     ),
-    // };
-    // let subroutine_mars_withdraw = AtomicSubroutineBuilder::new()
-    //     .with_function(withdraw_function)
-    //     .build();
-    // let authorization_mars_withdraw = AuthorizationBuilder::new()
-    //     .with_label(MARS_WITHDRAW_LABEL)
-    //     .with_mode(authorization_permissioned_mode.clone())
-    //     .with_subroutine(subroutine_mars_withdraw)
-    //     .build();
-    // authorizations.push(authorization_mars_withdraw);
-    //
-    // // Authorization for settle obligation
-    // let settle_obligation_function = AtomicFunction {
-    //     domain: Domain::Main,
-    //     message_details: MessageDetails {
-    //         message_type: MessageType::CosmwasmExecuteMsg,
-    //         message: Message {
-    //             name: "process_function".to_string(),
-    //             params_restrictions: Some(vec![ParamRestriction::MustBeIncluded(vec![
-    //                 "process_function".to_string(),
-    //                 "settle_next_obligation".to_string(),
-    //             ])]),
-    //         },
-    //     },
-    //     contract_address: LibraryAccountType::Addr(
-    //         ntrn_strategy_config.libraries.clearing_queue.clone(),
-    //     ),
-    // };
-    //
-    // let subroutine_settle_obligation = AtomicSubroutineBuilder::new()
-    //     .with_function(settle_obligation_function)
-    //     .build();
-    // let authorization_settle_obligation = AuthorizationBuilder::new()
-    //     .with_label(SETTLE_OBLIGATION_LABEL)
-    //     .with_mode(authorization_permissioned_mode.clone())
-    //     .with_subroutine(subroutine_settle_obligation)
-    //     .build();
-    // authorizations.push(authorization_settle_obligation);
-    //
-    // // Add all authorizations to the authorization contract
-    // let create_authorizations = valence_authorization_utils::msg::ExecuteMsg::PermissionedAction(
-    //     valence_authorization_utils::msg::PermissionedMsg::CreateAuthorizations { authorizations },
-    // );
-    //
-    // neutron_client
-    //     .execute_wasm(&authorization_contract, create_authorizations, vec![], None)
-    //     .await?;
-    // println!("Authorizations created successfully");
+    // subroutine for mars lending
+    let lend_function = AtomicFunction {
+        domain: Domain::Main,
+        message_details: MessageDetails {
+            message_type: MessageType::CosmwasmExecuteMsg,
+            message: Message {
+                name: "process_function".to_string(),
+                params_restrictions: Some(vec![ParamRestriction::MustBeIncluded(vec![
+                    "process_function".to_string(),
+                    "lend".to_string(),
+                ])]),
+            },
+        },
+        contract_address: LibraryAccountType::Addr(
+            ntrn_strategy_config.libraries.mars_lending.clone(),
+        ),
+    };
+
+    let subroutine_lend_liquidity = AtomicSubroutineBuilder::new()
+        .with_function(lend_function)
+        .build();
+
+    let authorization_lending_and_providing_liquidity = AuthorizationBuilder::new()
+        .with_label(LEND_AND_PROVIDE_LIQUIDITY_LABEL)
+        .with_mode(authorization_permissioned_mode.clone())
+        .with_subroutine(subroutine_lend_liquidity)
+        .build();
+    authorizations.push(authorization_lending_and_providing_liquidity);
+
+    // Authorization for Mars withdrawing
+    let withdraw_function = AtomicFunction {
+        domain: Domain::Main,
+        message_details: MessageDetails {
+            message_type: MessageType::CosmwasmExecuteMsg,
+            message: Message {
+                name: "process_function".to_string(),
+                params_restrictions: Some(vec![ParamRestriction::MustBeIncluded(vec![
+                    "process_function".to_string(),
+                    "withdraw".to_string(),
+                ])]),
+            },
+        },
+        contract_address: LibraryAccountType::Addr(
+            ntrn_strategy_config.libraries.mars_lending.clone(),
+        ),
+    };
+    let subroutine_mars_withdraw = AtomicSubroutineBuilder::new()
+        .with_function(withdraw_function)
+        .build();
+    let authorization_mars_withdraw = AuthorizationBuilder::new()
+        .with_label(MARS_WITHDRAW_LABEL)
+        .with_mode(authorization_permissioned_mode.clone())
+        .with_subroutine(subroutine_mars_withdraw)
+        .build();
+    authorizations.push(authorization_mars_withdraw);
+
+    // Authorization for settle obligation
+    let settle_obligation_function = AtomicFunction {
+        domain: Domain::Main,
+        message_details: MessageDetails {
+            message_type: MessageType::CosmwasmExecuteMsg,
+            message: Message {
+                name: "process_function".to_string(),
+                params_restrictions: Some(vec![ParamRestriction::MustBeIncluded(vec![
+                    "process_function".to_string(),
+                    "settle_next_obligation".to_string(),
+                ])]),
+            },
+        },
+        contract_address: LibraryAccountType::Addr(
+            ntrn_strategy_config.libraries.clearing_queue.clone(),
+        ),
+    };
+
+    let subroutine_settle_obligation = AtomicSubroutineBuilder::new()
+        .with_function(settle_obligation_function)
+        .build();
+    let authorization_settle_obligation = AuthorizationBuilder::new()
+        .with_label(SETTLE_OBLIGATION_LABEL)
+        .with_mode(authorization_permissioned_mode.clone())
+        .with_subroutine(subroutine_settle_obligation)
+        .build();
+    authorizations.push(authorization_settle_obligation);
+
+    // Add all authorizations to the authorization contract
+    let create_authorizations = valence_authorization_utils::msg::ExecuteMsg::PermissionedAction(
+        valence_authorization_utils::msg::PermissionedMsg::CreateAuthorizations { authorizations },
+    );
+
+    neutron_client
+        .execute_wasm(&authorization_contract, create_authorizations, vec![], None)
+        .await?;
+    println!("Authorizations created successfully");
 
     // Get the VK for the coprocessor app
     let coprocessor_client = CoprocessorClient::default();

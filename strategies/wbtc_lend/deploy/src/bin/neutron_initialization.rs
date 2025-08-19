@@ -28,6 +28,7 @@ use valence_domain_clients::{
 };
 use valence_library_utils::LibraryAccountType;
 use packages::labels::ICA_TRANSFER_LABEL;
+use packages::utils::crypto_provider::setup_crypto_provider;
 
 #[derive(Deserialize, Debug)]
 struct Parameters {
@@ -43,6 +44,8 @@ struct General {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    setup_crypto_provider().await?;
+
     dotenv::dotenv().ok();
     let mnemonic = env::var("MNEMONIC").expect("mnemonic must be provided");
 
