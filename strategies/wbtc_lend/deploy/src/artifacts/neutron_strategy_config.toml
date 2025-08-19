@@ -1,0 +1,23 @@
+grpc_url = "http://rpc.neutron.quokkastake.io"
+grpc_port = "9090"
+chain_id = "neutron-1"
+mars_credit_manager = "neutron1et4xza4pge3asumk8yxdx6qm85k9eplk0kathtkheln6znxsqheqfytsza"
+authorizations = "neutron1psjr2qf8kf56yyfamjuu6wzkv2ghagun6u6sjny8yfju60s4ajqspc7a6g"
+processor = "neutron14h736vls3kh9hpxxrnh00sqfft9uucsx8hzsearmufa00r9jn5pq49agf7"
+
+[denoms]
+deposit_token = "ibc/0E293A7622DC9A6439DB60E6D234B5AF446962E27CA3AB44D0590603DFF6968E"
+ntrn = "untrn"
+
+[accounts]
+ica = "neutron1u9p7g2syzflrgwu5j96kd98xjy94wufz88n4gadg2gzx6pxpnscs3qkwke"
+deposit = "neutron1qfy4n8jkrw0m2n0cvffpgpcm8f745rraz7j34xaep93kujqv9wvquzm0dk"
+settlement = "neutron1m6l3kyp3qamr2sltptt8k57xe3d63qx3xc855txhzq7h8mn988hqedtchp"
+
+[libraries]
+mars_lending = "neutron199xdey97m8xfc2xm50ffz5ngwcp4c4t996pgrhe4wgf0ydn7gwxqrnhyys"
+clearing_queue = "neutron12kyu48y4lmd0jqvec46s2samz30upyqge2fmj7yfe7ygqjkzll8sdf9ufe"
+ica_transfer = "neutron1wtty5ar0vmpzgeamwu748v79src5n37f0j3xqsza8k4cwaf8eg2skean6g"
+
+[coprocessor_app_ids]
+clearing_queue = ""

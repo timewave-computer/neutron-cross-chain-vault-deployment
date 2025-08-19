@@ -1,0 +1,20 @@
+[general]
+grpc_url = "http://rpc.neutron.quokkastake.io"
+grpc_port = "9090"
+chain_id = "neutron-1"
+owner = "neutron17w0xj03v3jj7tj8uz998ga6he93ytxggnrf8zr"      # Should be Neutron multisig
+strategist = "neutron17w0xj03v3jj7tj8uz998ga6he93ytxggnrf8zr" # Should be strategist address
+
+[ica]
+deposit_token_on_hub_denom = "ibc/D742E8566B0B8CC8F569D950051C09CF57988A88F0E45574BFB3079D41DE6462" # WBTC
+channel_id                 = "channel-569"                                                          # Hub -> Neutron channel
+ibc_transfer_timeout       = 600                                                                    # 10 minutes
+connection_id              = "connection-0"                                                         # Neutron -> Hub connection
+ica_timeout                = 43200                                                                  # 12 hours in seconds - Large value recommended: https://docs.neutron.org/neutron/modules/interchain-txs/messages
+
+[program]
+deposit_token_on_neutron_denom = "ibc/0E293A7622DC9A6439DB60E6D234B5AF446962E27CA3AB44D0590603DFF6968E"               # WBTC
+mars_credit_manager            = "neutron1et4xza4pge3asumk8yxdx6qm85k9eplk0kathtkheln6znxsqheqfytsza"                 # Need to figure this out, not sure if this one
+
+[coprocessor_app]
+clearing_queue_coprocessor_app_id = ""
