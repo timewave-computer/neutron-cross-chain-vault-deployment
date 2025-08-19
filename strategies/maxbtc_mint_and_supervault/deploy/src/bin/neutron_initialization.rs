@@ -25,6 +25,7 @@ use valence_domain_clients::{
     cosmos::wasm_client::WasmClient,
 };
 use valence_library_utils::LibraryAccountType;
+use packages::utils::crypto_provider::setup_crypto_provider;
 use packages::verification::VERIFICATION_ROUTE;
 
 #[derive(Deserialize, Debug)]
@@ -42,6 +43,8 @@ struct General {
 async fn main() -> anyhow::Result<()> {
     dotenv::dotenv().ok();
     let mnemonic = env::var("MNEMONIC").expect("mnemonic must be provided");
+
+    setup_crypto_provider().await?;
 
     let current_dir = env::current_dir()?;
 
