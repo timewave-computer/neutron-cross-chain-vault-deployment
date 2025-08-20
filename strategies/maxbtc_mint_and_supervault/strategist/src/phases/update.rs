@@ -28,6 +28,8 @@ impl Strategy {
     pub async fn update(&mut self, eth_rp: &CustomProvider) -> anyhow::Result<()> {
         info!(target: UPDATE_PHASE, "starting vault update phase");
 
+        return Ok(());
+
         let one_way_vault_contract =
             OneWayVault::new(self.cfg.ethereum.libraries.one_way_vault, &eth_rp);
 

@@ -113,11 +113,6 @@ impl Strategy {
                 .await?;
             info!(target: DEPOSIT_PHASE, "Neutron supervault deposit account balance = {supervault_deposit_bal}");
 
-            println!(
-                ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> {} {} ",
-                &self.cfg.neutron.accounts.supervault_deposit, &self.cfg.neutron.denoms.maxbtc
-            );
-
             // If there is maxBTC in the supervault deposit account, trigger the liquidity provision
             if supervault_deposit_bal > 0 {
                 info!(target: DEPOSIT_PHASE, "Supervault deposit account has maxBTC; triggering LP provision...");
@@ -150,8 +145,6 @@ impl Strategy {
             vec![to_json_binary(&maxbtc_issue_msg)?],
         )
         .await?;
-
-        tokio::time::sleep(Duration::from_millis(5000)).await;
 
         // Before ticking, check the current balance of the target account to ensure polling works
         let pre_issue_supervault_dep_bal = self
