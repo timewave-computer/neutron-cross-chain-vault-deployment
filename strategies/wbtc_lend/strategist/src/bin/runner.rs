@@ -3,11 +3,14 @@ use log::{info, warn};
 use packages::utils::logging::setup_logging;
 use std::env;
 use valence_strategist_utils::worker::ValenceWorker;
+use packages::utils::crypto_provider::setup_crypto_provider;
 
 const RUNNER: &str = "runner";
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    setup_crypto_provider().await?;
+
     // load environment variables
     let env_path = env::current_dir()?.join("strategies/wbtc_lend/strategist/wbtc_lend.env");
     dotenv::from_path(env_path.as_path())?;

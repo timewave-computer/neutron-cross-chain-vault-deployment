@@ -1,0 +1,6 @@
+grpc_url = "grpc_url"
+grpc_port = "grpc_port"
+chain_id = "chain_id"
+chain_denom = "uatom"
+deposit_denom = "ibc/DBD9E339E1B093A052D76BECFFDE8435EAC114CF2133346B4D691F3F2068C957"
+ica_address = "cosmos13258gwx7l4xn0nd59fq6slpt9clhluqsn3c88zrt4alj82py94qst7vaxr"

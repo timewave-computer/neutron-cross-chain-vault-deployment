@@ -14,3 +14,4 @@ serde_json                         = { workspace = true }
 alloy-primitives                   = { version = "0.8.25", default-features = false }
 bincode                            = { version = "2.0.1", default-features = false, features = ["alloc", "serde"] }
 clearing-queue-core.path           = "../core"
+ed25519-zebra                      = { version = "=4.0.3", default-features = false }
