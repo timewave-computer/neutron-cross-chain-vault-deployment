@@ -1,6 +1,9 @@
 use std::{env, fs};
 
-use alloy::{hex::FromHex, primitives::Bytes};
+use alloy::{
+    hex::FromHex,
+    primitives::{Bytes, FixedBytes},
+};
 use maxbtc_mint_and_supervault_deploy::{INPUTS_DIR, OUTPUTS_DIR};
 use maxbtc_mint_and_supervault_types::ethereum_config::EthereumStrategyConfig;
 use packages::{

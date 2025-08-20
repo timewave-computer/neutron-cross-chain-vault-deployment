@@ -116,7 +116,7 @@ impl Strategy {
                 &self.cfg.neutron.accounts.deposit,
                 &self.cfg.neutron.denoms.deposit_token,
             )
-                .await?;
+            .await?;
             info!(target: UPDATE_PHASE, "mars_tvl={mars_tvl}");
             total_deposit_assets += mars_tvl;
         }

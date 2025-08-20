@@ -26,4 +26,4 @@ timeout                    = 43200                                      # 12 hou
 ibc_transfer_threshold_amt = 10
 
 [coprocessor_app]
-eureka_transfer_coprocessor_app_id = "" # TBD after deployment
+eureka_transfer_coprocessor_app_id = "c637bd97ba1f617068800ce9fe76b1312159a0d1b00518ad7ab7bd7d5481360a" # TBD after deployment

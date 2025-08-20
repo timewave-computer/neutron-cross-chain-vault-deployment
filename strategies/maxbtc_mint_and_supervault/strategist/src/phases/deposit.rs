@@ -1,9 +1,9 @@
-use std::thread::sleep;
-use std::time::Duration;
 use alloy::{
     primitives::{Bytes, U256},
     providers::Provider,
 };
+use std::thread::sleep;
+use std::time::Duration;
 
 use crate::strategy_config::Strategy;
 use cosmwasm_std::to_json_binary;
@@ -113,13 +113,15 @@ impl Strategy {
                 .await?;
             info!(target: DEPOSIT_PHASE, "Neutron supervault deposit account balance = {supervault_deposit_bal}");
 
-            println!(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> {} {} ", &self.cfg.neutron.accounts.supervault_deposit, &self.cfg.neutron.denoms.maxbtc);
+            println!(
+                ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>> {} {} ",
+                &self.cfg.neutron.accounts.supervault_deposit, &self.cfg.neutron.denoms.maxbtc
+            );
 
             // If there is maxBTC in the supervault deposit account, trigger the liquidity provision
             if supervault_deposit_bal > 0 {
                 info!(target: DEPOSIT_PHASE, "Supervault deposit account has maxBTC; triggering LP provision...");
-                self.provide_liquidity_to_supervault()
-                    .await?;
+                self.provide_liquidity_to_supervault().await?;
             } else {
                 info!(target: DEPOSIT_PHASE, "Supervault deposit account balance is zero, skipping LP provision...");
             }
@@ -186,7 +188,9 @@ impl Strategy {
     ///   are sent to the final settlement account.
     async fn provide_liquidity_to_supervault(&mut self) -> anyhow::Result<()> {
         let supervault_lp_msg = valence_library_utils::msg::ExecuteMsg::<_, ()>::ProcessFunction(
-            valence_supervaults_lper::msg::FunctionMsgs::ProvideLiquidity { expected_vault_ratio_range: None }, // TODO?
+            valence_supervaults_lper::msg::FunctionMsgs::ProvideLiquidity {
+                expected_vault_ratio_range: None,
+            }, // TODO?
         );
 
         info!(target: DEPOSIT_PHASE, "enqueuing supervault LP message");

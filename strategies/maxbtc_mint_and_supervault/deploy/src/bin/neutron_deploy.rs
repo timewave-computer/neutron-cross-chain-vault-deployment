@@ -425,7 +425,10 @@ async fn main() -> anyhow::Result<()> {
         coprocessor_app_ids,
     };
 
-    println!("Neutron Strategy Config created successfully, saving to {}", format!("{OUTPUTS_DIR}/neutron_strategy_config.toml"));
+    println!(
+        "Neutron Strategy Config created successfully, saving to {}",
+        format!("{OUTPUTS_DIR}/neutron_strategy_config.toml")
+    );
 
     // Save the Neutron Strategy Config to a toml file
     let neutron_cfg_toml =

@@ -3,9 +3,12 @@ use std::{env, fs};
 use cosmwasm_std::Binary;
 use maxbtc_mint_and_supervault_deploy::{INPUTS_DIR, OUTPUTS_DIR};
 use maxbtc_mint_and_supervault_types::neutron_config::NeutronStrategyConfig;
+use packages::utils::crypto_provider::setup_crypto_provider;
+use packages::verification::VERIFICATION_ROUTE;
 use packages::{
     labels::{
-        ICA_TRANSFER_LABEL, MAXBTC_ISSUE_LABEL, PROVIDE_LIQUIDIY_LABEL, REGISTER_OBLIGATION_LABEL, SETTLE_OBLIGATION_LABEL,
+        ICA_TRANSFER_LABEL, MAXBTC_ISSUE_LABEL, PROVIDE_LIQUIDIY_LABEL, REGISTER_OBLIGATION_LABEL,
+        SETTLE_OBLIGATION_LABEL,
     },
     types::inputs::ClearingQueueCoprocessorApp,
 };
@@ -25,8 +28,6 @@ use valence_domain_clients::{
     cosmos::wasm_client::WasmClient,
 };
 use valence_library_utils::LibraryAccountType;
-use packages::utils::crypto_provider::setup_crypto_provider;
-use packages::verification::VERIFICATION_ROUTE;
 
 #[derive(Deserialize, Debug)]
 struct Parameters {

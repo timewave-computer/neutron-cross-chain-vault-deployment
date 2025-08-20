@@ -9,7 +9,8 @@ const RUNNER: &str = "runner";
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     // load environment variables
-    let env_path = env::current_dir()?.join("strategies/maxbtc_mint_and_supervault/strategist/maxbtc_mint_and_supervault.env");
+    let env_path = env::current_dir()?
+        .join("strategies/maxbtc_mint_and_supervault/strategist/maxbtc_mint_and_supervault.env");
     dotenv::from_path(env_path.as_path())?;
 
     setup_logging().await?;

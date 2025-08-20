@@ -1,9 +1,9 @@
 use dotenv::dotenv;
 use log::{info, warn};
+use packages::utils::{crypto_provider::setup_crypto_provider, logging::setup_logging};
 use std::env;
 use valence_strategist_utils::worker::ValenceWorker;
 use wbtc_strategist::strategy_config::Strategy;
-use packages::utils::{crypto_provider::setup_crypto_provider, logging::setup_logging};
 
 const RUNNER: &str = "runner";
 

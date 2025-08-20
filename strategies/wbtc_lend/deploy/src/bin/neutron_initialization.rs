@@ -1,8 +1,8 @@
 use std::{env, error::Error, fs};
 
-use wbtc_lend_deploy::{INPUTS_DIR, OUTPUTS_DIR};
-use wbtc_lend_types::neutron_config::NeutronStrategyConfig;
 use cosmwasm_std::Binary;
+use packages::labels::ICA_TRANSFER_LABEL;
+use packages::utils::crypto_provider::setup_crypto_provider;
 use packages::{
     labels::{
         LEND_AND_PROVIDE_LIQUIDITY_LABEL, MARS_WITHDRAW_LABEL, REGISTER_OBLIGATION_LABEL,
@@ -27,8 +27,8 @@ use valence_domain_clients::{
     cosmos::wasm_client::WasmClient,
 };
 use valence_library_utils::LibraryAccountType;
-use packages::labels::ICA_TRANSFER_LABEL;
-use packages::utils::crypto_provider::setup_crypto_provider;
+use wbtc_lend_deploy::{INPUTS_DIR, OUTPUTS_DIR};
+use wbtc_lend_types::neutron_config::NeutronStrategyConfig;
 
 #[derive(Deserialize, Debug)]
 struct Parameters {

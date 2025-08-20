@@ -1,20 +1,20 @@
 use std::{env, path::Path};
 
 use anyhow::anyhow;
-use wbtc_lend_types::{
-    ethereum_config::EthereumStrategyConfig, neutron_config::NeutronStrategyConfig,
-    noble_config::NobleStrategyConfig,
-};
+use packages::ibc_eureka_chain_ids::{EUREKA_COSMOS_HUB_CHAIN_ID, EUREKA_ETHEREUM_CHAIN_ID};
 use serde::{Deserialize, Serialize};
+use valence_domain_clients::clients::gaia::CosmosHubClient;
+use valence_domain_clients::clients::ibc_eureka_route_client::IBCEurekaRouteClient;
 use valence_domain_clients::clients::{
     coprocessor::CoprocessorClient, ethereum::EthereumClient, neutron::NeutronClient,
     noble::NobleClient, valence_indexer::OneWayVaultIndexerClient,
 };
-use valence_domain_clients::clients::gaia::CosmosHubClient;
-use valence_domain_clients::clients::ibc_eureka_route_client::IBCEurekaRouteClient;
 use valence_strategist_utils::worker::ValenceWorkerTomlSerde;
-use packages::ibc_eureka_chain_ids::{EUREKA_COSMOS_HUB_CHAIN_ID, EUREKA_ETHEREUM_CHAIN_ID};
 use wbtc_lend_types::gaia_config::GaiaStrategyConfig;
+use wbtc_lend_types::{
+    ethereum_config::EthereumStrategyConfig, neutron_config::NeutronStrategyConfig,
+    noble_config::NobleStrategyConfig,
+};
 
 /// top-level config that wraps around each domain configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -76,7 +76,7 @@ impl Strategy {
             &cfg.gaia.chain_id,
             &cfg.gaia.chain_denom,
         )
-            .await?;
+        .await?;
 
         let neutron_client = NeutronClient::new(
             &cfg.neutron.grpc_url,

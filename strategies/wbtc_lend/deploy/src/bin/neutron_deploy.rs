@@ -1,5 +1,16 @@
-use std::{env, error::Error, fs, time::SystemTime};
+use cosmwasm_std::{Decimal, Uint64, Uint128};
+use packages::{
+    contracts::{PATH_NEUTRON_CODE_IDS, UploadedContracts},
+    types::inputs::{ChainClientInputs, ClearingQueueCoprocessorApp},
+    verification::VALENCE_NEUTRON_VERIFICATION_ROUTER,
+};
+use serde::Deserialize;
 use std::collections::BTreeMap;
+use std::{env, error::Error, fs, time::SystemTime};
+use valence_domain_clients::{
+    clients::neutron::NeutronClient,
+    cosmos::{grpc_client::GrpcSigningClient, wasm_client::WasmClient},
+};
 use wbtc_lend_deploy::{INPUTS_DIR, OUTPUTS_DIR};
 use wbtc_lend_types::{
     neutron_config::{
@@ -8,20 +19,9 @@ use wbtc_lend_types::{
     },
     noble_config::NobleStrategyConfig,
 };
-use cosmwasm_std::{Decimal, Uint128, Uint64};
-use packages::{
-    contracts::{PATH_NEUTRON_CODE_IDS, UploadedContracts},
-    types::inputs::{ChainClientInputs, ClearingQueueCoprocessorApp},
-    verification::VALENCE_NEUTRON_VERIFICATION_ROUTER,
-};
-use serde::Deserialize;
-use valence_domain_clients::{
-    clients::neutron::NeutronClient,
-    cosmos::{grpc_client::GrpcSigningClient, wasm_client::WasmClient},
-};
 
-use valence_library_utils::LibraryAccountType;
 use packages::utils::crypto_provider::setup_crypto_provider;
+use valence_library_utils::LibraryAccountType;
 use wbtc_lend_types::gaia_config::GaiaStrategyConfig;
 
 #[derive(Deserialize, Debug)]
@@ -58,7 +58,7 @@ struct Ica {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     setup_crypto_provider().await?;
-    
+
     dotenv::dotenv().ok();
     let mnemonic = env::var("MNEMONIC").expect("mnemonic must be provided");
 
@@ -222,7 +222,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         )
         .await?;
     println!("ICA IBC Transfer library instantiated: {ica_ibc_transfer_library_address}");
-
 
     // Instantiate supervaults lper library
     let mars_lend_config = valence_mars_lending::msg::LibraryConfig {
@@ -419,7 +418,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         gaia_cfg_path,
         toml::to_string(&gaia_cfg).expect("Failed to serialize Gaia strategy config"),
     )
-        .expect("Failed to write Gaia strategy config to file");
+    .expect("Failed to write Gaia strategy config to file");
 
     Ok(())
 }

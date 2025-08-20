@@ -6,7 +6,6 @@ use alloy::sol_types::SolCall;
 use alloy::sol_types::SolValue;
 use cosmwasm_std::to_json_binary;
 use log::{info, warn};
-use serde_json::json;
 use packages::labels::{ICA_TRANSFER_LABEL, LEND_AND_PROVIDE_LIQUIDITY_LABEL};
 use packages::types::sol_types::AtomicFunction;
 use packages::types::sol_types::AtomicSubroutine;
@@ -21,16 +20,23 @@ use packages::types::sol_types::RetryTimesType;
 use packages::types::sol_types::SendMsgs;
 use packages::types::sol_types::Subroutine;
 use packages::types::sol_types::SubroutineType;
-use packages::{labels::CCTP_TRANSFER_LABEL, phases::DEPOSIT_PHASE, types::sol_types::{
-    Authorization, BaseAccount,
-    CCTPTransfer::{self},
-    ERC20,
-}, utils, utils::valence_core};
+use packages::{
+    labels::CCTP_TRANSFER_LABEL,
+    phases::DEPOSIT_PHASE,
+    types::sol_types::{
+        Authorization, BaseAccount,
+        CCTPTransfer::{self},
+        ERC20,
+    },
+    utils,
+    utils::valence_core,
+};
+use serde_json::json;
+use valence_domain_clients::coprocessor::base_client::CoprocessorBaseClient;
 use valence_domain_clients::{
     cosmos::base_client::BaseClient,
     evm::base_client::{CustomProvider, EvmBaseClient},
 };
-use valence_domain_clients::coprocessor::base_client::CoprocessorBaseClient;
 use valence_library_utils::OptionUpdate;
 
 impl Strategy {
@@ -248,7 +254,7 @@ impl Strategy {
                 to_json_binary(&ica_ibc_transfer_exec_msg)?,
             ],
         )
-            .await?;
+        .await?;
 
         info!(target: DEPOSIT_PHASE, "tick: update & transfer");
         valence_core::tick_neutron(&self.neutron_client, &self.cfg.neutron.processor).await?;

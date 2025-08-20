@@ -4,16 +4,24 @@ use alloy::{
     primitives::{Address, Bytes, FixedBytes, U256},
     sol_types::SolValue,
 };
-use wbtc_lend_deploy::{INPUTS_DIR, OUTPUTS_DIR};
-use wbtc_lend_types::ethereum_config::{EthereumAccounts, EthereumCoprocessorAppIds, EthereumDenoms, EthereumLibraries, EthereumStrategyConfig};
 use cosmwasm_std::Uint128;
-use packages::types::sol_types::{Authorization, BaseAccount, CCTPTransfer, CCTPTransferConfig, ERC1967Proxy, OneWayVault::{self, FeeDistributionConfig, OneWayVaultConfig}, processor_contract::LiteProcessor, IBCEurekaTransferConfig, IBCEurekaTransfer};
+use packages::types::inputs::{EurekaTransfer, EurekaTransferCoprocessorApp};
+use packages::types::sol_types::{
+    Authorization, BaseAccount, CCTPTransfer, CCTPTransferConfig, ERC1967Proxy, IBCEurekaTransfer,
+    IBCEurekaTransferConfig,
+    OneWayVault::{self, FeeDistributionConfig, OneWayVaultConfig},
+    processor_contract::LiteProcessor,
+};
 use serde::Deserialize;
 use valence_domain_clients::{
     clients::ethereum::EthereumClient,
     evm::{base_client::EvmBaseClient, request_provider_client::RequestProviderClient},
 };
-use packages::types::inputs::{EurekaTransfer, EurekaTransferCoprocessorApp};
+use wbtc_lend_deploy::{INPUTS_DIR, OUTPUTS_DIR};
+use wbtc_lend_types::ethereum_config::{
+    EthereumAccounts, EthereumCoprocessorAppIds, EthereumDenoms, EthereumLibraries,
+    EthereumStrategyConfig,
+};
 
 #[derive(Deserialize, Debug)]
 struct Parameters {

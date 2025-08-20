@@ -1,9 +1,9 @@
-use wbtc_lend_strategist::strategy_config::Strategy;
 use log::{info, warn};
+use packages::utils::crypto_provider::setup_crypto_provider;
 use packages::utils::logging::setup_logging;
 use std::env;
 use valence_strategist_utils::worker::ValenceWorker;
-use packages::utils::crypto_provider::setup_crypto_provider;
+use wbtc_lend_strategist::strategy_config::Strategy;
 
 const RUNNER: &str = "runner";
 
