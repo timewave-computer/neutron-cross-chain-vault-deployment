@@ -34,52 +34,52 @@ impl Strategy {
     pub async fn deposit(&mut self, eth_rp: &CustomProvider) -> anyhow::Result<()> {
         info!(target: DEPOSIT_PHASE, "starting deposit phase");
 
-        // // Stage 1: deposit token routing from Ethereum to Cosmos hub
-        // {
-        //     let eth_deposit_token_contract =
-        //         ERC20::new(self.cfg.ethereum.denoms.deposit_token, &eth_rp);
-        //     let eth_deposit_acc = BaseAccount::new(self.cfg.ethereum.accounts.deposit, &eth_rp);
-        //
-        //     // query the ethereum deposit account balance
-        //     let eth_deposit_acc_bal = self
-        //         .eth_client
-        //         .query(eth_deposit_token_contract.balanceOf(*eth_deposit_acc.address()))
-        //         .await?
-        //         ._0;
-        //     info!(target: DEPOSIT_PHASE, "eth deposit acc balance = {eth_deposit_acc_bal}");
-        //
-        //     // validate that the deposit account balance exceeds the eureka routing threshold amount
-        //     if eth_deposit_acc_bal < self.cfg.ethereum.ibc_transfer_threshold_amt {
-        //         // if balance does not exceed the transfer threshold, we skip the eureka transfer steps
-        //         // and proceed to gaia ica -> neutron routing
-        //         info!(target: DEPOSIT_PHASE, "IBC-Eureka transfer threshold not met! Proceeding to ICA routing.");
-        //     } else {
-        //         // if balance meets the transfer threshold, we carry out the eureka transfer steps
-        //         // prior to proceeding to gaia ica -> neutron routing
-        //         info!(target: DEPOSIT_PHASE, "IBC-Eureka transfer threshold met!");
-        //
-        //         self.eth_to_gaia_routing(eth_rp, eth_deposit_acc_bal)
-        //             .await?;
-        //     }
-        // }
-        //
-        // // Stage 2: deposit token routing from Gaia to Neutron
-        // {
-        //     let gaia_ica_bal = self
-        //         .gaia_client
-        //         .query_balance(&self.cfg.gaia.ica_address, &self.cfg.gaia.deposit_denom)
-        //         .await?;
-        //     info!(target: DEPOSIT_PHASE, "Cosmos Hub ICA balance = {gaia_ica_bal}");
-        //
-        //     // depending on the gaia ICA deposit token balance, we either perform the ICA IBC routing
-        //     // of the balances to Neutron, or proceed to the next stage
-        //     if gaia_ica_bal == 0 {
-        //         info!(target: DEPOSIT_PHASE, "nothing to bridge; proceeding to maxBTC issuance");
-        //     } else {
-        //         info!(target: DEPOSIT_PHASE, "pulling funds to Neutron...");
-        //         self.gaia_to_neutron_routing(gaia_ica_bal).await?;
-        //     }
-        // }
+        // Stage 1: deposit token routing from Ethereum to Cosmos hub
+        {
+            let eth_deposit_token_contract =
+                ERC20::new(self.cfg.ethereum.denoms.deposit_token, &eth_rp);
+            let eth_deposit_acc = BaseAccount::new(self.cfg.ethereum.accounts.deposit, &eth_rp);
+
+            // query the ethereum deposit account balance
+            let eth_deposit_acc_bal = self
+                .eth_client
+                .query(eth_deposit_token_contract.balanceOf(*eth_deposit_acc.address()))
+                .await?
+                ._0;
+            info!(target: DEPOSIT_PHASE, "eth deposit acc balance = {eth_deposit_acc_bal}");
+
+            // validate that the deposit account balance exceeds the eureka routing threshold amount
+            if eth_deposit_acc_bal < self.cfg.ethereum.ibc_transfer_threshold_amt {
+                // if balance does not exceed the transfer threshold, we skip the eureka transfer steps
+                // and proceed to gaia ica -> neutron routing
+                info!(target: DEPOSIT_PHASE, "IBC-Eureka transfer threshold not met! Proceeding to ICA routing.");
+            } else {
+                // if balance meets the transfer threshold, we carry out the eureka transfer steps
+                // prior to proceeding to gaia ica -> neutron routing
+                info!(target: DEPOSIT_PHASE, "IBC-Eureka transfer threshold met!");
+
+                self.eth_to_gaia_routing(eth_rp, eth_deposit_acc_bal)
+                    .await?;
+            }
+        }
+
+        // Stage 2: deposit token routing from Gaia to Neutron
+        {
+            let gaia_ica_bal = self
+                .gaia_client
+                .query_balance(&self.cfg.gaia.ica_address, &self.cfg.gaia.deposit_denom)
+                .await?;
+            info!(target: DEPOSIT_PHASE, "Cosmos Hub ICA balance = {gaia_ica_bal}");
+
+            // depending on the gaia ICA deposit token balance, we either perform the ICA IBC routing
+            // of the balances to Neutron, or proceed to the next stage
+            if gaia_ica_bal == 0 {
+                info!(target: DEPOSIT_PHASE, "nothing to bridge; proceeding to maxBTC issuance");
+            } else {
+                info!(target: DEPOSIT_PHASE, "pulling funds to Neutron...");
+                self.gaia_to_neutron_routing(gaia_ica_bal).await?;
+            }
+        }
 
         // Stage 3: maxBTC issuance
         {
