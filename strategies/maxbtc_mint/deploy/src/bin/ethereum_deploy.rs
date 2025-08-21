@@ -14,7 +14,8 @@ use packages::types::{
     inputs::{EurekaTransfer, EurekaTransferCoprocessorApp},
     sol_types::{
         Authorization, BaseAccount, ERC1967Proxy, IBCEurekaTransfer, IBCEurekaTransferConfig,
-        OneWayVault::{self, FeeDistributionConfig, OneWayVaultConfig},
+        KYCOneWayVault::{self, FeeDistributionConfig, KYCOneWayVaultConfig},
+        Wrapper as WrapperContract,
         processor_contract::LiteProcessor,
     },
 };
@@ -27,9 +28,17 @@ use valence_domain_clients::{
 #[derive(Deserialize, Debug)]
 struct Parameters {
     general: General,
+    wrapper: Wrapper,
     vault: Vault,
     eureka_transfer: EurekaTransfer,
     coprocessor_app: EurekaTransferCoprocessorApp,
+}
+
+#[derive(Deserialize, Debug)]
+struct Wrapper {
+    zk_me: Address,
+    cooperator: Address,
+    withdraws_enabled: bool,
 }
 
 #[derive(Deserialize, Debug)]
@@ -84,15 +93,26 @@ async fn main() -> anyhow::Result<()> {
         .unwrap();
     println!("Deposit account deployed at: {deposit_account}");
 
+    let wrapper_tx = WrapperContract::deploy_builder(&rp, eth_client.signer().address())
+        .into_transaction_request();
+
+    let wrapper = eth_client
+        .sign_and_send(wrapper_tx)
+        .await?
+        .contract_address
+        .unwrap();
+    println!("Wrapper deployed at: {wrapper}");
+
     let fee_distribution_config = FeeDistributionConfig {
         strategistAccount: parameters.vault.strategist_fee_account,
         platformAccount: parameters.vault.platform_fee_account,
         strategistRatioBps: parameters.vault.strategist_fee_ratio_bps,
     };
 
-    let one_way_vault_config = OneWayVaultConfig {
+    let kyc_one_way_vault_config = KYCOneWayVaultConfig {
         depositAccount: deposit_account,
         strategist: parameters.vault.strategist,
+        wrapper,
         depositFeeBps: parameters.vault.deposit_fee_bps,
         withdrawFeeBps: parameters.vault.withdraw_fee_bps,
         maxRateIncrementBps: parameters.vault.max_rate_increment_bps,
@@ -103,7 +123,7 @@ async fn main() -> anyhow::Result<()> {
         feeDistribution: fee_distribution_config,
     };
 
-    let implementation_tx = OneWayVault::deploy_builder(&rp).into_transaction_request();
+    let implementation_tx = KYCOneWayVault::deploy_builder(&rp).into_transaction_request();
 
     let implementation = eth_client
         .sign_and_send(implementation_tx)
@@ -122,12 +142,12 @@ async fn main() -> anyhow::Result<()> {
 
     println!("Vault deployed at: {proxy}");
 
-    let vault = OneWayVault::new(proxy, &rp);
+    let vault = KYCOneWayVault::new(proxy, &rp);
 
     let initialize_tx = vault
         .initialize(
             parameters.general.owner,
-            one_way_vault_config.abi_encode().into(),
+            kyc_one_way_vault_config.abi_encode().into(),
             parameters.vault.deposit_token,
             "Neutron-XChain-Vault".to_string(), // vault token name
             "nVault".to_string(),               // vault token symbol
@@ -136,6 +156,17 @@ async fn main() -> anyhow::Result<()> {
         .into_transaction_request();
     eth_client.sign_and_send(initialize_tx).await?;
     println!("Vault initialized");
+
+    let configure_wrapper_tx = WrapperContract::new(wrapper, &rp)
+        .setConfig(
+            proxy,
+            parameters.wrapper.zk_me,
+            parameters.wrapper.cooperator,
+            parameters.wrapper.withdraws_enabled,
+        )
+        .into_transaction_request();
+    eth_client.sign_and_send(configure_wrapper_tx).await?;
+    println!("Wrapper configured");
 
     let processor =
         LiteProcessor::deploy_builder(&rp, FixedBytes::<32>::default(), Address::ZERO, 0, vec![])
@@ -226,6 +257,7 @@ async fn main() -> anyhow::Result<()> {
     };
 
     let libraries = EthereumLibraries {
+        wrapper,
         one_way_vault: proxy,
         eureka_transfer,
     };
@@ -257,6 +289,8 @@ async fn main() -> anyhow::Result<()> {
     // Save the Ethereum Strategy Config to a toml file
     let eth_cfg_toml =
         toml::to_string(&eth_cfg).expect("Failed to serialize Ethereum Strategy Config");
+    fs::create_dir_all(OUTPUTS_DIR)
+        .expect("Failed to create Ethereum Strategy Config output directory");
     fs::write(
         current_dir.join(format!("{OUTPUTS_DIR}/ethereum_strategy_config.toml")),
         eth_cfg_toml,

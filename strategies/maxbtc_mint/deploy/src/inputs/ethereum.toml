@@ -2,6 +2,11 @@
 rpc_url = "https://eth-mainnet.public.blastapi.io"
 owner   = "0xF4be64577425b84aE62EdF38b4b695771a1d6538" # Neutron multisig address
 
+[wrapper]
+zk_me                    = "0x399488687fc3618FFaf1f5d0f61397c8E0360c02" # Should be updated to correct ZkMe Verify & Certify contract address
+cooperator               = "0x3f4b2F33e5488796cBA66C6b1E9f1934031656Fd" # Should be updated to correct cooperator provided from ZkMe
+withdraws_enabled        = false
+
 [vault]
 deposit_token            = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599" # Should be updated to correct deposit token address (e.g. WBTC)
 strategist               = "0xF4be64577425b84aE62EdF38b4b695771a1d6538" # Address of the strategist
