@@ -2050,7 +2050,7 @@ dependencies = [
  "env_logger",
  "hex",
  "log",
- "mmvault 0.1.6",
+ "mmvault 2.0.0 (git+https://github.com/neutron-org/slinky-vault?rev=3a2537c846731b4752bdbee84eeb562e71273438)",
  "packages",
  "serde",
  "serde_json",
@@ -2252,7 +2252,7 @@ dependencies = [
  "env_logger",
  "hex",
  "log",
- "mmvault 0.1.6",
+ "mmvault 2.0.0 (git+https://github.com/neutron-org/slinky-vault?rev=3a2537c846731b4752bdbee84eeb562e71273438)",
  "packages",
  "serde",
  "serde_json",
@@ -2384,6 +2384,7 @@ dependencies = [
  "bincode 2.0.1",
  "clearing-queue-core",
  "cosmwasm-std",
+ "ed25519-zebra",
  "serde_json",
  "valence-authorization-utils",
  "valence-clearing-queue-supervaults",
@@ -5242,7 +5243,7 @@ dependencies = [
  "hex",
  "log",
  "lombard_btc_types",
- "mmvault 0.1.6",
+ "mmvault 2.0.0 (git+https://github.com/neutron-org/slinky-vault?rev=3a2537c846731b4752bdbee84eeb562e71273438)",
  "packages",
  "serde",
  "serde_json",
@@ -5323,6 +5324,75 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0e7465ac9959cc2b1404e8e2367b43684a6d13790fe23056cc8c6c5a6b7bcb94"
 
 [[package]]
+name = "maxbtc_mint_and_supervault_deploy"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "anyhow",
+ "bincode 1.3.3",
+ "cosmrs",
+ "cosmwasm-std",
+ "dotenv",
+ "hex",
+ "maxbtc_mint_and_supervault_types",
+ "packages",
+ "serde",
+ "sp1-sdk",
+ "tokio",
+ "toml",
+ "valence-account-utils",
+ "valence-authorization-utils",
+ "valence-clearing-queue-supervaults",
+ "valence-domain-clients",
+ "valence-ica-ibc-transfer",
+ "valence-library-utils",
+ "valence-maxbtc-issuer",
+ "valence-processor-utils",
+ "valence-supervaults-lper",
+]
+
+[[package]]
+name = "maxbtc_mint_and_supervault_strategist"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "anyhow",
+ "async-trait",
+ "cosmwasm-std",
+ "dotenv",
+ "env_logger",
+ "hex",
+ "log",
+ "maxbtc_mint_and_supervault_types",
+ "mmvault 2.0.0 (git+https://github.com/neutron-org/slinky-vault?rev=3a2537c846731b4752bdbee84eeb562e71273438)",
+ "packages",
+ "serde",
+ "serde_json",
+ "tokio",
+ "valence-account-utils",
+ "valence-authorization-utils",
+ "valence-clearing-queue-supervaults",
+ "valence-domain-clients",
+ "valence-ica-ibc-transfer",
+ "valence-lending-utils",
+ "valence-library-utils",
+ "valence-maxbtc-issuer",
+ "valence-processor-utils",
+ "valence-strategist-utils",
+ "valence-supervaults-lper",
+]
+
+[[package]]
+name = "maxbtc_mint_and_supervault_types"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "cosmwasm-std",
+ "serde",
+ "valence-strategist-utils",
+]
+
+[[package]]
 name = "maxbtc_mint_deploy"
 version = "0.1.0"
 dependencies = [
@@ -5362,7 +5432,7 @@ dependencies = [
  "hex",
  "log",
  "maxbtc_mint_types",
- "mmvault 0.1.6",
+ "mmvault 2.0.0 (git+https://github.com/neutron-org/slinky-vault?rev=3a2537c846731b4752bdbee84eeb562e71273438)",
  "packages",
  "serde",
  "serde_json",
@@ -5435,8 +5505,8 @@ dependencies = [
 
 [[package]]
 name = "mmvault"
-version = "0.1.6"
-source = "git+https://github.com/neutron-org/slinky-vault?rev=b2e2ff4#b2e2ff486cb5c012610573690232fe49c7be49cd"
+version = "2.0.0"
+source = "git+https://github.com/neutron-org/slinky-vault?rev=3a2537c#3a2537c846731b4752bdbee84eeb562e71273438"
 dependencies = [
  "cosmwasm-std",
  "cw-storage-plus",
@@ -5454,7 +5524,7 @@ dependencies = [
 [[package]]
 name = "mmvault"
 version = "2.0.0"
-source = "git+https://github.com/neutron-org/slinky-vault?rev=3a2537c#3a2537c846731b4752bdbee84eeb562e71273438"
+source = "git+https://github.com/neutron-org/slinky-vault?rev=3a2537c846731b4752bdbee84eeb562e71273438#3a2537c846731b4752bdbee84eeb562e71273438"
 dependencies = [
  "cosmwasm-std",
  "cw-storage-plus",
@@ -6276,7 +6346,7 @@ dependencies = [
  "dotenv",
  "env_logger",
  "log",
- "mmvault 0.1.6",
+ "mmvault 2.0.0 (git+https://github.com/neutron-org/slinky-vault?rev=3a2537c846731b4752bdbee84eeb562e71273438)",
  "multi_log",
  "opentelemetry-appender-log",
  "opentelemetry-otlp",
@@ -9531,7 +9601,7 @@ dependencies = [
  "env_logger",
  "hex",
  "log",
- "mmvault 0.1.6",
+ "mmvault 2.0.0 (git+https://github.com/neutron-org/slinky-vault?rev=3a2537c846731b4752bdbee84eeb562e71273438)",
  "packages",
  "serde",
  "serde_json",
@@ -9641,7 +9711,7 @@ dependencies = [
  "cw-ownable",
  "cw-storage-plus",
  "cw-utils",
- "mmvault 2.0.0",
+ "mmvault 2.0.0 (git+https://github.com/neutron-org/slinky-vault?rev=3a2537c)",
  "valence-library-base",
  "valence-library-utils",
  "valence-macros",
@@ -10002,7 +10072,7 @@ source = "git+https://github.com/timewave-computer/valence-protocol?rev=6bc9ebb#
 dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
- "mmvault 2.0.0",
+ "mmvault 2.0.0 (git+https://github.com/neutron-org/slinky-vault?rev=3a2537c)",
  "neutron-std 5.1.2",
  "valence-account-utils",
  "valence-library-utils",
@@ -10218,6 +10288,77 @@ dependencies = [
 ]
 
 [[package]]
+name = "wbtc_lend_deploy"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "anyhow",
+ "bech32 0.11.0",
+ "bincode 1.3.3",
+ "cosmrs",
+ "cosmwasm-std",
+ "dotenv",
+ "hex",
+ "packages",
+ "serde",
+ "sp1-sdk",
+ "tokio",
+ "toml",
+ "valence-account-utils",
+ "valence-authorization-utils",
+ "valence-clearing-queue-supervaults",
+ "valence-domain-clients",
+ "valence-ica-ibc-transfer",
+ "valence-library-utils",
+ "valence-mars-lending",
+ "valence-processor-utils",
+ "wbtc_lend_types",
+]
+
+[[package]]
+name = "wbtc_lend_strategist"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "anyhow",
+ "async-trait",
+ "cosmwasm-std",
+ "dotenv",
+ "env_logger",
+ "hex",
+ "log",
+ "mmvault 2.0.0 (git+https://github.com/neutron-org/slinky-vault?rev=3a2537c846731b4752bdbee84eeb562e71273438)",
+ "packages",
+ "serde",
+ "serde_json",
+ "tokio",
+ "valence-account-utils",
+ "valence-authorization-utils",
+ "valence-clearing-queue-supervaults",
+ "valence-domain-clients",
+ "valence-forwarder-library",
+ "valence-ica-ibc-transfer",
+ "valence-lending-utils",
+ "valence-library-utils",
+ "valence-mars-lending",
+ "valence-processor-utils",
+ "valence-splitter-library",
+ "valence-strategist-utils",
+ "valence-supervaults-lper",
+ "wbtc_lend_types",
+]
+
+[[package]]
+name = "wbtc_lend_types"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "cosmwasm-std",
+ "serde",
+ "valence-strategist-utils",
+]
+
+[[package]]
 name = "wbtc_strategist"
 version = "0.1.0"
 dependencies = [
@@ -10229,7 +10370,7 @@ dependencies = [
  "env_logger",
  "hex",
  "log",
- "mmvault 0.1.6",
+ "mmvault 2.0.0 (git+https://github.com/neutron-org/slinky-vault?rev=3a2537c846731b4752bdbee84eeb562e71273438)",
  "packages",
  "serde",
  "serde_json",

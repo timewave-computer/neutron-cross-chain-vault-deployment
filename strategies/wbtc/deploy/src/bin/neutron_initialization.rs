@@ -52,7 +52,7 @@ async fn main() -> anyhow::Result<()> {
     let mnemonic = env::var("MNEMONIC").expect("mnemonic must be provided");
 
     let current_dir = env::current_dir()?;
-
+    //
     let ntrn_params = fs::read_to_string(current_dir.join(format!("{INPUTS_DIR}/neutron.toml")))
         .expect("Failed to read file");
 
@@ -77,15 +77,15 @@ async fn main() -> anyhow::Result<()> {
         &ntrn_strategy_config.chain_id,
     )
     .await?;
-
+    //
     let mut authorizations = vec![];
-
+    //
     // All authorizations except the phase shift one will be called by strategist
     let authorization_permissioned_mode =
         AuthorizationModeInfo::Permissioned(PermissionTypeInfo::WithoutCallLimit(vec![
             strategist.clone(),
         ]));
-
+    //
     // Subroutine for ICA Transfer
     // Involves updating the amount and trigger the transfer
     let update_amount_function = AtomicFunction {

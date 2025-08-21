@@ -1,0 +1,10 @@
+[package]
+name    = "wbtc_lend_types"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+cosmwasm-std             = { workspace = true }
+serde                    = { workspace = true }
+valence-strategist-utils = { workspace = true }
+alloy                    = { workspace = true }

@@ -2,8 +2,8 @@
 grpc_url      = "http://rpc.neutron.quokkastake.io"
 grpc_port     = "9090"
 chain_id      = "neutron-1"
-owner         = "neutron14mlpd48k5vkeset4x7f78myz3m47jcax3ysjkp" # Should be Neutron multisig
-strategist    = "neutron1z8qjsmtjxcd36j0la2rs2rfstf5nxmady2hx8a" # Should be strategist address
+owner         = "neutron17w0xj03v3jj7tj8uz998ga6he93ytxggnrf8zr" # Should be Neutron multisig
+strategist    = "neutron17w0xj03v3jj7tj8uz998ga6he93ytxggnrf8zr" # Should be strategist address
 
 [ica]
 deposit_token_on_hub_denom = "ibc/DBD9E339E1B093A052D76BECFFDE8435EAC114CF2133346B4D691F3F2068C957" # LBTC
@@ -26,4 +26,4 @@ initial_split_percentage_to_supervault = 20
 initial_settlement_ratio_percentage = 80
 
 [coprocessor_app]
-clearing_queue_coprocessor_app_id = "077341f90e2faa8e710b1a7e6e575104da40beaf0787d22c49d9c53f965d5816"
+clearing_queue_coprocessor_app_id = "26f7c483dba8d191bc52d389c64e21c6cbcbb1f61fcbaa79653e6f5f3d0f24c0"

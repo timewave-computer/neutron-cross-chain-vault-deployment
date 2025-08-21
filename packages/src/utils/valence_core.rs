@@ -73,6 +73,7 @@ pub async fn tick_neutron(client: &NeutronClient, processor: &str) -> anyhow::Re
         .await?;
 
     debug!("tx hash: {}", tx_resp.hash);
+    info!(target: DEPOSIT_PHASE, "{}", tx_resp.hash);
 
     client.poll_for_tx(&tx_resp.hash).await?;
 
