@@ -23,8 +23,6 @@ impl Strategy {
     pub async fn register_withdraw_obligations(&mut self) -> anyhow::Result<()> {
         info!(target: REGISTRATION_PHASE, "starting withdraw obligation registration phase");
 
-        return Ok(());
-
         // query the Clearing Queue library for the latest posted withdraw request ID
         let clearing_queue_cfg: valence_clearing_queue_supervaults::msg::Config = self
             .neutron_client

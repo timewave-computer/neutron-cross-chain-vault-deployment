@@ -9,7 +9,6 @@ use crate::strategy_config::Strategy;
 impl Strategy {
     pub async fn settlement(&mut self) -> anyhow::Result<()> {
         info!(target: SETTLEMENT_PHASE, "starting settlement phase");
-        return Ok(());
 
         let settlement_bal_maxbtc = self
             .neutron_client

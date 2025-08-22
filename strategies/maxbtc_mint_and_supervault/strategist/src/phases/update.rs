@@ -1,18 +1,19 @@
+use crate::strategy_config::Strategy;
 use alloy::{primitives::U256, providers::Provider};
 use anyhow::anyhow;
 use cosmwasm_std::{Decimal, Uint128};
 use log::info;
+use packages::utils::maxbtc::query_maxbtc_er;
 use packages::{
     phases::UPDATE_PHASE,
     types::sol_types::{BaseAccount, ERC20, OneWayVault},
+    utils,
     utils::{maxbtc::query_maxbtc_simulate_deposit, valence_core},
 };
 use valence_domain_clients::{
     cosmos::base_client::BaseClient,
     evm::base_client::{CustomProvider, EvmBaseClient},
 };
-
-use crate::strategy_config::Strategy;
 
 impl Strategy {
     /// performs the vault rate update. this phase involves the following stages:
@@ -28,26 +29,24 @@ impl Strategy {
     pub async fn update(&mut self, eth_rp: &CustomProvider) -> anyhow::Result<()> {
         info!(target: UPDATE_PHASE, "starting vault update phase");
 
-        return Ok(());
-
         let one_way_vault_contract =
             OneWayVault::new(self.cfg.ethereum.libraries.one_way_vault, &eth_rp);
 
         // in order to calculate the vault rate we need to find the total amount of deposit
         // denom distributed across the program and convert it to the equivalent maxBTC value
-        let total_assets_in_maxbtc = self.total_assets_in_maxbtc(eth_rp).await?;
-        info!(target: UPDATE_PHASE, "total assets in maxBTC: {total_assets_in_maxbtc}");
+        let total_assets_in_wbtc = self.total_assets_in_wbtc(eth_rp).await?;
+        info!(target: UPDATE_PHASE, "total assets in wBTC: {total_assets_in_wbtc}");
 
         // fetch the total issued shares and convert them to u128
         let total_shares = self.total_issued_shares(eth_rp).await?;
         info!(target: UPDATE_PHASE, "eth_vault_issued_shares_u128={total_shares}");
 
-        // rate = effective_total_assets_in_maxBTC / (effective_vault_shares * scaling_factor)
+        // rate = effective_total_assets_in_wBTC / (effective_vault_shares * scaling_factor)
         // multiplying the denominator by the scaling factor
         let scaled_shares_amount =
             Uint128::from(total_shares).checked_mul(self.cfg.ethereum.rate_scaling_factor)?;
         let redemption_rate_decimal =
-            Decimal::checked_from_ratio(total_assets_in_maxbtc, scaled_shares_amount)?;
+            Decimal::checked_from_ratio(total_assets_in_wbtc, scaled_shares_amount)?;
         info!(target: UPDATE_PHASE, "redemption rate decimal={redemption_rate_decimal}");
 
         let redemption_rate_sol_u256 = U256::try_from(redemption_rate_decimal.atomics().u128())?;
@@ -107,14 +106,14 @@ impl Strategy {
 
     /// queries the total value of the vault, expressed in maxBTC
     /// this involves querying the deposit token balances as well as the maxBTC balance
-    /// in the settlement account, and convert everything to maxBTC
+    /// in the supervault deposit account, and convert everything to wBTC
     /// - deposit denom balance queries:
     ///   - ethereum deposit account
     ///   - cosmos hub ICA
     ///   - neutron deposit account
     /// - maxBTC balance queries:
     ///   - neutron settlement account
-    async fn total_assets_in_maxbtc(&self, eth_rp: &CustomProvider) -> anyhow::Result<u128> {
+    async fn total_assets_in_wbtc(&self, eth_rp: &CustomProvider) -> anyhow::Result<u128> {
         let eth_deposit_acc_contract =
             BaseAccount::new(self.cfg.ethereum.accounts.deposit, &eth_rp);
         let eth_deposit_denom_contract =
@@ -151,27 +150,44 @@ impl Strategy {
         info!(target: UPDATE_PHASE, "neutron_deposit_acc_balance={neutron_deposit_acc_balance}");
         deposit_token_balance_total += neutron_deposit_acc_balance;
 
-        let neutron_settlement_acc_maxbtc_balance = self
+        let neutron_supervault_deposit_acc_maxbtc_balance = self
             .neutron_client
             .query_balance(
-                &self.cfg.neutron.accounts.settlement,
+                &self.cfg.neutron.accounts.supervault_deposit,
                 &self.cfg.neutron.denoms.maxbtc,
             )
             .await?;
-        info!(target: UPDATE_PHASE, "neutron_settlement_acc_maxbtc_balance={neutron_settlement_acc_maxbtc_balance}");
+        info!(target: UPDATE_PHASE, "neutron_supervault_deposit_acc_maxbtc_balance={neutron_supervault_deposit_acc_maxbtc_balance}");
+        let current_maxbtc_exchange_rate: Decimal =
+            query_maxbtc_er(&self.neutron_client, &self.cfg.neutron.maxbtc_contract).await?;
 
-        let deposit_token_balance_in_maxbtc = query_maxbtc_simulate_deposit(
+        // Calculate the final amount of maxBTC to be minted after fees and exchange rate conversion
+        let neutron_supervault_deposit_acc_balance_in_wbtc = dec_to_amount(
+            Decimal::from_atomics(neutron_supervault_deposit_acc_maxbtc_balance, 8)?
+                * current_maxbtc_exchange_rate,
+            8,
+        )?;
+        deposit_token_balance_total += neutron_supervault_deposit_acc_balance_in_wbtc.u128();
+
+        let supervaults_tvl = utils::supervaults::query_supervault_tvl_expressed_in_denom(
             &self.neutron_client,
-            &self.cfg.neutron.maxbtc_contract,
-            deposit_token_balance_total,
+            &self.cfg.neutron.supervault_contract,
+            &self.cfg.neutron.accounts.supervault_deposit,
+            &self.cfg.neutron.accounts.settlement,
+            &self.cfg.neutron.denoms.deposit_token,
         )
         .await?;
-        info!(target: UPDATE_PHASE, "deposit_token_balance_in_maxbtc={deposit_token_balance_in_maxbtc}");
+        info!(target: UPDATE_PHASE, "supervaults_tvl={supervaults_tvl}");
 
-        let total_maxbtc_balance =
-            deposit_token_balance_in_maxbtc + neutron_settlement_acc_maxbtc_balance;
-        info!(target: UPDATE_PHASE, "total_maxbtc_balance={total_maxbtc_balance}");
+        deposit_token_balance_total += supervaults_tvl;
+        info!(target: UPDATE_PHASE, "deposit_token_balance_total={deposit_token_balance_total}");
 
-        Ok(total_maxbtc_balance)
+        Ok(deposit_token_balance_total)
     }
+}
+
+pub fn dec_to_amount(dec: Decimal, decimals: u32) -> anyhow::Result<Uint128> {
+    dec.atomics()
+        .checked_div(Uint128::from(10u128.pow(dec.decimal_places() - decimals)))
+        .map_err(anyhow::Error::from)
 }
