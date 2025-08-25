@@ -1,28 +1,28 @@
 grpc_url = "http://rpc.neutron.quokkastake.io"
 grpc_port = "9090"
 chain_id = "neutron-1"
-maxbtc_contract = "neutron1j4sl8nf7fkpsptqtcw6hmd6t27varth57gmjrrswfkr2t85sj8sqf6ncrh"
-supervault_contract = "neutron1048engrh7u0ssphgfd8lgs05pyq7e4n9uh6u8g24f4uu23ay4s6qc0cm9g"
-authorizations = "neutron1lrwt72sf9w2gqs2rj3sqg95eg7jyp7nl8np0tmrvupmevlawp39styd909"
-processor = "neutron1t8h95xxfcfrn2dfd6z9uu2ze50r5zf6w69nf22rzphhlkzqzggvsclq47l"
+maxbtc_contract = "neutron1200577g2rywas6a0pnswe6wdgy4uqgjf0lymdkgq4uhjklej3ftsg4qs03"
+supervault_contract = "neutron10s83et9vd4k0fux6auxlavlsumsqcvppvjvk2e2cy4gr3rx8egvsqsyay6"
+authorizations = "neutron1rad46ahl6zhyzj53n9rwf7hyejaq0zl9vzmddurrhv4sulgrxv7s2qgz9r"
+processor = "neutron17yg3husg4al29cjvt90gxxhvy2j0jxt68l5y9ml0cy8vtwxmhq2qcwqp6u"
 
 [denoms]
 deposit_token = "ibc/0E293A7622DC9A6439DB60E6D234B5AF446962E27CA3AB44D0590603DFF6968E"
 ntrn = "untrn"
-maxbtc = "factory/neutron1j4sl8nf7fkpsptqtcw6hmd6t27varth57gmjrrswfkr2t85sj8sqf6ncrh/maxbtc"
-supervault_lp = "factory/neutron1048engrh7u0ssphgfd8lgs05pyq7e4n9uh6u8g24f4uu23ay4s6qc0cm9g/BTC-BTC"
+maxbtc = "factory/neutron1200577g2rywas6a0pnswe6wdgy4uqgjf0lymdkgq4uhjklej3ftsg4qs03/maxbtc"
+supervault_lp = "factory/neutron10s83et9vd4k0fux6auxlavlsumsqcvppvjvk2e2cy4gr3rx8egvsqsyay6/BTC-BTC"
 
 [accounts]
-gaia_ica = "neutron12luunfdhzwzeqfwl7ed5m7l6x28relaknnc95lqnkke99tg85ajqpm0h64"
-ica_deposit = "neutron13f4knqzuzatfeppvjga9mu7z4c42x6s4g9aykx7klcytr3g3e7nsuxd5em"
-supervault_deposit = "neutron1859v3rt4r4p7556uf2dcv2l28w332hdusy0wgmzj9awye8ekcdvq2wqvyd"
-settlement = "neutron1mhlrj908cq40anrkn0ed9d9cthfwpxg5hq8e6hc3jeaszcwt4w4ssg87qd"
+gaia_ica = "neutron1glyn29my9smmcv2d7afxyur3vjpa0cuhfzq6qx34nxljnr7au7fs0sxrz8"
+ica_deposit = "neutron1vewfunz07v02lx5je2w364u38qscsguavj8w59248jed0jdhx47snpkcu0"
+supervault_deposit = "neutron158mdr24c6qxwle5ljfg2vw7wm0lm7t2dpf4tchnwj29kg5wsqgqsxmth2k"
+settlement = "neutron1dj5x0rcchph73p627dtnc542kmyz7krnyqkgle8ceg2znz969a4sgk9lys"
 
 [libraries]
-maxbtc_issuer = "neutron1g2gjezzrps0ka6l0jk85u43x8vz6s7sz6lsgefj274zn32ltx96q9eej45"
-clearing_queue = "neutron1s9hqrqktfg55tqsqcravzpgxpfeuppur7tq0vhu7mz9lks5qzxpq6lepac"
-ica_transfer_gaia = "neutron1sx4yvgm9q20j57mm8mx6p3s0326ywglrsq6fcwexes9a36kd8wasl4l4rq"
-supervault_lper = "neutron1r4atda6u0swwk8uvjfe8ckmdq5s0lw3chh2rmz858f6umddt2qgsv0p8xs"
+maxbtc_issuer = "neutron1a5r4x73gdstdw599lymly8sek9pzypuzjh8g2jemgvqww0sy8dqsxa02ae"
+clearing_queue = "neutron1fj4ygthsgvetpsdyxk3el8hk3ha42wunhknxhe8z5pdwut8x6pvqvenq4z"
+ica_transfer_gaia = "neutron1ejftkkapms6dth7qvct5md5mp9pcek0k09fny7jc9hzf35495y7q5u4xgt"
+supervault_lper = "neutron1yjrtlfxykpufghvhvun267h6r6w359qvndnd9et55hr2jflphngqxwce2j"
 
 [coprocessor_app_ids]
-clearing_queue = "66c611c39cad1747351bbb3d62922f537ff1defe58a67655b5213247cc84e061"
+clearing_queue = "0f429349d63494575de4fc687e0c192ea0883ff96f1af0b82c627cdbaf44a7b6"

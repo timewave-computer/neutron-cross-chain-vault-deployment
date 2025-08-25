@@ -1,12 +1,12 @@
 [general]
 rpc_url = "https://eth-mainnet.public.blastapi.io"
-owner   = "0xf2857620c197c7b4eab27494b0707a92cb5c9b90" # Neutron multisig address
+owner   = "0xF4be64577425b84aE62EdF38b4b695771a1d6538" # Neutron multisig address
 
 [vault]
 deposit_token            = "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599" # Should be updated to correct deposit token address (e.g. WBTC)
-strategist               = "0xf2857620c197c7b4eab27494b0707a92cb5c9b90" # Address of the strategist
-platform_fee_account     = "0xf2857620c197c7b4eab27494b0707a92cb5c9b90" # Receiver of the platform fees portion
-strategist_fee_account   = "0xf2857620c197c7b4eab27494b0707a92cb5c9b90" # Receiver of the strategist fees portion
+strategist               = "0xF4be64577425b84aE62EdF38b4b695771a1d6538" # Address of the strategist
+platform_fee_account     = "0xF4be64577425b84aE62EdF38b4b695771a1d6538" # Receiver of the platform fees portion
+strategist_fee_account   = "0xF4be64577425b84aE62EdF38b4b695771a1d6538" # Receiver of the strategist fees portion
 strategist_fee_ratio_bps = 0                                            # Strategist fee is 50%, rest goes to the platform (50%)
 scaling_factor           = "10000000000"                                # scaling factor for rate updates
 deposit_cap              = "10000000000000"                             # e.g. 10K BTC
@@ -20,10 +20,10 @@ max_rate_update_delay    = 345600                                       # 4 days
 
 [eureka_transfer]
 handler                    = "0xfc2d0487a0ae42ae7329a80dc269916a9184cf7c"
-recipient                  = "cosmos1rrp78hcqwhn55uk38kvqd2udscq9ckumcssgqulyql8a4m7ppyvs35p5g8" # Eventual ICA address
+recipient                  = "cosmos1gw05ayeaxlcsxxcdc6ku9zn3s6pyc2j2k7nr4cpcqdfygedqeeds3r0yv9" # Eventual ICA address
 source_client              = "cosmoshub-0"
 timeout                    = 43200                                      # 12 hours in seconds
 ibc_transfer_threshold_amt = 10
 
 [coprocessor_app]
-eureka_transfer_coprocessor_app_id = "c637bd97ba1f617068800ce9fe76b1312159a0d1b00518ad7ab7bd7d5481360a" # TBD after deployment
+eureka_transfer_coprocessor_app_id = "17f4e048a3fa4bb4875bccc732042a26926e17006854efa468eddaea12441a01" # TBD after deployment

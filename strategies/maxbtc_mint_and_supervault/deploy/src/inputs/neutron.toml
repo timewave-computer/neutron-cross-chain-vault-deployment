@@ -2,8 +2,8 @@
 grpc_url   = "http://rpc.neutron.quokkastake.io"
 grpc_port  = "9090"
 chain_id   = "neutron-1"
-owner      = "neutron1rx54nvv0rw0vm27g8tw8fjduvmr577q89feg20" # Should be Neutron multisig
-strategist = "neutron1rx54nvv0rw0vm27g8tw8fjduvmr577q89feg20" # Should be strategist address
+owner      = "neutron17w0xj03v3jj7tj8uz998ga6he93ytxggnrf8zr" # Should be Neutron multisig
+strategist = "neutron17w0xj03v3jj7tj8uz998ga6he93ytxggnrf8zr" # Should be strategist address
 
 [ica]
 deposit_token_on_hub_denom = "ibc/D742E8566B0B8CC8F569D950051C09CF57988A88F0E45574BFB3079D41DE6462" # Should be token denom on Hub
@@ -14,12 +14,12 @@ ica_timeout                = 43200                                              
 
 [program]
 deposit_token_on_neutron_denom  = "ibc/0E293A7622DC9A6439DB60E6D234B5AF446962E27CA3AB44D0590603DFF6968E"                # Should be token denom on Neutron
-maxbtc_contract                 = "neutron1j4sl8nf7fkpsptqtcw6hmd6t27varth57gmjrrswfkr2t85sj8sqf6ncrh"                  # The contract address where maxBTC are minted from
-maxbtc_denom                    = "factory/neutron1j4sl8nf7fkpsptqtcw6hmd6t27varth57gmjrrswfkr2t85sj8sqf6ncrh/maxbtc"   # Should be real maxBTC denom on Neutron
-supervault_contract             = "neutron1048engrh7u0ssphgfd8lgs05pyq7e4n9uh6u8g24f4uu23ay4s6qc0cm9g"
-supervault_asset1               = "factory/neutron1j4sl8nf7fkpsptqtcw6hmd6t27varth57gmjrrswfkr2t85sj8sqf6ncrh/maxbtc"   # maxBTC
+maxbtc_contract                 = "neutron1200577g2rywas6a0pnswe6wdgy4uqgjf0lymdkgq4uhjklej3ftsg4qs03"                  # The contract address where maxBTC are minted from
+maxbtc_denom                    = "factory/neutron1200577g2rywas6a0pnswe6wdgy4uqgjf0lymdkgq4uhjklej3ftsg4qs03/maxbtc"   # Should be real maxBTC denom on Neutron
+supervault_contract             = "neutron10s83et9vd4k0fux6auxlavlsumsqcvppvjvk2e2cy4gr3rx8egvsqsyay6"
+supervault_asset1               = "factory/neutron1200577g2rywas6a0pnswe6wdgy4uqgjf0lymdkgq4uhjklej3ftsg4qs03/maxbtc"   # maxBTC
 supervault_asset2               = "ibc/0E293A7622DC9A6439DB60E6D234B5AF446962E27CA3AB44D0590603DFF6968E"                # WBTC
-supervault_lp_denom             = "factory/neutron1048engrh7u0ssphgfd8lgs05pyq7e4n9uh6u8g24f4uu23ay4s6qc0cm9g/BTC-BTC"
+supervault_lp_denom             = "factory/neutron10s83et9vd4k0fux6auxlavlsumsqcvppvjvk2e2cy4gr3rx8egvsqsyay6/BTC-BTC"
 
 [coprocessor_app]
-clearing_queue_coprocessor_app_id = "66c611c39cad1747351bbb3d62922f537ff1defe58a67655b5213247cc84e061" # TBD after deployment
+clearing_queue_coprocessor_app_id = "0f429349d63494575de4fc687e0c192ea0883ff96f1af0b82c627cdbaf44a7b6" # TBD after deployment
