@@ -12,18 +12,12 @@ impl Strategy {
     /// for more elaborate sentry configurations, see the strategist
     /// getting started guide.
     pub async fn sentry(&mut self) -> anyhow::Result<()> {
-        // before starting the cycle we flush any existing medium or high
-        // priority items from the processor queue
+        // before starting the cycle we flush any existing items
+        // from the processor queue
         valence_core::flush_neutron_processor_queue(
             &self.neutron_client,
             &self.cfg.neutron.processor,
             valence_authorization_utils::authorization::Priority::Medium,
-        )
-        .await?;
-        valence_core::flush_neutron_processor_queue(
-            &self.neutron_client,
-            &self.cfg.neutron.processor,
-            valence_authorization_utils::authorization::Priority::High,
         )
         .await?;
 
