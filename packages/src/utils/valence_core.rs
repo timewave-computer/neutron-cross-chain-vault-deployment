@@ -17,7 +17,7 @@ use valence_domain_clients::{
 
 use crate::{
     labels::REGISTER_OBLIGATION_LABEL,
-    phases::{DEPOSIT_PHASE, REGISTRATION_PHASE, UPDATE_PHASE},
+    phases::{DEPOSIT_PHASE, REGISTRATION_PHASE, SENTRY_PHASE, UPDATE_PHASE},
     types::sol_types::OneWayVault,
 };
 
@@ -204,6 +204,40 @@ pub async fn validate_new_redemption_rate(
                 ));
             }
         }
+    }
+
+    Ok(())
+}
+
+/// helper function to flush leftover elements of given priority from
+/// the queue.
+/// useful to unblock the processor from cycles that resulted in leftover
+/// items for any reason.
+pub async fn flush_neutron_processor_queue(
+    client: &NeutronClient,
+    processor: &str,
+    priority: valence_authorization_utils::authorization::Priority,
+) -> anyhow::Result<()> {
+    info!(target: SENTRY_PHASE, "flushing {priority:?} priority elements from the processor queue");
+
+    let queue: Vec<valence_processor_utils::processor::MessageBatch> = client
+        .query_contract_state(
+            processor,
+            valence_processor_utils::msg::QueryMsg::GetQueue {
+                from: None,
+                to: None,
+                priority,
+            },
+        )
+        .await?;
+
+    if queue.is_empty() {
+        info!(target: SENTRY_PHASE, "processor queue is empty; nothing to flush");
+    } else {
+        for _ in queue.iter() {
+            tick_neutron(client, processor).await?;
+        }
+        info!(target: SENTRY_PHASE, "flushed {} elements from the queue", queue.len());
     }
 
     Ok(())
