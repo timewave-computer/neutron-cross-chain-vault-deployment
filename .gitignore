@@ -1,6 +1,7 @@
 target/
 .env
 *.env
+.idea/
 
 # Output files
 strategies/*/deploy/src/ethereum_strategy_config.toml

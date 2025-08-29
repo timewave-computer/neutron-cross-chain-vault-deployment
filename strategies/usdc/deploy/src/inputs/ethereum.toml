@@ -1,25 +1,25 @@
 [general]
 rpc_url = "https://eth-mainnet.public.blastapi.io"
-owner   = "0xd9A23b58e684B985F661Ce7005AA8E10630150c1" # Neutron multisig address
+owner   = "0xF4be64577425b84aE62EdF38b4b695771a1d6538" # Neutron multisig address
 
 [vault]
 deposit_token            = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" # USDC on Ethereum
-strategist               = "0x510c4a1d637ff374399826f421003b775dc3e8dc" # Address of the strategist
-platform_fee_account     = "0x510c4a1d637ff374399826f421003b775dc3e8dc" # Receiver of the platform fees portion
-strategist_fee_account   = "0x510c4a1d637ff374399826f421003b775dc3e8dc" # Receiver of the strategist fees portion
-strategist_fee_ratio_bps = 5000                                         # Strategist fee is 50%, rest goes to the platform (50%)
+strategist               = "0xF4be64577425b84aE62EdF38b4b695771a1d6538" # Address of the strategist
+platform_fee_account     = "0xF4be64577425b84aE62EdF38b4b695771a1d6538" # Receiver of the platform fees portion
+strategist_fee_account   = "0xF4be64577425b84aE62EdF38b4b695771a1d6538" # Receiver of the strategist fees portion
+strategist_fee_ratio_bps = 0                                         # Strategist fee is 50%, rest goes to the platform (50%)
 scaling_factor           = "1000000000000"                              # scaling factor for rate updates
 deposit_cap              = "100000000000"                               # e.g. 100K USDC
-deposit_fee_bps          = 100                                          # 1% deposit fee
-withdraw_fee_bps         = 100                                          # 1% withdraw fee
-max_rate_increment_bps   = 2000                                         # 20% maximum rate increment per update
-max_rate_decrement_bps   = 2000                                         # 20% maximum rate decrement per update
+deposit_fee_bps          = 0                                          # 1% deposit fee
+withdraw_fee_bps         = 0                                          # 1% withdraw fee
+max_rate_increment_bps   = 100000                                         # 20% maximum rate increment per update
+max_rate_decrement_bps   = 10000                                         # 20% maximum rate decrement per update
 starting_rate            = "1000000"                                    # 1e6 - USDC Precision - 6 decimals
 min_rate_update_delay    = 10                                           # 10 seconds - Minimum delay for rate updates
 max_rate_update_delay    = 345600                                       # 4 days in seconds - Maximum delay for rate updates before vault gets paused
 
 [cctp_transfer]
 cctp_token_messenger        = "0xBd3fa81B58Ba92a82136038B25aDec7066af3155"                         # CCTP Token Messenger contract address
-recipient                   = "0x0000000000000000000000006d36ee66d20fc92b6f703cf26927a5ac23703740" # Forwarding Account on Noble
+recipient                   = "0x00000000000000000000000028918EED3741DE20A9175762EFD26600E00BB3FB" # Forwarding Account on Noble
 destination_domain          = 4                                                                    # Noble
-cctp_transfer_threshold_amt = 1000000
+cctp_transfer_threshold_amt = 10

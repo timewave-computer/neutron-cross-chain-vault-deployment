@@ -1,13 +1,13 @@
 [general]
-grpc_url = "http://rpc.neutron.quokkastake.io"
-grpc_port = "9090"
+grpc_url = "http://grpc-xyphion.neutron-1.neutron.org"
+grpc_port = "80"
 chain_id = "neutron-1"
-owner = "neutron14mlpd48k5vkeset4x7f78myz3m47jcax3ysjkp"      # Should be Neutron multisig
-strategist = "neutron1m6w8n0hluq7avn40hj0n6jnj8ejhykfrwfnnjh" # Should be strategist address
+owner = "neutron17w0xj03v3jj7tj8uz998ga6he93ytxggnrf8zr"      # Should be Neutron multisig
+strategist = "neutron17w0xj03v3jj7tj8uz998ga6he93ytxggnrf8zr" # Should be strategist address
 
 [program]
 deposit_token_on_neutron_denom = "ibc/B559A80D62249C8AA07A380E2A2BEA6E5CA9A6F079C912C3A9E9B494105E4F81" # USDC on Neutron
 mars_credit_manager = "neutron1qdzn3l4kn7gsjna2tfpg3g3mwd6kunx4p50lfya59k02846xas6qslgs3r"              # prod Mars Credit Manager address
 
 [coprocessor_app]
-clearing_queue_coprocessor_app_id = "366df6d8f0b2c9a3496d9c1398927551c46f38974274220da2ce5d0b8bf16618"
+clearing_queue_coprocessor_app_id = "077fc135b90f303b9bded904aae460ec29626847d7a72e9b78b1a3cfa2db3f67"

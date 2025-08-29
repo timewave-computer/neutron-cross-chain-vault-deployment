@@ -54,6 +54,8 @@ pub struct EthereumAccounts {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EthereumLibraries {
+    /// KYC deposit/withdraw guard wrapper
+    pub wrapper: Address,
     /// ERC-4626-based vault
     pub one_way_vault: Address,
     /// IBC-Eureka transfer

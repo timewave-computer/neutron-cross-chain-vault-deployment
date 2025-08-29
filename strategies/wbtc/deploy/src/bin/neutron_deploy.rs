@@ -1360,7 +1360,7 @@ async fn main() -> anyhow::Result<()> {
     let neutron_cfg_toml =
         toml::to_string(&neutron_cfg).expect("Failed to serialize Neutron Strategy Config");
     fs::write(
-        current_dir.join("deploy/src/neutron_strategy_config.toml"),
+        current_dir.join(format!("{OUTPUTS_DIR}/neutron_strategy_config.toml")),
         neutron_cfg_toml,
     )
     .expect("Failed to write Neutron Strategy Config to file");
