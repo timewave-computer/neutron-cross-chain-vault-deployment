@@ -65,17 +65,18 @@ impl Strategy {
             info!(target: REGISTRATION_PHASE, "processing obligation #{obligation_id}");
 
             // build the json input for coprocessor client
-            let withdraw_id_json = json!({
+            let proof_request_json = json!({
                 "domain": "ethereum-electra-beta",
                 "withdraw_request_id": obligation_id
             });
+
             // post the proof request to the coprocessor client & await
-            info!(target: REGISTRATION_PHASE, "posting proof request to coprocessor client: {withdraw_id_json}");
+            info!(target: REGISTRATION_PHASE, "posting proof request to coprocessor client: {proof_request_json}");
             let vault_zkp_response = self
                 .coprocessor_client
                 .prove(
                     &self.cfg.neutron.coprocessor_app_ids.clearing_queue,
-                    &withdraw_id_json,
+                    &proof_request_json,
                 )
                 .await?;
             info!(target: REGISTRATION_PHASE, "vault zkp resp: {vault_zkp_response:?}");
