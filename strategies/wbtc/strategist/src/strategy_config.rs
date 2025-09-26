@@ -100,6 +100,7 @@ impl Strategy {
             &cfg.ethereum.denoms.deposit_token.to_string(),
             EUREKA_COSMOS_HUB_CHAIN_ID,
             &cfg.gaia.deposit_denom,
+            false,
         );
 
         Ok(Self {

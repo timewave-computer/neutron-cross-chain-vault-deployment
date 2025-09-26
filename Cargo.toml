@@ -55,7 +55,7 @@ opentelemetry-appender-log = "0.30.0"
 
 
 # valence-protocol
-valence-domain-clients               = { git = "https://github.com/timewave-computer/valence-domain-clients.git", rev = "885feb6" }
+valence-domain-clients               = "3.0.0"
 valence-authorization-utils          = { git = "https://github.com/timewave-computer/valence-protocol", rev = "6bc9ebb" }
 valence-processor-utils              = { git = "https://github.com/timewave-computer/valence-protocol", rev = "6bc9ebb" }
 valence-library-utils                = { git = "https://github.com/timewave-computer/valence-protocol", rev = "6bc9ebb" }
