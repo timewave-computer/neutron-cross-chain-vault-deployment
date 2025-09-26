@@ -14,7 +14,6 @@ use valence_coprocessor_ethereum::{
 use valence_coprocessor_wasm::abi;
 
 const NETWORK: &str = "eth-mainnet";
-const DOMAIN: &str = "ethereum-electra-alpha";
 
 const FN_SELECTOR: [u8; 4] = withdrawRequestsCall::SELECTOR;
 
@@ -22,8 +21,10 @@ const FN_SELECTOR: [u8; 4] = withdrawRequestsCall::SELECTOR;
 const WITHDRAWS_MAPPING_SLOT: u64 = 0xA;
 
 pub fn get_witnesses(args: Value) -> anyhow::Result<Vec<Witness>> {
+    let domain = args["domain"].as_str().ok_or(anyhow::anyhow!("args must include domain"))?;
+
     let block =
-        abi::get_latest_block(DOMAIN)?.ok_or_else(|| anyhow::anyhow!("no valid domain block"))?;
+        abi::get_latest_block(domain)?.ok_or_else(|| anyhow::anyhow!("no valid domain block"))?;
 
     let block = format!("{:#x}", block.number);
 
