@@ -21,7 +21,9 @@ const FN_SELECTOR: [u8; 4] = withdrawRequestsCall::SELECTOR;
 const WITHDRAWS_MAPPING_SLOT: u64 = 0xA;
 
 pub fn get_witnesses(args: Value) -> anyhow::Result<Vec<Witness>> {
-    let domain = args["domain"].as_str().ok_or(anyhow::anyhow!("args must include domain"))?;
+    let domain = args["domain"]
+        .as_str()
+        .ok_or(anyhow::anyhow!("args must include domain"))?;
 
     let block =
         abi::get_latest_block(domain)?.ok_or_else(|| anyhow::anyhow!("no valid domain block"))?;
