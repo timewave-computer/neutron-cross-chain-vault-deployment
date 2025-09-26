@@ -65,7 +65,10 @@ impl Strategy {
             info!(target: REGISTRATION_PHASE, "processing obligation #{obligation_id}");
 
             // build the json input for coprocessor client
-            let withdraw_id_json = json!({"withdraw_request_id": obligation_id});
+            let withdraw_id_json = json!({
+                "domain": "ethereum-electra-beta",
+                "withdraw_request_id": obligation_id
+            });
 
             // post the proof request to the coprocessor client & await
             info!(target: REGISTRATION_PHASE, "posting proof request to coprocessor client: {withdraw_id_json}");
