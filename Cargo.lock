@@ -5323,6 +5323,74 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0e7465ac9959cc2b1404e8e2367b43684a6d13790fe23056cc8c6c5a6b7bcb94"
 
 [[package]]
+name = "maxbtc_mint_and_supervault_deploy"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "anyhow",
+ "bincode 1.3.3",
+ "cosmrs",
+ "cosmwasm-std",
+ "dotenv",
+ "hex",
+ "maxbtc_mint_and_supervault_types",
+ "packages",
+ "serde",
+ "sp1-sdk",
+ "tokio",
+ "toml",
+ "valence-account-utils",
+ "valence-authorization-utils",
+ "valence-clearing-queue-supervaults",
+ "valence-domain-clients",
+ "valence-ica-ibc-transfer",
+ "valence-library-utils",
+ "valence-maxbtc-issuer",
+ "valence-processor-utils",
+ "valence-supervaults-lper",
+]
+
+[[package]]
+name = "maxbtc_mint_and_supervault_strategist"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "anyhow",
+ "async-trait",
+ "cosmwasm-std",
+ "dotenv",
+ "env_logger",
+ "hex",
+ "log",
+ "maxbtc_mint_and_supervault_types",
+ "mmvault 0.1.6",
+ "packages",
+ "serde",
+ "serde_json",
+ "tokio",
+ "valence-account-utils",
+ "valence-authorization-utils",
+ "valence-clearing-queue-supervaults",
+ "valence-domain-clients",
+ "valence-ica-ibc-transfer",
+ "valence-lending-utils",
+ "valence-library-utils",
+ "valence-maxbtc-issuer",
+ "valence-processor-utils",
+ "valence-strategist-utils",
+]
+
+[[package]]
+name = "maxbtc_mint_and_supervault_types"
+version = "0.1.0"
+dependencies = [
+ "alloy",
+ "cosmwasm-std",
+ "serde",
+ "valence-strategist-utils",
+]
+
+[[package]]
 name = "maxbtc_mint_deploy"
 version = "0.1.0"
 dependencies = [
